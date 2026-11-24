@@ -8,7 +8,8 @@
 // The default build is 'upper', a waist-up figure for gestures, talking and reactions: body (the
 // torso with the neck, turning and breathing at the waist), head (turning at the neck), eyes (a
 // part of their own, so they blink), hairBack (behind everything), and upperArm/forearm/hand on
-// each side. Its origin is the middle of the waist. The 'kid' and 'adult' builds are full bodies
+// each side. Its origin is the middle of the waist. 'side' is a character in profile for platformers
+// and side-scrollers (src/art/figure-side.js). The 'kid' and 'adult' builds are full bodies
 // standing on the ground (origin between the feet) and add thigh, shin and foot on each side.
 // L is the figure's left (the viewer's right); it draws behind.
 // Pure: shapes only, rendered by src/art/shapes.js.
@@ -18,13 +19,14 @@ const BUILDS = Object.freeze({
   kid: { head: 0.28, torso: 0.3, torsoW: 0.28, upperArm: 0.12, forearm: 0.11, hand: 0.075, limb: 0.08, thigh: 0.15, shin: 0.14, foot: 0.06, footL: 0.16 },
   adult: { head: 0.16, torso: 0.33, torsoW: 0.23, upperArm: 0.17, forearm: 0.15, hand: 0.055, limb: 0.06, thigh: 0.23, shin: 0.21, foot: 0.045, footL: 0.13 },
 });
-export const FIGURE_BUILDS = Object.freeze(['upper', ...Object.keys(BUILDS)]);
+export const FIGURE_BUILDS = Object.freeze(['upper', 'side', ...Object.keys(BUILDS)]);
 /** The waist-up figure: a torso that breathes, a head that turns, eyes that blink, and arms. */
 export const UPPER_PARTS = Object.freeze(['hairBack', 'upperArmL', 'forearmL', 'handL', 'body', 'head', 'eyes', 'upperArmR', 'forearmR', 'handR']);
 export const FIGURE_PARTS = Object.freeze(['thighL', 'shinL', 'footL', 'thighR', 'shinR', 'footR', 'upperArmL', 'forearmL', 'handL', 'body', 'head',
   'upperArmR', 'forearmR', 'handR']);
 
 import { colorOf, darken } from './style.js';
+import { sideParts } from './figure-side.js';
 
 const r2 = v => Math.round(v * 100) / 100;
 
@@ -147,7 +149,7 @@ function upperParts(c, style) {
  */
 export function figureParts(c, style) {
   const pre = typeof c.prefix === 'string' && /^[A-Za-z][A-Za-z0-9]{0,15}$/.test(c.prefix) ? `${c.prefix}_` : '';
-  const parts = BUILDS[c.build] ? fullParts(c, style) : upperParts(c, style);
+  const parts = c.build === 'side' ? sideParts(c, style) : BUILDS[c.build] ? fullParts(c, style) : upperParts(c, style);
   // A prefix names a second figure in the same drawing (kid_ body, kid_ head...).
   return pre ? parts.map(p => ({ ...p, name: pre + p.name, ...(p.parent ? { parent: pre + p.parent } : {}) })) : parts;
 }

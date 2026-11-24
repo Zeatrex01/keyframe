@@ -15,6 +15,7 @@ import { componentParts, COMPONENTS } from '../src/art/components.js';
 import { expandParts, deriveShapes } from '../src/art/draw-spec.js';
 import { critiqueArt } from '../src/art/critique-art.js';
 import { FIGURE_PARTS, UPPER_PARTS } from '../src/art/figure.js';
+import { SIDE_PARTS } from '../src/art/figure-side.js';
 import { editableOf, applyEdit } from '../src/art/edit.js';
 import { jointSeparations } from '../src/understand/joints.js';
 import { critiqueAnimation } from '../src/understand/critique.js';
@@ -280,6 +281,38 @@ test('the default look is clean: no dark outline, only an edge a shade darker th
   assert.ok(expandParts([{ name: 'play', component: { component: 'button', label: 'Play' }, at: [0, 0] }], cartoon).parts[0].svg.includes(`stroke="${colorOf(cartoon, 'ink')}"`));
 });
 
+test('a side-view figure for platformers: in profile, far limbs behind and darker, and its clips export framed alike with the ground origin', async () => {
+  const s = studio();
+  try {
+    const r = await s.call('draw_rig', { name: 'hero', parts: [{ name: 'hero', component: { component: 'figure', build: 'side', h: 300 }, at: [0, 0] }] });
+    assert.equal(r.error, undefined, JSON.stringify(r.error));
+    assert.deepEqual([...r.parts].sort(), [...SIDE_PARTS].sort());
+    const sk = JSON.parse(fs.readFileSync(path.join(s.dir, 'hero.json'), 'utf8'));
+    const parent = Object.fromEntries(sk.bones.map(b => [b.name, b.parent]));
+    for (const [child, up] of [['footFront', 'shinFront'], ['shinFront', 'thighFront'], ['thighFront', 'body'], ['handBack', 'forearmBack'], ['eye', 'head'], ['head', 'body']]) assert.equal(parent[child], up, child);
+    const order = sk.slots.map(x => x.name);
+    for (const b of ['thighBack', 'upperArmBack']) assert.ok(order.indexOf(b) < order.indexOf('body'), `${b} draws behind`);
+    for (const f of ['thighFront', 'upperArmFront']) assert.ok(order.indexOf(f) > order.indexOf('body'), `${f} draws in front`);
+    const parts = JSON.parse(fs.readFileSync(path.join(s.dir, 'hero.parts.json'), 'utf8')).parts;
+    const toneOf = n => parts.find(p => p.name === n).svg.match(/(?:stop-color|fill)="(#[0-9a-f]{6})"/)[1];
+    assert.notEqual(toneOf('thighBack'), toneOf('thighFront'), 'the far leg is a tone darker');
+    const rot = pairs => pairs.map(([time, value], i) => ({ time, value, ...(i < pairs.length - 1 ? { curve: 'inOutSine' } : {}) }));
+    const clip = { run: { bones: { thighFront: { rotate: rot([[0, 35], [0.3, -35], [0.6, 35]]) }, thighBack: { rotate: rot([[0, -35], [0.3, 35], [0.6, -35]]) }, shinFront: { rotate: rot([[0, -10], [0.3, -60], [0.6, -10]]) } } },
+      jump: { bones: { body: { translate: [{ time: 0, x: 0, y: 0, curve: 'outCubic' }, { time: 0.3, x: 0, y: 140, curve: 'inCubic' }, { time: 0.6, x: 0, y: 0 }] } } } };
+    let file;
+    for (const [animation, c] of Object.entries(clip)) file = (await s.call('write_animation', { from: 'hero.json', animation, clip: c, ...(file ? { replace: true } : {}) })).file;
+    const run = await s.call('export_art', { file: 'hero.parts.json', kinds: ['clip'], animation: 'run', fps: 10, size: 128 });
+    const jump = await s.call('export_art', { file: 'hero.parts.json', kinds: ['clip'], animation: 'jump', fps: 10, size: 128, loop: false });
+    assert.deepEqual([run.clip.loop, jump.clip.loop], [true, false]);
+    assert.deepEqual(run.clip.origin, jump.clip.origin, 'every clip keeps the same ground origin, so switching clips never jumps');
+    assert.deepEqual([run.clip.frames, jump.clip.frames], [6, 7]);
+    const map = JSON.parse(fs.readFileSync(path.join(s.dir, 'hero-export', 'clip-jump@sheet.json'), 'utf8'));
+    assert.deepEqual(map.meta.origin, { x: jump.clip.origin[0], y: jump.clip.origin[1] });
+    assert.ok(map.meta.origin.y > 64, 'the ground sits low in the frame, room above for the jump');
+    assert.deepEqual(Object.values(map.frames)[0].pivot, { x: +(map.meta.origin.x / 128).toFixed(2), y: +(map.meta.origin.y / 128).toFixed(2) });
+  } finally { s.done(); }
+});
+
 test('the words and colours of AI-drawn parts are edited by hand and drawn again in the guide, keeping where the owner put them', () => {
   const { parts } = expandParts([{ name: 'win', component: { component: 'popup', title: 'YOU WON', lines: ['Nice'] }, at: [0, 0] },
     { name: 'coin', box: [64, 64], shapes: [{ circle: [32, 32, 28], fill: 'reward' }, { text: '5', at: [32, 44], size: 24 }], at: [300, 0] }], style);
@@ -349,11 +382,12 @@ test('export_art turns a clip into a PNG sequence and a sheet with its frame tim
     fs.writeFileSync(file, JSON.stringify(sk));
     const e = await s.call('export_art', { file: 'b.parts.json', kinds: ['clip'], animation: 'press', fps: 12, size: 64 });
     assert.equal(e.error, undefined, JSON.stringify(e.error));
-    assert.equal(e.clip.frames, 7);
+    assert.deepEqual([e.clip.frames, e.clip.loop], [6, true], 'a clip that ends where it starts loops, without the closing copy of its first frame');
     const map = JSON.parse(fs.readFileSync(path.join(s.dir, 'b-export', 'clip-press@sheet.json'), 'utf8'));
-    assert.equal(Object.keys(map.frames).length, 7);
-    assert.equal(map.meta.fps, 12);
-    assert.ok(fs.existsSync(path.join(s.dir, 'b-export', 'clip-press', 'frame_0006.png')));
+    assert.equal(Object.keys(map.frames).length, 6);
+    assert.deepEqual([map.meta.fps, map.meta.loop], [12, true]);
+    assert.ok(fs.existsSync(path.join(s.dir, 'b-export', 'clip-press', 'frame_0005.png')));
+    assert.ok(!fs.existsSync(path.join(s.dir, 'b-export', 'clip-press', 'frame_0006.png')));
     // Frames never touch: clear pixels around each one and from the sheet's edges.
     const frames = Object.values(map.frames).map(f => f.frame);
     for (const f of frames) assert.ok(f.x >= 2 && f.y >= 2 && f.x + f.w <= map.meta.size.w - 2 && f.y + f.h <= map.meta.size.h - 2, JSON.stringify(f));

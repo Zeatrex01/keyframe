@@ -46,7 +46,11 @@ A part is drawn one of three ways, cheapest first:
    turning at its joint with round caps that overlap there. The default `build: upper` is waist-up,
    for gestures, talking and reactions: `body` (the torso and neck, turning and breathing at the
    waist), `head`, `eyes` (a part of their own, so they blink), `hairBack`, and each arm as upper,
-   lower and hand. `build: kid | adult` is a full body standing, with legs, for when the owner asks
+   lower and hand. `build: side` is a character in profile facing right, for platformers and side-scrollers
+   (flip the root's x scale to face left): `body` carries everything and turns at the hips, with
+   `head`, `eye`, and Back (far, a tone darker) and Front (near) arms and legs in three parts. Its
+   clips export as sprite sheets framed alike, with the ground origin in the map.
+   `build: kid | adult` is a full body standing, with legs, for when the owner asks
    for one (`h`, `skin`, `shirt`, `pants`, `hair`, `shoes`, `sleeves: long`, and `prefix` for a
    second figure in one drawing).
 2. **Shapes**: `{ name: "coin", box: [64, 64], shapes: [{ circle: [32, 32, 28], fill: "reward", shine: true }], at: [0, 0] }`.

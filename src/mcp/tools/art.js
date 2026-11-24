@@ -92,7 +92,7 @@ export const exportArtTool = {
   tier: 'core',
   writes: true,
   summary: 'Exports a drawing for engines and the web: trimmed PNGs per part and state with pivots at any scale, a sprite sheet with a JSON map, clean SVG, a clip as PNG frames, and an embeddable web player.',
-  description: `Writes new files into <folder>/<name>-export/ (never touches the drawing or the owner's files; a second export replaces the folder's files): \`parts\` png@<s>x/<part>.png, each part and each state at scale s (pixels per rig unit), transparent and trimmed, with parts.json listing for each its trim offset, source size and pivot in pixels so an engine places and turns it like the rig; \`sheet\` <name>@<s>x.png and .json, all of them packed into one sprite sheet with a frame map in the common JSON-hash layout (frame, spriteSourceSize, sourceSize, pivot) that game engines and web libraries read; \`svg\` svg/<part>.svg and <name>.svg, clean SVG with a <g id> per part for web pages and design tools; \`clip\` (with \`animation\`) clip-<anim>/frame_0000.png... and clip-<anim>@sheet.png/.json at \`fps\`, for engines without a skeletal runtime; \`web\` web/keyframe-player.js (the studio's engine as one script: a KeyframePlayer class with play, stop, pause, seek, setSpeed, setLook for drawn states, and start/complete/loop/event listeners, plus a <keyframe-player> element), the skeleton, its atlas and pages, and an index.html showing the snippet, for web games and pages. Kinds: ${KINDS.join(', ')}; default parts, sheet and svg. Scales default [1, 2]; \`pixels\` instead sets the longest side of the whole drawing.`,
+  description: `Writes new files into <folder>/<name>-export/ (never touches the drawing or the owner's files; a second export replaces the folder's files): \`parts\` png@<s>x/<part>.png, each part and each state at scale s (pixels per rig unit), transparent and trimmed, with parts.json listing for each its trim offset, source size and pivot in pixels so an engine places and turns it like the rig; \`sheet\` <name>@<s>x.png and .json, all of them packed into one sprite sheet with a frame map in the common JSON-hash layout (frame, spriteSourceSize, sourceSize, pivot) that game engines and web libraries read; \`svg\` svg/<part>.svg and <name>.svg, clean SVG with a <g id> per part for web pages and design tools; \`clip\` (with \`animation\`) clip-<anim>/frame_0000.png... and clip-<anim>@sheet.png/.json at \`fps\`, for engines without a skeletal runtime: every clip of the skeleton is framed alike (same size, feet on the same row), the map gives the origin in pixels (meta.origin, each frame's pivot) and whether the clip loops (a loop leaves out its closing copy of the first frame); \`web\` web/keyframe-player.js (the studio's engine as one script: a KeyframePlayer class with play, stop, pause, seek, setSpeed, setLook for drawn states, and start/complete/loop/event listeners, plus a <keyframe-player> element), the skeleton, its atlas and pages, and an index.html showing the snippet, for web games and pages. Kinds: ${KINDS.join(', ')}; default parts, sheet and svg. Scales default [1, 2]; \`pixels\` instead sets the longest side of the whole drawing.`,
   inputSchema: {
     type: 'object', required: ['file'], additionalProperties: false,
     properties: {
@@ -104,9 +104,10 @@ export const exportArtTool = {
       fps: { type: 'number', minimum: 1, maximum: 60, short: 'clip frames per second (24)', description: 'Frames per second of the clip export; default 24.' },
       size: { type: 'number', minimum: 16, maximum: 2048, short: 'clip frame px (256)', description: 'Square frame size of the clip export in pixels; default 256.' },
       padding: { type: 'integer', minimum: 0, maximum: 32, short: 'clear px around each sprite (2)', description: 'Clear pixels around every sprite and clip frame in a sheet, so texture filtering never bleeds a neighbour in; default 2.' },
+      loop: { type: 'boolean', short: 'clip loops or plays once (auto)', description: 'Whether the clip export cycles (idle, run) or plays once (jump, attack). Default: it loops when it ends where it starts.' },
     },
   },
-  async run({ file, kinds, scales, pixels, animation, fps, size, padding }, { session }) {
+  async run({ file, kinds, scales, pixels, animation, fps, size, padding, loop }, { session }) {
     const project = projectOf(session);
     const { doc, abs } = readDrawing(project, file);
     const wanted = kinds?.length ? kinds : ['parts', 'sheet', 'svg', ...(animation ? ['clip'] : [])];
@@ -128,9 +129,9 @@ export const exportArtTool = {
       if (wanted.includes('clip')) {
         if (!animation) throw new StudioError('bad-argument', 'kind clip needs `animation`.', {});
         const pages = Object.fromEntries(Object.entries(bytes).map(([k, v]) => [k, decodePng(v)]));
-        const done = await exportClip({ json, atlasText, pages, animation, fps: fps ?? 24, size: size ?? 256, padding: padding ?? 2 });
+        const done = await exportClip({ json, atlasText, pages, animation, fps: fps ?? 24, size: size ?? 256, padding: padding ?? 2, loop });
         Object.assign(files, done.files);
-        clip = { animation, frames: done.frames, fps: done.fps, from: project.rel(skeletonFile) };
+        clip = { animation, frames: done.frames, fps: done.fps, loop: done.loop, origin: done.origin, from: project.rel(skeletonFile) };
       }
       if (wanted.includes('web')) {
         for (const [rel, data] of Object.entries(webPlayerFiles({ name: doc.name, skeleton: json, atlasText, pages: bytes }))) files[`web/${rel}`] = data;

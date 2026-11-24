@@ -113,28 +113,50 @@ export function exportDrawing(doc, { scales = [1, 2], kinds = ['parts', 'sheet',
 
 /**
  * An animation as a PNG sequence and one sheet, for engines without a skeletal runtime.
- * @param {{ json: object, atlasText: string, pages: object, animation: string, fps?: number, size?: number, padding?: number }} input
+ *
+ * Every clip of a skeleton is framed the same way: one view that holds all of its clips, so the
+ * character keeps its size and its feet stay on the same pixel row when a game switches from idle to
+ * run to jump. The sheet's map gives that anchor (the skeleton's origin, the ground under a
+ * character) as `meta.origin` in pixels and as each frame's `pivot` (0-1). A clip that ends where it
+ * starts is a loop: its last frame, a copy of the first, is left out so it cycles without a hitch.
+ * @param {{ json: object, atlasText: string, pages: object, animation: string, fps?: number, size?: number, padding?: number, loop?: boolean }} input
  */
-export async function exportClip({ json, atlasText, pages, animation, fps = 24, size = 256, padding = 2 }) {
+export async function exportClip({ json, atlasText, pages, animation, fps = 24, size = 256, padding = 2, loop: asked }) {
   const clip = json.animations?.[animation];
   if (!clip) throw new StudioError('bad-argument', `There is no animation "${animation}". Clips: ${Object.keys(json.animations ?? {}).join(', ') || 'none'}.`, { animation });
-  let end = 0;
-  const scan = v => { if (Array.isArray(v)) v.forEach(scan); else if (v && typeof v === 'object') { if (Number.isFinite(v.time)) end = Math.max(end, v.time); Object.values(v).forEach(scan); } };
-  scan(clip);
+  const endOf = c => { let end = 0; const scan = v => { if (Array.isArray(v)) v.forEach(scan); else if (v && typeof v === 'object') { if (Number.isFinite(v.time)) end = Math.max(end, v.time); Object.values(v).forEach(scan); } }; scan(c); return end; };
+  const end = endOf(clip);
+  // One view for every clip of the skeleton.
+  let view = null;
+  for (const [name, c] of Object.entries(json.animations ?? {})) {
+    const e = endOf(c), times = Array.from({ length: 13 }, (_, i) => r2(e * i / 12));
+    const { viewport: b } = await renderFrames({ json, atlasText, pages, animation: name, times, width: size, height: size, boundsOnly: true });
+    if (b) view = view ? { x: Math.min(view.x, b.x), y: Math.min(view.y, b.y), width: Math.max(view.x + view.width, b.x + b.width) - Math.min(view.x, b.x), height: Math.max(view.y + view.height, b.y + b.height) - Math.min(view.y, b.y) } : b;
+  }
   const count = Math.max(1, Math.min(240, Math.round(end * fps) + 1));
   const times = Array.from({ length: count }, (_, i) => r2(i / fps));
-  const { frames } = await renderFrames({ json, atlasText, pages, animation, times, width: size, height: size, margin: 0.06 });
+  const margin = 0.06;
+  const rendered = await renderFrames({ json, atlasText, pages, animation, times, width: size, height: size, margin, ...(view ? { viewport: view } : {}) });
+  let frames = rendered.frames;
+  const same = (a, b) => { for (let i = 0; i < a.data.length; i++) if (Math.abs(a.data[i] - b.data[i]) > 2) return false; return true; };
+  // A clip that ends where it starts cycles, unless the caller says it plays once (a jump that lands back on its feet).
+  const closes = frames.length > 2 && same(frames[0].image, frames[frames.length - 1].image);
+  const loop = typeof asked === 'boolean' ? asked : closes;
+  if (loop && closes) frames = frames.slice(0, -1);
+  const box = rendered.viewport, k = rendered.scale;
+  const origin = box && k ? [r2(size / 2 - (box.x + box.width / 2) * k), r2(size / 2 + (box.y + box.height / 2) * k)] : [size / 2, size / 2];
   /** @type {Record<string, Uint8Array | string>} */
   const files = {};
   frames.forEach((f, i) => { files[`clip-${animation}/frame_${String(i).padStart(4, '0')}.png`] = encodePng(f.image); });
-  const cols = Math.ceil(Math.sqrt(count));
+  const cols = Math.ceil(Math.sqrt(frames.length));
   const { at, image } = packSheetGrid(frames.map(f => f.image), cols, padding);
+  const pivot = { x: r2(origin[0] / size), y: r2(origin[1] / size) };
   files[`clip-${animation}@sheet.png`] = encodePng(image);
   files[`clip-${animation}@sheet.json`] = `${JSON.stringify({
-    frames: Object.fromEntries(frames.map((f, i) => [`${animation}_${String(i).padStart(4, '0')}`, { frame: { x: at[i][0], y: at[i][1], w: size, h: size }, rotated: false, trimmed: false, spriteSourceSize: { x: 0, y: 0, w: size, h: size }, sourceSize: { w: size, h: size }, duration: Math.round(1000 / fps) }])),
-    meta: { app: 'Keyframe Studio', image: `clip-${animation}@sheet.png`, size: { w: image.width, h: image.height }, fps, frames: count, loop: true },
+    frames: Object.fromEntries(frames.map((f, i) => [`${animation}_${String(i).padStart(4, '0')}`, { frame: { x: at[i][0], y: at[i][1], w: size, h: size }, rotated: false, trimmed: false, spriteSourceSize: { x: 0, y: 0, w: size, h: size }, sourceSize: { w: size, h: size }, pivot, duration: Math.round(1000 / fps) }])),
+    meta: { app: 'Keyframe Studio', image: `clip-${animation}@sheet.png`, size: { w: image.width, h: image.height }, fps, frames: frames.length, loop, origin: { x: origin[0], y: origin[1] }, scale: r2(k) },
   }, null, 1)}\n`;
-  return { files, frames: count, fps };
+  return { files, frames: frames.length, fps, loop, origin };
 }
 
 /** Frames on a grid, `pad` px of clear space around each, so a sampler never bleeds one into the next. */

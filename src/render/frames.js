@@ -102,10 +102,11 @@ function boundsOf(frames) {
  *        box to frame; default is the union of everything drawn across `times`
  * @param {{r,g,b,a}} [options.background]  straight colour; default transparent
  * @param {number} [options.supersample=2]  edge anti-aliasing factor
+ * @param {boolean} [options.boundsOnly] return only the framed box (`viewport`), drawing nothing
  * @param {string} [options.skin] @param {number} [options.fps=60]
  */
 export async function renderFrames({ json, atlasText, pages, animation, times, width = 256, height = 256, margin = 0.08,
-  viewport, background = null, supersample = 2, skin, fps = 60 }) {
+  viewport, background = null, supersample = 2, skin, fps = 60, boundsOnly = false }) {
   if (!(width > 0 && height > 0) || width * height * supersample * supersample > MAX_PIXELS) {
     throw new StudioError('bad-argument', 'Frame size is out of range.', { width, height, supersample });
   }
@@ -131,6 +132,7 @@ export async function renderFrames({ json, atlasText, pages, animation, times, w
   for (const { time, index } of order) drawsByIndex[index] = drawsAt(poser.at(time));
 
   const box = viewport ?? boundsOf(drawsByIndex);
+  if (boundsOnly) return { frames: [], viewport: box, scale: 0 };
   if (!box) return { frames: times.map(time => ({ time, image: toImage(createCanvas(width, height), 1, background) })), viewport: null, scale: 0 };
   const W = width * supersample, H = height * supersample;
   const usableW = W * (1 - 2 * margin), usableH = H * (1 - 2 * margin);
