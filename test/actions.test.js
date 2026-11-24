@@ -44,6 +44,10 @@ test('a strike thrown by the arm alone has no weight behind it; one driven from 
   const strong = rig('punch', { bones: { arm_r: arm,
     hips: { translate: keys([0, 0.2, 0.26, 0.4, 0.6], [0, 6, -20, -20, 0], 'x'), rotate: keys([0, 0.2, 0.26, 0.6], [0, -6, 18, 0]) } } });
   assert.deepEqual(codes(strong, 'punch'), [], 'weight shift, wind-up, a fast blow and a held reach');
+  // Named as an upper-body layer (played over a run), the same arm-only strike leaves the weight to the clip beneath.
+  const layer = rig('punch_upper', { bones: { arm_r: arm } });
+  assert.ok(!codes(layer, 'punch_upper').includes('no-weight-shift'));
+  assert.ok(codes(rig('punch_upper', { bones: { arm_r: arm, leg_l: { rotate: keys([0, 0.6], [0, 0]) } } }), 'punch_upper').includes('no-weight-shift'), 'a layer keys no leg');
   const noWindUp = rig('punch', { bones: { arm_r: { rotate: keys([0, 0.06, 0.4], [0, -90, 0]) } } });
   assert.ok(codes(noWindUp, 'punch').includes('no-wind-up'));
   assert.ok(codes(noWindUp, 'punch').includes('no-impact'));

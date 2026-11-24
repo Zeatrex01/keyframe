@@ -17,7 +17,10 @@ Kind: Character. Shown at 320 px wide. Teaches: weight shift with planted feet, 
 | `idle_axe` | 1.6 s, loop | the sword stance with the axe in hand |
 | `attack_axe` | 0.78 s | the overhead cut with the axe |
 | `idle_unarmed` | 1.6 s, loop | no weapon: fists up in guard, breathing over planted feet |
-| `punch` | 0.72 s | no weapon: guard, a short pull back, a straight punch from the hips, hold, recover |
+| `punch` | 0.45 s | no weapon: a jab with the near fist from the guard, a short pull back, hold, back to the guard |
+| `punch_cross` | 0.5 s | no weapon: the cross with the far fist, turning the hips into it; chains after the jab for a one-two |
+| `punch_upper` | 0.45 s | the jab for the arms and head only, to play over the run or the jump on a second layer |
+| `punch_cross_upper` | 0.5 s | the cross for the arms and head only, to play over the run or the jump |
 | `run` | 0.6 s, loop | two strides with a moment in the air after each push-off, arms opposite the legs; keeps whatever weapon the game gave it |
 | `jump` | 1 s | crouch with the feet planted, launch, tuck at the top, land into a planted crouch and stand; keeps the weapon in hand |
 

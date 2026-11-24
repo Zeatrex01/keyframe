@@ -12,7 +12,7 @@ test('warrior: every stance shows its own weapon, and the punch none', () => {
   const want = { sword: 'weapon', spear: 'weapon_spear', bow: 'weapon_bow', axe: 'weapon_axe', unarmed: null, punch: null };
   for (const clip of brief.clips) {
     const key = Object.keys(want).find(k => clip.name.includes(k));
-    if (!key) continue;
+    if (!key || clip.name.endsWith('_upper')) continue;
     const pose = sample(model, clip.name, [0.1])[0];
     assert.equal(pose.slots.find(s => s.name === 'weapon').attachment ?? null, want[key], clip.name);
   }
@@ -56,5 +56,26 @@ test('warrior: the shot nocks an arrow, draws the string to it, and lets it go',
   // Every other clip puts the arrow away, so none inherits one from an interrupted shot.
   for (const name of Object.keys(skeleton.animations).filter(n => n !== 'shoot_bow')) {
     assert.deepEqual(skeleton.animations[name].slots?.arrow?.attachment?.map(k => k.name ?? null), [null], name);
+  }
+});
+
+test('warrior: a one-two from the guard, and the same punches as an upper-body layer for the run and the jump', () => {
+  const guard = sample(model, 'idle_unarmed', [0])[0];
+  const pose = (clip, t) => sample(model, clip, [t])[0];
+  const arms = ['upperArmFront', 'forearmFront', 'upperArmBack', 'forearmBack'];
+  // Each punch starts and ends in the guard, so the game chains them in any order.
+  for (const clip of ['punch', 'punch_cross']) {
+    const end = brief.clips.find(c => c.name === clip).seconds;
+    for (const t of [0, end]) for (const b of arms) assert.ok(Math.abs(bone(pose(clip, t), b).rotation - bone(guard, b).rotation) < 0.5, `${clip} at ${t}: ${b} out of the guard`);
+  }
+  // The jab throws the near fist, the cross the far one.
+  const reach = (clip, hand) => Math.max(...frames(0.5).map(t => bone(pose(clip, Math.min(t, 0.45)), hand).worldX)) - bone(guard, hand).worldX;
+  assert.ok(reach('punch', 'handFront') > 25 && reach('punch', 'handBack') < 10, 'the jab is the near fist');
+  assert.ok(reach('punch_cross', 'handBack') > 25, 'the cross is the far fist');
+  // The layers key nothing below the shoulders (no body, legs or slots), so they play over a run.
+  for (const clip of ['punch_upper', 'punch_cross_upper']) {
+    const a = skeleton.animations[clip];
+    assert.deepEqual(Object.keys(a.bones).filter(b => !/^(head|upperArm|forearm|hand)/.test(b)), [], clip);
+    assert.equal(a.slots?.weapon, undefined, `${clip} leaves the weapon to the game`);
   }
 });

@@ -72,6 +72,22 @@ import prints what was baked and what was left out, and keeps it on the root as 
 Godot evaluates a bezier exactly, while Spine runtimes walk it in ten straight steps; a steep
 overshoot can differ by about a percent between keys. Baked keys are exact on their frames.
 
+### Punching while running: an upper-body layer
+
+The Warrior's unarmed one-two is `punch` (the near fist) and `punch_cross` (the far fist), each from
+the guard back to it, so a game chains them. Standing, they plant the feet. To punch without
+stopping, play `punch_upper` or `punch_cross_upper` over `run` or `jump`: these key only the arms
+and the head, so a second player on the same rig takes the arms while the first keeps the legs
+running (`play_layer` on the rig's root).
+
+```gdscript
+$warrior.play_layer("punch_upper")             # the jab, while the AnimationPlayer keeps "run" going
+$warrior.play_layer("punch_cross_upper")       # the next press: the cross
+```
+
+`play_layer` plays the clip on a second AnimationPlayer it adds beside the first, so the layer's
+tracks win while it plays. When the layer ends, the arms go back to the clip underneath.
+
 ## How it is checked
 
 `test/godot.test.js` in the Keyframe Studio repository plays every shipped skeleton's scene

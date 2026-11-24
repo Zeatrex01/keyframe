@@ -15,6 +15,8 @@ const HAND = /hand|wrist|fist|palm|paw/i;
 const ARM = /arm|elbow|shoulder/i;
 const HEAD = /^head$|(^|[_\-. ])head($|[_\-. ])/i;
 const LEG = /leg|thigh|shin|knee|foot|feet|toe/i;
+/** A clip made to play over another one, on the upper body only. */
+const LAYER = /(^|[_\-\s])(upper|layer|overlay)([_\-\s]|$)/i;
 const FOOT = /foot|feet|toe/i;
 const FPS = 60;
 
@@ -75,9 +77,14 @@ export function actionFindings(sk, name, { action } = {}) {
   const leadTrack = track(lead);
   const leadY = leadTrack.map(b => b.worldY), leadX = leadTrack.map(b => b.worldX), leadRot = leadTrack.map(b => b.worldRotation);
 
+  // A layer for the upper body (named so, "punch_upper", and keying arms or the head, never the core
+  // or a leg) plays over another clip, a run or a jump, whose body carries the weight: its strike is
+  // judged for the arm alone.
+  const keyed = Object.keys(clip.bones ?? {});
+  const layer = LAYER.test(name) && keyed.length > 0 && !keyed.some(n => core.includes(n) || legs.includes(n) || n === lead);
   if (kind === 'strike' && isFigure) {
     const shift = Math.max(range(leadX), range(leadY)) / H, turn = range(leadRot);
-    if (shift < 0.04 && turn < 8) add('weak', 'no-weight-shift', `"${name}" is a strike, but the body behind it barely moves (${r2(shift * 100)}% of the height, ${r2(turn)} degrees): it is an arm move, not a blow.`,
+    if (!layer && shift < 0.04 && turn < 8) add('weak', 'no-weight-shift', `"${name}" is a strike, but the body behind it barely moves (${r2(shift * 100)}% of the height, ${r2(turn)} degrees): it is an arm move, not a blow.`,
       { shift: r2(shift), turnDegrees: r2(turn), lead }, `Drive it from the core: shift ${lead} toward the target by 5-10% of the height and turn it 10-25 degrees into the strike, then let the arm follow 1-3 frames later.`, 'weight and follow-through');
     // The striking limb: the hand that travels fastest.
     const limb = (hands.length ? hands : arms).map(b => ({ b, t: track(b) })).map(({ b, t }) => {

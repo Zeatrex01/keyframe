@@ -1,5 +1,6 @@
 // "Warrior": the side-view figure dressed for a fight (src/art/figure-gear.js), with a stance and
-// an attack for each weapon it carries, an unarmed punch, a run and a jump. One skeleton: plate
+// an attack for each weapon it carries, an unarmed one-two (also as an upper-body layer to play over
+// the run and the jump), a run and a jump. One skeleton: plate
 // armour with leather as the other look of every piece, and a sword, spear, bow and axe in one
 // weapon slot that each stance and attack switches at its first key (the run and the jump leave it
 // alone, so they keep whatever weapon the game gave the character). Teaches weight shift with planted feet
@@ -78,12 +79,21 @@ export const clips = {
     upperArmFront: { rotate: K([[0, 30], [0.85, 26], [1.6, 30]]) }, forearmFront: { rotate: K([[0, 100], [0.9, 106], [1.6, 100]]) },
     upperArmBack: { rotate: K([[0, 40], [0.8, 36], [1.6, 40]]) }, forearmBack: { rotate: K([[0, 100], [0.85, 106], [1.6, 100]]) },
   } },
-  punch: { slots: weapon(null), bones: { ...stance(0.7, 1, -1),
-    body: { rotate: K([[0, -1], [0.18, 8, 'inCubic'], [0.25, -16, 'outQuad'], [0.42, -14], [0.7, -1]]), translate: T([[0, 0, -21], [0.18, -8, -23, 'inCubic'], [0.25, 9, -25, 'outQuad'], [0.42, 8, -25], [0.7, 0, -21]]) },
-    head: { rotate: K([[0, 2], [0.2, -4], [0.28, 8], [0.45, 6], [0.72, 2]]) },
-    upperArmFront: { rotate: K([[0, 30], [0.18, 16, 'inCubic'], [0.25, 92, 'outQuad'], [0.42, 89], [0.7, 30]]) },
-    forearmFront: { rotate: K([[0, 100], [0.18, 116, 'inCubic'], [0.25, 0, 'outQuad'], [0.42, 4], [0.7, 100]]) },
-    upperArmBack: { rotate: K([[0, 40], [0.2, 60], [0.28, -30], [0.44, -26], [0.72, 40]]) }, forearmBack: { rotate: K([[0, 100], [0.2, 110], [0.28, 110], [0.44, 104], [0.72, 100]]) },
+  // A one-two: the jab with the near fist, the cross with the far one, each from the guard back to
+  // it, so a game chains them (punch, punch_cross, punch...). Short enough to keep the game moving.
+  punch: { slots: weapon(null), bones: { ...stance(0.45, 1, -1),
+    body: { rotate: K([[0, -1], [0.08, 3, 'inCubic'], [0.14, -10, 'outQuad'], [0.24, -9], [0.45, -1]]), translate: T([[0, 0, -21], [0.08, -3, -22, 'inCubic'], [0.14, 6, -23, 'outQuad'], [0.24, 5, -23], [0.45, 0, -21]]) },
+    head: { rotate: K([[0, 2], [0.1, 0], [0.16, 6], [0.26, 5], [0.45, 2]]) },
+    upperArmFront: { rotate: K([[0, 30], [0.08, 22, 'inCubic'], [0.14, 92, 'outQuad'], [0.24, 89], [0.45, 30]]) },
+    forearmFront: { rotate: K([[0, 100], [0.08, 112, 'inCubic'], [0.14, 0, 'outQuad'], [0.25, 4], [0.45, 100]]) },
+    upperArmBack: { rotate: K([[0, 40], [0.09, 44], [0.16, 34], [0.26, 36], [0.45, 40]]) }, forearmBack: { rotate: K([[0, 100], [0.1, 104], [0.17, 108], [0.27, 106], [0.45, 100]]) },
+  } },
+  punch_cross: { slots: weapon(null), bones: { ...stance(0.5, 1, -1),
+    body: { rotate: K([[0, -1], [0.1, 4, 'inCubic'], [0.17, -14, 'outQuad'], [0.28, -12], [0.5, -1]]), translate: T([[0, 0, -21], [0.1, -4, -22, 'inCubic'], [0.17, 9, -25, 'outQuad'], [0.28, 8, -25], [0.5, 0, -21]]) },
+    head: { rotate: K([[0, 2], [0.12, -1], [0.19, 7], [0.3, 6], [0.5, 2]]) },
+    upperArmBack: { rotate: K([[0, 40], [0.1, 52, 'inCubic'], [0.17, 92, 'outQuad'], [0.28, 89], [0.5, 40]]) },
+    forearmBack: { rotate: K([[0, 100], [0.1, 112, 'inCubic'], [0.17, 0, 'outQuad'], [0.29, 4], [0.5, 100]]) },
+    upperArmFront: { rotate: K([[0, 30], [0.11, 26], [0.18, 12], [0.29, 14], [0.5, 30]]) }, forearmFront: { rotate: K([[0, 100], [0.12, 104], [0.19, 122], [0.3, 120], [0.5, 100]]) },
   } },
   run: { bones: {
     // Contact, down, passing, push-off in each step, the down quick after the contact and the
@@ -117,7 +127,7 @@ const on = (f, b) => [{ bone: 'footFront', at: [f, 13.7] }, { bone: 'footBack', 
 // Two-handed holds: the back hand rides the spear shaft behind the front fist, and on the bow it
 // holds the arrow's nock through the draw (`plant` with `on`: the point travels with the weapon).
 const SHAFT = { bone: 'handBack', on: 'weapon', at: [-60, 0] }, NOCK = { bone: 'handBack', on: 'weapon', at: [-76, -2] };
-const PLANT = { idle_sword: on(34, -40), attack_sword: on(34, -40), idle_spear: [...on(34, -40), SHAFT], attack_spear: [...on(34, -40), SHAFT], idle_bow: on(30, -36), shoot_bow: [...on(30, -36), { ...NOCK, from: 0.3, to: 0.62 }], punch: on(34, -40), jump: [{ bone: 'footFront', from: 0, to: 0.22 }, { bone: 'footBack', from: 0, to: 0.22 }, { bone: 'footFront', from: 0.7, to: 1 }, { bone: 'footBack', from: 0.7, to: 1 }] };
+const PLANT = { idle_sword: on(34, -40), attack_sword: on(34, -40), idle_spear: [...on(34, -40), SHAFT], attack_spear: [...on(34, -40), SHAFT], idle_bow: on(30, -36), shoot_bow: [...on(30, -36), { ...NOCK, from: 0.3, to: 0.62 }], punch: on(34, -40), punch_cross: on(34, -40), jump: [{ bone: 'footFront', from: 0, to: 0.22 }, { bone: 'footBack', from: 0, to: 0.22 }, { bone: 'footFront', from: 0.7, to: 1 }, { bone: 'footBack', from: 0.7, to: 1 }] };
 
 // Each body part eases in its own way, so the parts do not move to one rhythm: the hips smooth, the
 // arms sharper, the head and the hands quick to settle.
@@ -139,6 +149,13 @@ for (const name of ['idle_sword', 'idle_spear', 'idle_bow', 'idle_unarmed']) {
 clips.idle_axe = { ...structuredClone(clips.idle_sword), slots: weapon('weapon_axe') };
 clips.attack_axe = { ...structuredClone(clips.attack_sword), slots: weapon('weapon_axe') };
 Object.assign(PLANT, { idle_axe: PLANT.idle_sword, attack_axe: PLANT.attack_sword, idle_unarmed: PLANT.punch });
+
+// The punches again for the upper body alone (arms and head, nothing below the shoulders), to play
+// over the run or the jump on a second layer: the legs keep running while the fists fly.
+for (const name of ['punch', 'punch_cross']) {
+  const upper = Object.fromEntries(Object.entries(clips[name].bones).filter(([bone]) => /^(head|upperArm|forearm|hand)/.test(bone)));
+  clips[`${name}_upper`] = { bones: structuredClone(upper) };
+}
 
 // The arrow shows on the bow from the nock to the release (the game sends its own arrow flying);
 // every other clip puts it away, so no clip inherits a nocked arrow from an interrupted shot.
@@ -171,7 +188,10 @@ export const brief = {
     { name: 'idle_axe', seconds: 1.6, loop: true, does: 'the sword stance with the axe in hand' },
     { name: 'attack_axe', seconds: 0.78, loop: false, does: 'the overhead cut with the axe' },
     { name: 'idle_unarmed', seconds: 1.6, loop: true, does: 'no weapon: fists up in guard, breathing over planted feet' },
-    { name: 'punch', seconds: 0.72, loop: false, does: 'no weapon: guard, a short pull back, a straight punch from the hips, hold, recover' },
+    { name: 'punch', seconds: 0.45, loop: false, does: 'no weapon: a jab with the near fist from the guard, a short pull back, hold, back to the guard' },
+    { name: 'punch_cross', seconds: 0.5, loop: false, does: 'no weapon: the cross with the far fist, turning the hips into it; chains after the jab for a one-two' },
+    { name: 'punch_upper', seconds: 0.45, loop: false, does: 'the jab for the arms and head only, to play over the run or the jump on a second layer' },
+    { name: 'punch_cross_upper', seconds: 0.5, loop: false, does: 'the cross for the arms and head only, to play over the run or the jump' },
     { name: 'run', seconds: 0.6, loop: true, does: 'two strides with a moment in the air after each push-off, arms opposite the legs; keeps whatever weapon the game gave it' },
     { name: 'jump', seconds: 1, loop: false, does: 'crouch with the feet planted, launch, tuck at the top, land into a planted crouch and stand; keeps the weapon in hand' },
   ],

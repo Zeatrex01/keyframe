@@ -82,9 +82,27 @@
     },
     {
       "name": "punch",
-      "seconds": 0.72,
+      "seconds": 0.45,
       "loop": false,
-      "does": "no weapon: guard, a short pull back, a straight punch from the hips, hold, recover"
+      "does": "no weapon: a jab with the near fist from the guard, a short pull back, hold, back to the guard"
+    },
+    {
+      "name": "punch_cross",
+      "seconds": 0.5,
+      "loop": false,
+      "does": "no weapon: the cross with the far fist, turning the hips into it; chains after the jab for a one-two"
+    },
+    {
+      "name": "punch_upper",
+      "seconds": 0.45,
+      "loop": false,
+      "does": "the jab for the arms and head only, to play over the run or the jump on a second layer"
+    },
+    {
+      "name": "punch_cross_upper",
+      "seconds": 0.5,
+      "loop": false,
+      "does": "the cross for the arms and head only, to play over the run or the jump"
     },
     {
       "name": "run",

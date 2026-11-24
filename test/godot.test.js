@@ -261,7 +261,7 @@ test('the dressable warrior reaches Godot with every look and weapon, each stanc
   assert.equal(shown('punch', 'weapon'), null);
   // The add-on's rig finds slots by name and swaps looks and weapons.
   const rig = fs.readFileSync(path.join(ROOT, 'integrations/godot/addons/keyframe/keyframe_rig.gd'), 'utf8');
-  for (const api of ['func set_attachment(slot_name: String, attachment: String) -> bool', 'func set_look(new_look: String) -> void', 'func get_attachments(slot_name: String) -> PackedStringArray']) assert.ok(rig.includes(api), api);
+  for (const api of ['func play_layer(clip: String) -> bool', 'func set_attachment(slot_name: String, attachment: String) -> bool', 'func set_look(new_look: String) -> void', 'func get_attachments(slot_name: String) -> PackedStringArray']) assert.ok(rig.includes(api), api);
   const builder = fs.readFileSync(path.join(ROOT, 'integrations/godot/addons/keyframe/keyframe_builder.gd'), 'utf8');
   assert.match(builder, /set_meta\("keyframe_slot", String\(slot\.name\)\)/);
   // A slot drawn empty (the arrow) stores "", since Godot keeps no meta for null, and the rig asks before it reads.

@@ -8,6 +8,10 @@ extends Node2D
 ##   rig.weapon = "weapon_spear"              # or "" to put it away
 ##   rig.set_attachment("helmet", "")         # take one piece off
 ## A clip that keys a slot (each stance keys its weapon) shows what the clip says while it plays.
+##
+## An upper-body layer (a clip that keys only the arms and the head, such as "punch_upper") plays
+## over the clip the AnimationPlayer is playing, so the legs keep running:
+##   rig.play_layer("punch_upper")
 
 ## Emitted when a clip passes one of its events.
 signal keyframe_event(event_name: String, int_value: int, float_value: float, string_value: String)
@@ -114,3 +118,23 @@ func _slot_node(slot_name: String) -> Node2D:
 	if _slot_map.is_empty():
 		_index_slots()
 	return _slot_map.get(slot_name)
+
+
+## Plays `clip` on a second player over the one running: its tracks (the arms and the head of an
+## upper-body clip) win while it plays, and the rest of the rig follows the clip beneath. When it
+## ends, the arms go back to that clip. Returns false when the rig has no such clip.
+func play_layer(clip: String) -> bool:
+	var base := get_node_or_null("AnimationPlayer") as AnimationPlayer
+	if base == null or not base.has_animation(clip):
+		return false
+	var layer := get_node_or_null("LayerPlayer") as AnimationPlayer
+	if layer == null:
+		layer = AnimationPlayer.new()
+		layer.name = "LayerPlayer"
+		add_child(layer)                          # after the AnimationPlayer: its tracks are applied last
+		layer.root_node = base.root_node
+		layer.add_animation_library("", base.get_animation_library(""))
+	layer.stop()
+	layer.play(clip)
+	return true
+
