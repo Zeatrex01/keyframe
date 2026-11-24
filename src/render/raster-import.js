@@ -120,6 +120,14 @@ export const SIDE_BIPED = Object.freeze([
 ]);
 
 /**
+ * The drawing order, back to front, apart from the placing order above: the far limbs go behind the
+ * torso, every upper segment covers the rounded top of the one below it (sleeve over forearm, thigh
+ * over shin, so a joint never shows two caps), and the torso's hem covers the tops of both thighs.
+ */
+export const SIDE_BIPED_DRAW = Object.freeze(['forearmBack', 'upperArmBack', 'shinBack', 'thighBack', 'shinFront', 'thighFront',
+  'torso', 'head', 'forearmFront', 'upperArmFront']);
+
+/**
  * Place named pieces on a side-view skeleton (rig units, y up, feet near y = 0).
  * @param {Record<string, { image: { width: number, height: number } }>} named  piece by part name
  * @param {{ scale?: number, joints?: { shoulder?: number[], hip?: number[], neck?: number[] } }} [options]
@@ -158,7 +166,7 @@ export function assembleSideBiped(named, { scale = 0.5, joints = {} } = {}) {
     // The next joint: the centre of this limb's shaft just above its bottom end.
     reachEnd.set(p.name, [at[0] - w / 2 + bottom.x * scale, pivot[1] - (h - 2 * inset)]);
   }
-  return SIDE_BIPED.map(p => parts.get(p.name));
+  return SIDE_BIPED_DRAW.map(n => parts.get(n));
 }
 /** @param {number[]} s */
 const limbReach = s => s[1] - 2 * Math.min(s[0] / 2, s[1] / 4);

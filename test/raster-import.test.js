@@ -3,7 +3,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { detectKey, keyOut, findPieces, assembleSideBiped, puppetRig, SIDE_BIPED } from '../src/render/raster-import.js';
+import { detectKey, keyOut, findPieces, assembleSideBiped, puppetRig, SIDE_BIPED, SIDE_BIPED_DRAW } from '../src/render/raster-import.js';
 
 const KEY = [255, 0, 255];
 
@@ -66,7 +66,12 @@ test('named pieces stand up as a side-view figure: feet near the ground, head on
     forearmBack: [28, 90], thighFront: [40, 110], shinFront: [36, 110], thighBack: [40, 110], shinBack: [36, 110] };
   const named = Object.fromEntries(Object.entries(sizes).map(([k, [w, h]]) => [k, box(w, h)]));
   const parts = assembleSideBiped(named, { scale: 0.5 });
-  assert.deepEqual(parts.map(p => p.name), SIDE_BIPED.map(p => p.name));
+  assert.deepEqual([...parts.map(p => p.name)].sort(), SIDE_BIPED.map(p => p.name).sort());
+  const drawn = parts.map(p => p.name), before = (a, b) => drawn.indexOf(a) < drawn.indexOf(b);
+  assert.deepEqual(drawn, SIDE_BIPED_DRAW);
+  for (const [a, b] of [['shinFront', 'thighFront'], ['thighFront', 'torso'], ['forearmFront', 'upperArmFront'], ['forearmBack', 'upperArmBack'], ['upperArmBack', 'torso']]) {
+    assert.ok(before(a, b), `${a} is drawn under ${b}`);
+  }
   const by = Object.fromEntries(parts.map(p => [p.name, p]));
   const bottom = p => p.at[1] - p.size[1] / 2, top = p => p.at[1] + p.size[1] / 2;
   for (const shin of ['shinFront', 'shinBack']) assert.ok(Math.abs(bottom(by[shin])) < 20, `${shin} ends near the ground (${bottom(by[shin])})`);
