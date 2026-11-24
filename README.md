@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/brand/intro.gif" alt="Keyframe Studio: the amber key flies in, leaves its violet onion skins behind and lands; the name rises under it" width="540">
+  <img src="docs/brand/intro.gif" alt="Keyframe Studio: the amber key hops in, leaves a violet onion skin of itself on each spot it leaves, and lands; the name rises under it" width="540">
 </p>
 
 <h3 align="center">Describe it. Watch it move.</h3>
@@ -53,7 +53,7 @@ those things for whichever AI you use:
   AnimationPlayer, and a single HTML file plays it with no studio at all.
 
 The opening above was made the same way: the studio drew the mark as parts, wrote the motion,
-checked and critiqued it, and exported it as one HTML file
+checked and critiqued it, and exported it as one HTML file (its build is `examples/kit/opening.js`)
 ([`docs/brand/intro.html`](docs/brand/intro.html), download and double-click). Its source is in
 [`examples/opening`](examples/opening).
 

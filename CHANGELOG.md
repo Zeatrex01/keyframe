@@ -6,6 +6,8 @@ All notable changes to this project. The format follows
 ## Unreleased
 
 ### Added
+- The opening has a longer clip for the README and the launch, `reveal`: the amber key hops in and leaves an onion skin of itself on each spot it leaves, the mark's two ghosts, then lands in the lockup with a squash and a flash. The opening is now built through the studio by `examples/kit/opening.js`.
+
 - Versions are stated plainly (`docs/concept.md`): a base has one result file (`<name>_v2.json`) that every change updates, so a game keeps loading one name; the last 20 states are kept as versions to go back to. The delivery card says so.
 - The Director has a team: an Art Director (draws, keeps the style guide, checks the art), a Senior Animator (writes and polishes motion) and a Researcher, each set up in Settings with its own agent and tools. The Director hands one of them a task with `ask_team` and gets its answer back, then checks the work before it replies; the helper's answer shows in the chat too. The Illustrator slot is now the Art Director.
 - A large-rig gate: a 240-bone rig goes through read, write, check and critique in tens of milliseconds each (`test/large-rig.test.js`).
@@ -52,6 +54,7 @@ All notable changes to this project. The format follows
 - Parts reach the page as safe trees (`src/render/svg-safe.js`): only shapes, groups and gradients survive, so nothing in a drawing can run.
 
 ### Fixed
+- An effect added with `add_effect` (its bones and slots) is kept when a later `write_animation` rebuilds the delivery from the base; before, the next write was refused because a clip keyed the effect's slot.
 - Draw: a new part hangs from the root instead of the part that happened to be selected.
 - Godot: a slot drawn empty (the arrow) no longer logs a missing-meta error when the look changes.
 - Planted limbs turn the short way between baked keys: a solved angle crossing ±180 no longer spins a limb a full turn.

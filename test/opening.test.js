@@ -1,6 +1,7 @@
 // The opening in examples/opening: the brand mark's intro, drawn with draw_rig and written with
 // write_animation and add_effect. The brand asks for the ghosts sliding in and the key landing with
-// a ~10% overshoot that settles by 0.9 s, the name after it, and the finished lockup at the end.
+// a ~10% overshoot that settles by 0.9 s, the name after it, and the finished lockup at the end;
+// `reveal` is the longer one for the README, where the key hops in and leaves the ghosts behind.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -45,6 +46,29 @@ test('opening: the name follows the mark, and the last frame is the finished loc
     assert.ok(Math.abs(b.worldX - setup.x) < 0.01 && Math.abs(b.worldY - setup.y) < 0.01, `${name} ends off its place`);
   }
   assert.equal(alpha(last, 'key_flash'), 0, 'the landing flash is still lit at the end');
+});
+
+test('opening: reveal hops the key onto each ghost\'s spot at its size, leaves the ghost there, and ends on the lockup', () => {
+  const play = t => sample(model, 'reveal', [t])[0];
+  const duration = model.animations.get('reveal').duration;
+  assert.ok(duration >= 2.4 && duration <= 3.2, `reveal lasts ${duration} s`);
+  assert.equal(alpha(play(0), 'ghost1'), 0, 'the ghosts are not there before the key leaves them');
+  for (const [time, ghost, size] of [[0.3, 'ghost1', 0.62], [0.7, 'ghost2', 0.75]]) {
+    const pose = play(time), key = bone(pose, 'key'), spot = skeleton.bones.find(b => b.name === ghost);
+    assert.ok(Math.abs(key.worldX - spot.x) < 0.5 && Math.abs(key.worldY - spot.y) < 0.5, `the key lands on ${ghost}'s spot at ${time} s`);
+    assert.ok(Math.abs(Math.sqrt(key.worldScaleX * key.worldScaleY) - size) < 0.06, `at ${ghost}'s size (${key.worldScaleX.toFixed(2)} x ${key.worldScaleY.toFixed(2)})`);
+    assert.ok(key.worldScaleX > key.worldScaleY, 'squashed on landing');
+    assert.equal(alpha(pose, ghost), 0, `${ghost} shows under the key before it leaves`);
+    assert.equal(alpha(play(time + 0.25), ghost), 1, `${ghost} is not left behind`);
+  }
+  assert.ok(alpha(play(1.27), 'key_flash') > 0.2, 'the last landing flashes');
+  const last = play(duration);
+  for (const name of PARTS) {
+    assert.equal(alpha(last, name), 1, `${name} is not shown at the end`);
+    const b = bone(last, name), setup = skeleton.bones.find(x => x.name === name);
+    assert.ok(Math.abs(b.worldX - setup.x) < 0.01 && Math.abs(b.worldY - setup.y) < 0.01 && Math.abs(b.worldScaleX - 1) < 0.001, `${name} ends off its place`);
+  }
+  assert.notEqual(critiqueAnimation(skeleton, 'reveal').verdict, 'poor');
 });
 
 test('opening: the splash is always on the dark ground, so the light wordmark reads in either theme', () => {

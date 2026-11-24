@@ -248,10 +248,61 @@ export function addEffect(skeleton, spec) {
   if (typeof spec.animation !== 'string' || !spec.animation) throw new StudioError('bad-argument', 'An effect is written into a clip: name it in `animation`.');
   const sk = structuredClone(skeleton);
   sk.bones ??= []; sk.slots ??= [];
+  const bonesBefore = new Set(sk.bones.map(b => b.name)), slotsBefore = new Set(sk.slots.map(x => x.name));
   const report = [];
   if (spec.kind === 'burst') burst(sk, spec, report);
   else if (spec.kind === 'flash' || spec.kind === 'glow') overlay(sk, spec, report, spec.kind);
   else if (spec.kind === 'trail') trail(sk, spec, report);
   else shake(sk, spec, report);
+  // What the effect added to the rig is recorded, so a later write rebuilt from the base keeps it.
+  const bones = sk.bones.map(b => b.name).filter(n => !bonesBefore.has(n));
+  const slots = sk.slots.map(x => x.name).filter(n => !slotsBefore.has(n));
+  if (bones.length || slots.length) {
+    const added = sk[ADDED_MARKER] ?? {};
+    sk[ADDED_MARKER] = { bones: [...new Set([...(added.bones ?? []), ...bones])], slots: [...new Set([...(added.slots ?? []), ...slots])] };
+  }
   return { skeleton: sk, report };
+}
+
+/** Marks the bones and slots the studio added to a delivery (effects), beyond the base. */
+export const ADDED_MARKER = '_kfAdded';
+
+/**
+ * Put back into a delivery rebuilt from the base what the studio added to the previous one
+ * (effect bones and slots, with their attachments), where the base still has what they hang on.
+ * @param {any} out the new delivery (a copy of the base, with its clips)
+ * @param {any} previous the previous delivery
+ * @returns {{ kept: string[], dropped: string[] }}
+ */
+export function carryAdded(out, previous) {
+  const record = previous?.[ADDED_MARKER];
+  const kept = [], dropped = [];
+  if (!record || typeof record !== 'object') return { kept, dropped };
+  out.bones ??= []; out.slots ??= [];
+  const bones = new Set(out.bones.map(b => b.name)), slots = new Set(out.slots.map(x => x.name));
+  const keptBones = [], keptSlots = [];
+  for (const name of record.bones ?? []) {
+    const bone = (previous.bones ?? []).find(b => b.name === name);
+    if (!bone || bones.has(name)) continue;
+    if (bone.parent && !bones.has(bone.parent)) { dropped.push(name); continue; }
+    out.bones.push(structuredClone(bone)); bones.add(name); keptBones.push(name);
+  }
+  const wanted = new Set(record.slots ?? []);
+  let after = null;   // the last slot of the previous draw order that the new one has
+  for (const slot of previous.slots ?? []) {
+    if (!wanted.has(slot.name) || slots.has(slot.name)) { if (slots.has(slot.name)) after = slot.name; continue; }
+    if (!bones.has(slot.bone)) { dropped.push(slot.name); continue; }
+    const at = after === null ? 0 : out.slots.findIndex(x => x.name === after) + 1;
+    out.slots.splice(at, 0, structuredClone(slot)); slots.add(slot.name); after = slot.name; keptSlots.push(slot.name);
+    for (const skin of skinsOf(previous)) {
+      const attachments = skin.attachments?.[slot.name];
+      if (!attachments) continue;
+      const target = skinsOf(out).find(x => x.name === skin.name) ?? (out.skins.push({ name: skin.name, attachments: {} }), out.skins.at(-1));
+      target.attachments ??= {};
+      target.attachments[slot.name] = structuredClone(attachments);
+    }
+  }
+  if (keptBones.length || keptSlots.length) out[ADDED_MARKER] = { bones: keptBones, slots: keptSlots };
+  kept.push(...keptBones, ...keptSlots);
+  return { kept, dropped };
 }

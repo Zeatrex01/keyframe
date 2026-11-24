@@ -19,6 +19,7 @@ import { readRepairMarker, REPAIR_MARKER } from '../spine/weight-repair.js';
 import { parseSkeleton } from '../runtime/index.js';
 import { normalizeAnimation } from './normalize.js';
 import { carryPaints } from '../spine/paint.js';
+import { carryAdded } from '../spine/effects.js';
 import { mergeAnimations, mergeClip, changesBetween } from './policy.js';
 
 /** Marks a file as a studio delivery; only such files (or new ones) may be overwritten. */
@@ -108,6 +109,8 @@ export async function composeDelivery({ base, previous = null, name, animation, 
   const { clip, carried: carriedInClip } = mergeClip(lower, normalized.animation);
 
   const out = structuredClone(base);
+  // Effects the studio added to the previous delivery (their bones and slots) come along.
+  const added = previous ? carryAdded(out, previous) : { kept: [], dropped: [] };
   const merged = mergeAnimations({ ...(base.animations ?? {}), [name]: clip }, previous?.animations, name);
   out.animations = merged.animations;
   // Planted feet are solved on the clip as composed, and baked to rotate keys (src/deliver/plant.js).
@@ -160,6 +163,7 @@ export async function composeDelivery({ base, previous = null, name, animation, 
       changes: changesBetween(previous?.animations ?? base.animations, out.animations),
       weightRepairs: weights,
       ...(paints.kept.length || paints.dropped.length ? { paintedMeshes: paints } : {}),
+      ...(added.kept.length || added.dropped.length ? { effectParts: added } : {}),
       droppedMarkers,
       inheritedFatals: inherited,
       warnings: outFindings.filter(f => f.level === 'warn' && !baseKeys.has(identity(f))),

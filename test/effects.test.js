@@ -105,3 +105,33 @@ test('add_effect writes a delivery and leaves the base alone', async () => {
     assert.equal(JSON.parse(fs.readFileSync(path.join(dir, 'chest_v2.json'), 'utf8')).slots.length, 6);
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
+
+test('an effect added to a delivery stays when a later write rebuilds the delivery from the base', async (t) => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'kf-effect-carry-'));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  fs.writeFileSync(path.join(dir, 'star.json'), JSON.stringify({ skeleton: { hash: 'star', spine: '4.2.43' }, bones: [{ name: 'root' }, { name: 'star', parent: 'root' }],
+    slots: [{ name: 'star', bone: 'star', attachment: 'star' }], skins: [{ name: 'default', attachments: { star: { star: { width: 40, height: 40 } } } }], animations: {} }));
+  /** @type {any[]} */
+  const sent = [];
+  const { wire } = createServer({ session: { dir, writable: () => true }, version: 'test', write: (m) => sent.push(m), all: true });
+  const call = async (/** @type {string} */ name, /** @type {object} */ args) => {
+    sent.length = 0;
+    await wire.handle({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name, arguments: args } });
+    const r = sent[0].result;
+    assert.ok(!r.isError, `${name}: ${r.content?.[0]?.text}`);
+    return r.structuredContent;
+  };
+  const spin = { bones: { star: { rotate: [{ value: 0 }, { time: 0.5, value: 90 }] } } };
+  await call('write_animation', { from: 'star.json', animation: 'pop', clip: spin });
+  await call('add_effect', { file: 'star_v2.json', kind: 'flash', animation: 'pop', sprite: { slot: 'star' }, at: 0.2, duration: 0.2 });
+  const flashed = JSON.parse(fs.readFileSync(path.join(dir, 'star_v2.json'), 'utf8'));
+  const flashSlot = flashed.slots.find((/** @type {any} */ s) => s.name !== 'star').name;
+  assert.deepEqual(flashed._kfAdded, { bones: [], slots: [flashSlot] }, 'the effect records what it added');
+
+  const second = await call('write_animation', { from: 'star.json', animation: 'wobble', replace: true, clip: spin });
+  const out = JSON.parse(fs.readFileSync(path.join(dir, 'star_v2.json'), 'utf8'));
+  assert.deepEqual(out.slots.map((/** @type {any} */ s) => s.name), ['star', flashSlot], 'the flash slot is kept in its place');
+  assert.ok(out.skins[0].attachments[flashSlot], 'with its attachment');
+  assert.ok(out.animations.pop.slots[flashSlot], 'the clip that flashes still does');
+  assert.deepEqual(second.effectParts, { kept: [flashSlot], dropped: [] });
+});

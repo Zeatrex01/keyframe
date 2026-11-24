@@ -8,8 +8,9 @@ import { build as chest } from './chest.js';
 import { build as playButton } from './play-button.js';
 import { build as coinBurst } from './coin-burst.js';
 import { build as warrior } from './warrior.js';
+import { build as opening } from './opening.js';
 
-const ALL = { mika, pip, chest, 'play-button': playButton, 'coin-burst': coinBurst, warrior };
+const ALL = { mika, pip, chest, 'play-button': playButton, 'coin-burst': coinBurst, warrior, opening };
 const names = process.argv.slice(2);
 for (const name of names) if (!ALL[name]) { console.error(`No example named ${name}. Examples: ${Object.keys(ALL).join(', ')}`); process.exit(2); }
 for (const name of names.length ? names : Object.keys(ALL)) await ALL[name]();
