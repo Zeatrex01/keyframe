@@ -150,6 +150,7 @@ the animation principles and saves it beside your file, which is never changed.
 - CI runs on Linux, Windows and macOS with Node.js 18, 20, 22 and 24.
 
 ### Fixed
+- The copies `export_art` writes into `<name>-export/` are no longer taken for project skeletons or drawings, so the stage stays on the delivery after an export.
 - A project that holds only a studio result (`hero_v2.json` without `hero.json`) can be written: the result is updated in place with a backup, the answer says the base is missing, and `start_here` points at the result instead of suggesting a new drawing.
 - A clip with a field from another format (`duration`, `loop`, `fps`, `name`) is refused with the reason and what to do instead.
 - What the embedded Director (or a helper) says through `reply` carries its slot in the conversation, like its final answer.

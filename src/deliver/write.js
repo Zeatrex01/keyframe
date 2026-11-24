@@ -23,6 +23,8 @@ import { composeDelivery, DELIVERY_MARKER } from './compose.js';
 import { deleteAnimations } from './policy.js';
 
 const SKIPPED_DIRS = new Set(['.backup', '.keyframe', 'studio', 'node_modules', '.git', 'reference']);
+/** export_art writes into <name>-export/: copies made for engines and web pages, never the project's own skeletons. */
+export const isExportFolder = (/** @type {string} */ name) => name.endsWith('-export');
 const hash = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
 const readBytes = abs => { try { return fs.readFileSync(abs); } catch { return null; } };
 const toRel = (dir, abs) => path.relative(dir, abs).split(path.sep).join('/');
@@ -41,7 +43,7 @@ export function findSkeletons(projectDir, { includeDeliveries = false } = {}) {
     try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
     for (const entry of entries) {
       const abs = path.join(dir, entry.name);
-      if (entry.isDirectory()) { if (depth < 2 && !SKIPPED_DIRS.has(entry.name)) walk(abs, depth + 1); continue; }
+      if (entry.isDirectory()) { if (depth < 2 && !SKIPPED_DIRS.has(entry.name) && !isExportFolder(entry.name)) walk(abs, depth + 1); continue; }
       if (!/\.json$/i.test(entry.name)) continue;
       try {
         const json = JSON.parse(fs.readFileSync(abs, 'utf8'));

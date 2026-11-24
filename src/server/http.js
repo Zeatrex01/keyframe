@@ -31,7 +31,7 @@ import { listProjects, currentProject, openProject, createProject, forgetProject
 import { zipFolder } from '../core/zip.js';
 import { resolvePaths } from '../core/app-paths.js';
 import { silentLogger } from '../core/log.js';
-import { findSkeletons } from '../deliver/write.js';
+import { findSkeletons, isExportFolder } from '../deliver/write.js';
 import { standalonePlayerFor } from '../deliver/standalone.js';
 import { SECURITY_HEADERS, send, refuse, refuseError, statusFor, readBody, readJson, sendFile } from './respond.js';
 import { createStateReader, REFERENCE_TYPES } from './state.js';
@@ -134,7 +134,7 @@ export function createStudioServer({ projectDir, version, configFile, maxUpload 
       let entries = [];
       try { entries = fs.readdirSync(abs, { withFileTypes: true }); } catch { return; }
       for (const e of entries) {
-        if (e.name.startsWith('.') || e.name === 'node_modules') continue;
+        if (e.name.startsWith('.') || e.name === 'node_modules' || (e.isDirectory() && isExportFolder(e.name))) continue;
         const child = path.join(abs, e.name);
         if (e.isDirectory() && depth < 3) walk(child, depth + 1);
         else if (e.isFile() && e.name.endsWith('.parts.json')) {

@@ -66,3 +66,23 @@ test('the drawing board lists, reads and saves drawings through draw_rig', async
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('export folders (<name>-export/) are copies for engines: never listed as drawings or project skeletons', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'kf-export-scan-'));
+  const studio = createStudioServer({ projectDir: dir, version: 'test' });
+  const port = await studio.listen(0);
+  try {
+    const parts = [{ name: 'body', svg: BODY, at: [0, 60], pivot: [0, 0] }];
+    assert.equal((await call(port, 'POST', '/api/drawing', { name: 'pal', parts })).status, 200);
+    // what export_art kind web leaves: a copy of the skeleton and its drawing beside it
+    const out = path.join(dir, 'pal-export', 'web');
+    fs.mkdirSync(out, { recursive: true });
+    for (const f of ['pal.json', 'pal.parts.json']) fs.copyFileSync(path.join(dir, f), path.join(out, f));
+    const { findSkeletons } = await import('../src/deliver/write.js');
+    assert.deepEqual(findSkeletons(dir, { includeDeliveries: true }).map(s => s.file), ['pal.json']);
+    assert.deepEqual((await call(port, 'GET', '/api/drawings')).json.drawings.map(d => d.file), ['pal.parts.json']);
+  } finally {
+    await new Promise(done => studio.server.close(done));
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
