@@ -98,7 +98,10 @@ function forEachTimeline(animation, visit) {
  */
 export function normalizeAnimation(animation, { holdFromStart = true, fps } = {}) {
   if (!animation || typeof animation !== 'object' || Array.isArray(animation)) fail('animation', 'expected an animation object.');
-  for (const key of Object.keys(animation)) if (!TOP_LEVEL.has(key)) fail(key, 'not a Spine 4.2 animation section.');
+  // Fields other formats put on a clip get the reason, not just the refusal.
+  const ELSEWHERE = { duration: 'a clip lasts until its last key: leave it out and put a key at the end time instead', length: 'a clip lasts until its last key: leave it out and put a key at the end time instead',
+    loop: 'looping is how a clip is played, not part of it: leave it out', fps: 'pass fps as an argument of write_animation, not inside the clip', name: 'the name is the `animation` argument: leave it out of the clip' };
+  for (const key of Object.keys(animation)) if (!TOP_LEVEL.has(key)) fail(key, ELSEWHERE[key] ? `not part of a clip: ${ELSEWHERE[key]}.` : `not a section of a clip; the sections are ${[...TOP_LEVEL].join(', ')}.`);
   if (fps !== undefined && !(fps > 0 && fps <= 240)) throw new StudioError('bad-argument', 'fps must be between 0 and 240.', { fps });
 
   const out = structuredClone(animation);

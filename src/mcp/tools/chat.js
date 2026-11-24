@@ -67,7 +67,7 @@ export const replyTool = {
     }
     if (weak && typeof weak === 'string' && weak.trim()) text = `${text}\n\nStill weak: ${weak.trim()}`;
     const state = work ?? readAgent(project.dir).work;
-    const message = appendMessage(project.dir, { from: 'agent', text, work: state, ...(file ? { file } : {}), ...(animation ? { animation } : {}) });
+    const message = appendMessage(project.dir, { from: 'agent', text, work: state, ...(file ? { file } : {}), ...(animation ? { animation } : {}), ...(typeof session.slot === 'string' && session.slot ? { slot: session.slot } : {}) });
     // The cursor is not moved here: an owner message that arrived while the agent worked is still
     // unread, and wait_for_message returns it next (it steps over the agent's own lines itself).
     touchAgent(project.dir, { work: state });

@@ -131,3 +131,9 @@ test('a curve given as its shape becomes the same bezier a preset with those han
     assert.throws(() => normalizeAnimation(keys(bad)), e => isStudioError(e) && /handles/.test(e.message), JSON.stringify(bad));
   }
 });
+
+test('a field other formats put on a clip is refused with the reason', () => {
+  assert.throws(() => normalizeAnimation({ duration: 1, bones: {} }), e => e.code === 'bad-animation' && /last key/.test(e.message) && e.details.where === 'duration');
+  assert.throws(() => normalizeAnimation({ loop: true }), e => /how a clip is played/.test(e.message));
+  assert.throws(() => normalizeAnimation({ tracks: {} }), e => /the sections are bones, slots/.test(e.message));
+});

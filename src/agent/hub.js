@@ -186,7 +186,7 @@ export function createAgentHub({ configFile, env = process.env, root = ROOT, tim
     const plan = {
       projectDir: dir, tools, resume, model: slot.model ?? adapter.defaultModel,
       brief: adapter.systemPrompt ? briefFor(slot.role, slot.brief) : '',
-      mcp: { command: process.execPath, args: [path.join(root, 'tools', 'mcp-server.js'), '--project', dir, '--only', tools.join(','),
+      mcp: { command: process.execPath, args: [path.join(root, 'tools', 'mcp-server.js'), '--project', dir, '--slot', slot.id, '--only', tools.join(','),
         ...(team.length ? ['--team', team.map(m => `${m.id}:${m.role}`).join(',')] : [])] },
       configFile: path.join(dir, CHAT_DIR, 'agent', `${slot.id}-${adapter.id}.json`),
     };

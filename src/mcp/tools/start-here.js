@@ -85,7 +85,8 @@ export default {
     const deliveries = skeletons.filter(s => s.role === 'delivery');
     const references = (() => { try { return fs.readdirSync(`${project.dir}/reference`).filter(n => /\.(mp4|webm|mov|gif)$/i.test(n)); } catch { return []; } })();
     let next;
-    if (!bases.length) next = { tool: 'draw_rig', why: 'No skeleton here yet. If the owner has a rig, they put it into this folder (a Keyframe file, or a Spine 4.2 JSON export with its atlas); otherwise draw placeholder art from their description with draw_rig.' };
+    if (!bases.length && deliveries.length) next = { tool: 'read_rig', args: { file: deliveries[0].file }, why: `Only a studio result is here (${deliveries.map(d => d.file).join(', ')}); its base is not. Read it, then write with from: "${deliveries[0].file}": the result is updated in place, with a backup.` };
+    else if (!bases.length) next = { tool: 'draw_rig', why: 'No skeleton here yet. If the owner has a rig, they put it into this folder (a Keyframe file, or a Spine 4.2 JSON export with its atlas); otherwise draw placeholder art from their description with draw_rig.' };
     else if (bases.length > 1 && !deliveries.length) next = { tool: 'scan_project', why: `Several skeletons (${bases.map(b => b.file).join(', ')}); see which one is the rig to animate and pass it as \`file\` / \`from\`.` };
     else if (references.length && !deliveries.length) next = { tool: 'see_reference', why: `There is a reference video (${references.join(', ')}): look at it, then measure_reference the element that matters instead of timing it by eye.` };
     else if (deliveries.length) next = { tool: 'describe_animation', args: { file: deliveries[0].file }, why: 'A delivery exists: read what it already says before adding to it.' };

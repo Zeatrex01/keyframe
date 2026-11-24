@@ -142,3 +142,15 @@ test('while it waits, the agent is stamped as seen now and then, not on every po
     assert.equal(readAgent(p.dir).name, 'Claude');
   } finally { p.cleanup(); }
 });
+
+test('reply from a server started for a studio slot carries that slot', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'kf-reply-slot-'));
+  try {
+    /** @type {any[]} */
+    const sent = [];
+    const { wire } = createServer({ session: { dir, slot: 'director', writable: () => true }, version: 'test', write: m => sent.push(m) });
+    await wire.handle({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'reply', arguments: { text: 'On it.', work: 'writing' } } });
+    assert.ok(!sent[0].result.isError);
+    assert.equal(readMessages(dir).at(-1).slot, 'director');
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});

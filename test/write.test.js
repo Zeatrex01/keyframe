@@ -82,6 +82,28 @@ test('the base, an owner file, a delivery as base and another folder are refused
   } finally { p.cleanup(); }
 });
 
+test('a delivery whose base is not in the folder is updated in place, with a backup', async () => {
+  const p = project();
+  try {
+    await writeDelivery({ projectDir: p.dir, from: 'logo.json', name: 'w', animation: wave(p.bone) });
+    fs.rmSync(path.join(p.dir, 'logo.json'));
+    // Named, or found as the only skeleton there is.
+    for (const from of ['logo_v2.json', undefined]) {
+      const out = await writeDelivery({ projectDir: p.dir, from, name: from ? 'second' : 'third', animation: wave(p.bone) });
+      assert.equal(out.file, 'logo_v2.json');
+      assert.match(out.baseMissing, /logo\.json is not in this folder/);
+      assert.ok(out.backup, 'the previous version is backed up');
+    }
+    const delivery = JSON.parse(read(p.dir, 'logo_v2.json'));
+    for (const name of ['w', 'second', 'third']) assert.ok(delivery.animations[name], `${name} is kept`);
+    assert.equal(delivery._kfDelivery.base, 'logo.json');
+    assert.deepEqual(fs.readdirSync(p.dir).filter(n => n.endsWith('.json')), ['logo_v2.json'], 'no second delivery');
+    const { default: startHere } = await import('../src/mcp/tools/start-here.js');
+    const next = startHere.run({}, { session: { dir: p.dir, writable: () => true } }).next;
+    assert.deepEqual([next.tool, next.args?.file], ['read_rig', 'logo_v2.json'], 'start_here points at the result, not at drawing a new rig');
+  } finally { p.cleanup(); }
+});
+
 test('a change between reading and writing is caught and nothing is written', async () => {
   const p = project();
   try {

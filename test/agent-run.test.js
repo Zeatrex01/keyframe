@@ -56,6 +56,7 @@ test('an owner message starts the director; its answer is appended as an agent m
     const mcp = JSON.parse(fs.readFileSync(call.args[call.args.indexOf('--mcp-config') + 1], 'utf8')).mcpServers['keyframe-studio'];
     assert.equal(mcp.command, process.execPath);
     assert.deepEqual(mcp.args.slice(1, 3), ['--project', s.dir]);
+    assert.equal(mcp.args[mcp.args.indexOf('--slot') + 1], 'director', 'what the run says through reply carries its slot');
     assert.ok(mcp.args[mcp.args.indexOf('--only') + 1].split(',').includes('write_animation'));
     assert.match(fs.readFileSync(call.args[call.args.indexOf('--append-system-prompt-file') + 1], 'utf8'), /Director/);
 

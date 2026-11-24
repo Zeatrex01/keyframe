@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // The stdio MCP server.
 //
-//   node tools/mcp-server.js [--project <folder>] [--all] [--full-descriptions] [--only <tool,tool>] [--team <id:role,...>]
+//   node tools/mcp-server.js [--project <folder>] [--all] [--full-descriptions] [--only <tool,tool>] [--team <id:role,...>] [--slot <id>]
 //
 // Without --project it follows the studio: every call works on the project open in the page
 // (Projects), so switching there brings the agent along.
@@ -36,9 +36,11 @@ const isDirectory = p => { try { return statSync(p).isDirectory(); } catch { ret
 
 // --team id:role,id:role — the helpers the embedded Director may hand tasks to (ask_team).
 const team = (option('--team') ?? '').split(',').map(e => e.trim().split(':')).filter(([id, role]) => id && role).map(([id, role]) => ({ id, role }));
+// --slot <id>: the studio slot this server works for; what it says through reply carries it.
+const slot = option('--slot') ?? null;
 const session = dir
-  ? { dir, team, writable: () => isDirectory(dir) }
-  : { get dir() { return currentProject(); }, team, writable() { const d = currentProject(); return !!d && isDirectory(d); } };
+  ? { dir, team, slot, writable: () => isDirectory(dir) }
+  : { get dir() { return currentProject(); }, team, slot, writable() { const d = currentProject(); return !!d && isDirectory(d); } };
 const only = option('--only');
 const onlyNames = only === undefined ? null : new Set(only.split(',').map(n => n.trim()).filter(Boolean));
 const { wire } = createServer({

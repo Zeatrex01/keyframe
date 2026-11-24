@@ -74,8 +74,25 @@ export function atlasBeside(jsonAbs) {
  */
 export async function prepareDelivery({ projectDir, from, into, name, animation, replace = false, fps, holdFromStart = true, plant }) {
   const dir = () => projectDir;
-  const opened = openSkeleton(dir, from, { findSkeletons: d => findSkeletons(d) });
+  // With no base in the folder, its deliveries are what there is to write onto (below).
+  const opened = openSkeleton(dir, from, { findSkeletons: d => { const bases = findSkeletons(d); return bases.length ? bases : findSkeletons(d, { includeDeliveries: true }); } });
   const base = opened.sk;
+  // A delivery whose base is not in its folder (only the result was kept or shared): it is
+  // the only source there is, so it is updated in place, with a backup, like any delivery.
+  const ownBase = base[DELIVERY_MARKER]?.base;
+  if (base[DELIVERY_MARKER] && !into && (!ownBase || !fs.existsSync(path.join(path.dirname(opened.abs), ownBase)))) {
+    const bytes = readBytes(opened.abs);
+    const source = structuredClone(base);
+    delete source[DELIVERY_MARKER];
+    const { skeleton, report } = await composeDelivery({ base: source, previous: base, name, animation, replace, fps, holdFromStart, plant,
+      deliveryInfo: { ...base[DELIVERY_MARKER] } });
+    return {
+      projectDir, base: null,
+      target: { rel: opened.rel, abs: opened.abs, hash: hash(bytes), existed: true },
+      bytes: Buffer.from(`${JSON.stringify(skeleton, null, 2)}\n`, 'utf8'),
+      report: { ...report, baseMissing: `${ownBase ?? 'The base'} is not in this folder, so ${opened.rel} was updated in place (the previous version is backed up). Put the base back beside it to write onto the base again.` },
+    };
+  }
   if (base[DELIVERY_MARKER]) {
     throw new StudioError('base-is-delivery', `"${opened.rel}" is a studio delivery; write onto its own base${base[DELIVERY_MARKER].base ? ` ("${base[DELIVERY_MARKER].base}")` : ''}.`,
       { file: opened.rel, base: base[DELIVERY_MARKER].base ?? null });
