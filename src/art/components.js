@@ -25,7 +25,7 @@ export const COMPONENTS = Object.freeze({
   toggle: 'A switch: track with on/off states and a knob that slides. Two parts.',
   badge: 'A reward badge: a glow behind (hidden, additive), the icon on a plate, a value, and two sparkles (hidden, additive). Four parts.',
   icon: 'One icon from the family, optionally on a round or square plate. One part.',
-  figure: 'A jointed character body to start from: body, head, and each arm and leg as upper, lower and hand or foot, every part turning at its joint (h, build: kid | adult, skin, shirt, pants, hair, shoes, prefix). Fourteen parts.',
+  figure: 'A jointed character to start from, every part turning at its joint. build upper (the default): waist up, for gestures and talking: body (breathes at the waist), head, eyes (blink), hairBack, and each arm as upper, lower and hand; ten parts. build kid | adult: a full body standing, with legs; fourteen parts (h, build, skin, shirt, pants, hair, shoes, sleeves: long, prefix).',
 });
 export const BUTTON_STATES = Object.freeze(['hover', 'pressed', 'disabled']);
 
@@ -41,7 +41,7 @@ function buttonShapes(style, { w, h, r, color, label, icon, size, state, round }
   const fill = disabled ? `${color}-15~` : pressed ? `${color}-18` : hover ? `${color}+${round ? 32 : 22}` : color;
   const y = pressed ? drop * 0.75 : 0;
   const out = [];
-  if (drop > 0) out.push({ ...(round ? { circle: [w / 2, h / 2 + drop, h / 2] } : { rect: [0, drop, w, h], r }), fill: disabled ? 'ink~' : 'ink', stroke: false, shade: false, opacity: pressed ? 0.25 : style.light.shadowAlpha + 0.2 });
+  if (drop > 0) out.push({ ...(round ? { circle: [w / 2, h / 2 + drop, h / 2] } : { rect: [0, drop, w, h], r }), fill: disabled ? 'ink~' : 'ink', stroke: false, shade: false, opacity: pressed ? style.light.shadowAlpha * 0.6 : style.light.shadowAlpha + (style.type.outline ? 0.2 : 0) });
   out.push({ ...(round ? { circle: [w / 2, h / 2 + y, h / 2 - style.stroke.bold / 2] } : { rect: [style.stroke.bold / 2, y + style.stroke.bold / 2, w - style.stroke.bold, h - style.stroke.bold], r }), fill, sw: 'bold', shine: !pressed && !disabled });
   const textColor = disabled ? 'muted' : ink;
   const iconSize = round ? h * 0.56 : h * 0.52;
@@ -140,7 +140,7 @@ export function componentParts(c, style, name) {
     return [
       { name: `${name}_track`, box: [w, h + drop], offset: [0, -drop / 2], shapes: [
         ...(drop > 0 ? [{ rect: [0, drop, w, h], r: 'pill', fill: 'ink', stroke: false, shade: false, opacity: style.light.shadowAlpha }] : []),
-        { rect: [sw / 2, sw / 2, w - sw, h - sw], r: 'pill', fill: c.trackColor ?? 'surface-25', sw: 'bold', shade: false }] },
+        { rect: [sw / 2, sw / 2, w - sw, h - sw], r: 'pill', fill: c.trackColor ?? (style.type.outline ? 'surface-25' : 'surfaceAlt'), sw: 'bold', shade: false }] },
       // Full length in the setup pose: the fill grows from its left edge, so its x scale is the progress.
       { name: `${name}_fill`, box: inner, offset: [0, 0], pivot: [-inner[0] / 2, 0], shapes: [
         { rect: [0, 0, inner[0], inner[1]], r: 'pill', fill: c.color ?? 'primary', stroke: false, shine: true }] },

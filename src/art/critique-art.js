@@ -161,7 +161,7 @@ export function critiqueArt(doc, style) {
       if (n) {
         const avg = `#${[r, g, b].map(v => Math.round(v / n).toString(16).padStart(2, '0')).join('')}`;
         const ratio = contrast(avg, colorOf(style, 'surface'));
-        const outlined = style.stroke.color !== 'none' && strokes.length;
+        const outlined = style.stroke.color !== 'none' && style.stroke.color !== 'tint' && strokes.length;
         if (ratio < 1.25 && !outlined) add('contrast', 'info', p.name, `its average colour is ${ratio.toFixed(2)}:1 against the surface: it melts into the background.`, 'give it an outline or a lighter or darker fill.');
       }
     }

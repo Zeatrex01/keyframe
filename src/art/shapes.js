@@ -12,12 +12,14 @@
 // Pure and isomorphic.
 
 import { StudioError } from '../shared/errors.js';
-import { colorOf, weightOf, radiusOf, lighten, darken } from './style.js';
+import { colorOf, weightOf, radiusOf, lighten, darken, mix } from './style.js';
 import { layoutText, strokesPath } from './font.js';
 import { GLYPHS, GLYPH_NAMES } from './glyphs.js';
 
 export const SHAPE_KINDS = Object.freeze(['rect', 'circle', 'ellipse', 'path', 'poly', 'line', 'star', 'text', 'icon']);
 const r2 = v => Math.round(v * 100) / 100;
+/** How much darker than its fill a tinted outline is. */
+const TINT = 0.25;
 const esc = v => String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 const nums = (v, n, label) => {
   if (!Array.isArray(v) || v.length !== n || !v.every(Number.isFinite)) throw new StudioError('bad-argument', `${label} is ${n} numbers.`, { value: v });
@@ -82,7 +84,8 @@ export function renderShapes(spec, style) {
     if (!s || typeof s !== 'object') throw new StudioError('bad-argument', `${where} is not a shape.`, {});
     const g = geometry(s, style, where);
     const opacity = s.opacity !== undefined ? Math.max(0, Math.min(1, Number(s.opacity))) : undefined;
-    const ink = colorOf(style, style.stroke.color === 'none' ? 'ink' : style.stroke.color);
+    const tinted = style.stroke.color === 'tint';
+    const ink = colorOf(style, style.stroke.color === 'none' || tinted ? 'ink' : style.stroke.color);
     const sw = weightOf(style, s.sw ?? 'regular');
 
     if (g.kind === 'text') {
@@ -140,7 +143,7 @@ export function renderShapes(spec, style) {
       const paint = s.shade ?? style.light.shade > 0 ? gradient(lighten(fill, style.light.shade * 0.5), darken(fill, style.light.shade * 0.6)) : fill;
       const parts = [];
       if (s.shadow && style.light.shadow > 0) parts.push(el('path', { d, fill: ink, 'fill-opacity': style.light.shadowAlpha, 'fill-rule': 'evenodd', transform: `translate(${r2(lightDx * style.light.shadow / k)} ${r2(style.light.shadow / k)})` }));
-      parts.push(el('path', { d, fill: paint, 'fill-rule': 'evenodd', ...(strokeW > 0 ? { stroke: ink, 'stroke-width': strokeW, 'stroke-linejoin': 'round' } : {}) }));
+      parts.push(el('path', { d, fill: paint, 'fill-rule': 'evenodd', ...(strokeW > 0 ? { stroke: tinted ? darken(fill, TINT) : ink, 'stroke-width': strokeW, 'stroke-linejoin': 'round' } : {}) }));
       for (const det of glyph.details ?? []) {
         if (det.tone === 'hole') continue;
         if (det.tone.endsWith('line')) {
@@ -162,7 +165,9 @@ export function renderShapes(spec, style) {
       const [bx, by, bw, bh] = g.box, inset = s.stroke === 'none' ? 0 : sw / 2;
       frames.push([bx + inset, by + inset, bx + bw - inset, by + bh - inset]);
     }
-    const strokeColor = s.stroke === false ? 'none' : colorOf(style, s.stroke ?? (style.stroke.color === 'none' ? 'none' : style.stroke.color));
+    // A tinted outline is the fill a shade darker (an unfilled shape takes a soft ink line).
+    const strokeColor = s.stroke === false ? 'none' : s.stroke !== undefined ? colorOf(style, s.stroke)
+      : tinted ? (fill !== 'none' ? darken(fill, TINT) : mix(ink, '#ffffff', 0.55)) : colorOf(style, style.stroke.color === 'none' ? 'none' : style.stroke.color);
     const shaded = fill !== 'none' && (s.shade ?? style.light.shade > 0) && !s.grad;
     const paint = s.grad ? gradient(colorOf(style, s.grad[0]), colorOf(style, s.grad[1]))
       : shaded ? gradient(lighten(fill, style.light.shade * 0.5), darken(fill, style.light.shade * 0.6)) : fill;

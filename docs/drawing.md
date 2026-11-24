@@ -19,10 +19,12 @@ The path mirrors the animation path: **direct, draw, critique, look, deliver**.
 Start from a preset and change what the project needs:
 
 ```json
-{ "preset": "casual-game", "set": { "palette": { "primary": "#4cc461", "brand": "#ff7a00" }, "radius": { "md": 14 } } }
+{ "preset": "clean", "set": { "palette": { "primary": "#4cc461", "brand": "#ff7a00" }, "radius": { "md": 14 } } }
 ```
 
-Presets: `casual-game` (thick outline, pill corners, top light and shine), `flat-web` (no outline,
+Presets: `clean`, the default (no dark outline, only a thin edge a shade darker than each fill
+(`stroke.color: "tint"`), gentle radii, a soft top light and a light shadow, plain capitals without an outline),
+`casual-game` (an optional cartoon look: thick dark outline, pill corners, glossy shine), `flat-web` (no outline,
 small radii, soft shadow, sentence case), `dark-sci` (sharp corners, thin bright lines on dark
 panels). Roles are words: `primary`, `secondary`, `accent`, `danger`, `reward`, `surface`,
 `surfaceAlt`, `panel`, `ink` (outlines), `text`, `textDark`, `muted`, and any of your own.
@@ -40,10 +42,13 @@ A part is drawn one of three ways, cheapest first:
    Components: `button`, `iconButton`, `panel`, `popup`, `progress`, `toggle`, `badge`, `icon`,
    `figure`. Each is split into the parts an animator needs (a progress bar is a track, a fill that
    grows from its left edge, and a frame; a popup is a backdrop, a panel, a title, an action button
-   and a close button). A `figure` is the body a character starts from: a body, a head, and each
-   arm and leg in three parts (upper, lower, and a hand or a foot), every part turning at its joint
-   with round caps that overlap there (`h`, `build: kid | adult`, `skin`, `shirt`, `pants`, `hair`,
-   `shoes`, and `prefix` for a second figure in one drawing).
+   and a close button). A `figure` is the character a drawing starts from, every part
+   turning at its joint with round caps that overlap there. The default `build: upper` is waist-up,
+   for gestures, talking and reactions: `body` (the torso and neck, turning and breathing at the
+   waist), `head`, `eyes` (a part of their own, so they blink), `hairBack`, and each arm as upper,
+   lower and hand. `build: kid | adult` is a full body standing, with legs, for when the owner asks
+   for one (`h`, `skin`, `shirt`, `pants`, `hair`, `shoes`, `sleeves: long`, and `prefix` for a
+   second figure in one drawing).
 2. **Shapes**: `{ name: "coin", box: [64, 64], shapes: [{ circle: [32, 32, 28], fill: "reward", shine: true }], at: [0, 0] }`.
    Shapes: `rect`, `circle`, `ellipse`, `poly`, `path`, `line`, `star`, `text` (the built-in
    stroke font) and `icon` (the icon family). Paint: `fill`, `stroke`, `sw`, `r`, `shade` (top-lit

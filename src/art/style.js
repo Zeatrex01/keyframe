@@ -4,7 +4,8 @@
 //   <project>/keyframe.style.json
 //
 // A guide names colours by role (primary, surface, ink, text...), stroke weights, corner radii,
-// the light (where it comes from, how much shade and shine), the spacing grid, the type and the
+// the light (where it comes from, how much shade and shine), the outline (a colour, "tint" for an
+// edge a shade darker than each fill, or "none"), the spacing grid, the type and the
 // standard sizes. Shapes and components (src/art/shapes.js, components.js) take these by name, so
 // an AI writes "fill: primary, r: md" instead of colours and numbers, and a change to the guide
 // restyles every part drawn from it. Pure: the tool reads and writes the file.
@@ -18,8 +19,22 @@ const ROLE = /^[a-z][a-zA-Z0-9]{0,23}$/;
 
 /** Ready-made guides: a starting point the art director adjusts, never a fixed look. */
 export const STYLE_PRESETS = Object.freeze({
+  clean: {
+    note: 'Refined and calm: no dark outline, only a thin edge a shade darker than each fill; form from shape, colour and a soft top light; gentle radii, a light drop shadow, plain capitals without an outline.',
+    palette: {
+      primary: '#3f7cf4', secondary: '#8a6cf0', accent: '#f4b23e', danger: '#ec5f5f', reward: '#f4b23e',
+      surface: '#272c42', surfaceAlt: '#373d5c', panel: '#fbfaf7', ink: '#1d2233', text: '#ffffff', textDark: '#262b3d', muted: '#9aa0b5', skin: '#f2c8a6',
+    },
+    stroke: { thin: 1, regular: 1.5, bold: 2, color: 'tint' },
+    radius: { sm: 6, md: 12, lg: 20, pill: 999 },
+    shape: 'soft',
+    light: { from: 'top', shade: 0.14, shine: 0.22, shadow: 4, shadowAlpha: 0.16 },
+    grid: 4,
+    type: { size: { sm: 16, md: 24, lg: 34 }, weight: 'bold', case: 'upper', outline: false },
+    sizes: { button: [200, 64], buttonSmall: [110, 48], icon: 48, panel: [420, 300], bar: [300, 20], toggle: [72, 40] },
+  },
   'casual-game': {
-    note: 'Chunky, friendly game UI: thick dark outline, pill and soft corners, light from the top, a glossy shine.',
+    note: 'Chunky cartoon game UI (optional, never the default): thick dark outline, pill and soft corners, light from the top, a glossy shine.',
     palette: {
       primary: '#4cc461', secondary: '#4d9cf0', accent: '#ffc83d', danger: '#f0524d', reward: '#ffb627',
       surface: '#3b3f6b', surfaceAlt: '#525791', panel: '#f4ecdf', ink: '#1e1b33', text: '#ffffff', textDark: '#2c2846', muted: '#a6a3c2', skin: '#f6c9a0',
@@ -61,7 +76,7 @@ export const STYLE_PRESETS = Object.freeze({
     sizes: { button: [200, 56], buttonSmall: [110, 44], icon: 48, panel: [420, 300], bar: [300, 14], toggle: [72, 36] },
   },
 });
-export const DEFAULT_PRESET = 'casual-game';
+export const DEFAULT_PRESET = 'clean';
 
 const clone = v => JSON.parse(JSON.stringify(v));
 
@@ -88,7 +103,7 @@ export function validateStyle(guide) {
     if (typeof value !== 'string' || !HEX.test(value)) problems.push(`palette.${role} must be a #rrggbb colour.`);
   }
   for (const key of ['thin', 'regular', 'bold']) if (!(out.stroke[key] >= 0 && out.stroke[key] <= 40)) problems.push(`stroke.${key} must be 0-40.`);
-  if (out.stroke.color !== 'none' && !out.palette[out.stroke.color] && !HEX.test(out.stroke.color)) problems.push(`stroke.color "${out.stroke.color}" is not a palette role, a colour or none.`);
+  if (out.stroke.color !== 'none' && out.stroke.color !== 'tint' && !out.palette[out.stroke.color] && !HEX.test(out.stroke.color)) problems.push(`stroke.color "${out.stroke.color}" is not a palette role, a colour or none.`);
   for (const [k, v] of Object.entries(out.radius)) if (!(v >= 0)) problems.push(`radius.${k} must be 0 or more.`);
   for (const k of ['shade', 'shine', 'shadowAlpha']) if (!(out.light[k] >= 0 && out.light[k] <= 1)) problems.push(`light.${k} must be 0-1.`);
   if (!(out.light.shadow >= 0 && out.light.shadow <= 40)) problems.push('light.shadow must be 0-40 (units the shadow falls).');
@@ -167,7 +182,7 @@ export function styleSummary(style) {
   return {
     name: style.name, preset: style.preset, note: style.note,
     roles: Object.keys(style.palette),
-    stroke: `${style.stroke.thin}/${style.stroke.regular}/${style.stroke.bold} in ${style.stroke.color}`,
+    stroke: `${style.stroke.thin}/${style.stroke.regular}/${style.stroke.bold} in ${style.stroke.color === 'tint' ? 'a shade darker than each fill' : style.stroke.color}`,
     radius: Object.entries(style.radius).map(([k, v]) => `${k} ${v}`).join(', '),
     light: `from ${style.light.from}, shade ${style.light.shade}, shine ${style.light.shine}, shadow ${style.light.shadow}`,
     grid: style.grid,

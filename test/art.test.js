@@ -7,14 +7,14 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { presetStyle, validateStyle, colorOf, contrast, STYLE_PRESETS } from '../src/art/style.js';
+import { presetStyle, validateStyle, colorOf, contrast, darken, STYLE_PRESETS, DEFAULT_PRESET } from '../src/art/style.js';
 import { layoutText, FONT_CHARACTERS } from '../src/art/font.js';
 import { renderShapes } from '../src/art/shapes.js';
 import { GLYPH_NAMES } from '../src/art/glyphs.js';
 import { componentParts, COMPONENTS } from '../src/art/components.js';
 import { expandParts, deriveShapes } from '../src/art/draw-spec.js';
 import { critiqueArt } from '../src/art/critique-art.js';
-import { FIGURE_PARTS } from '../src/art/figure.js';
+import { FIGURE_PARTS, UPPER_PARTS } from '../src/art/figure.js';
 import { editableOf, applyEdit } from '../src/art/edit.js';
 import { jointSeparations } from '../src/understand/joints.js';
 import { critiqueAnimation } from '../src/understand/critique.js';
@@ -217,7 +217,7 @@ test('text is set to fit its shape, centred on its ink, and critique_art catches
 test('a figure is jointed: limbs in three parts with hands and feet, each turning at its joint, so a wave keeps the arm on', async () => {
   const s = studio();
   try {
-    const r = await s.call('draw_rig', { name: 'kid', parts: [{ name: 'kid', component: { component: 'figure', h: 320 }, at: [0, 0] }] });
+    const r = await s.call('draw_rig', { name: 'kid', parts: [{ name: 'kid', component: { component: 'figure', h: 320, build: 'kid' }, at: [0, 0] }] });
     assert.equal(r.error, undefined, JSON.stringify(r.error));
     assert.deepEqual([...r.parts].sort(), [...FIGURE_PARTS].sort());
     const sk = JSON.parse(fs.readFileSync(path.join(s.dir, 'kid.json'), 'utf8'));
@@ -237,6 +237,47 @@ test('a figure is jointed: limbs in three parts with hands and feet, each turnin
     const pulled = { ...sk, animations: { wave: { bones: { upperArmR: { translate: [{ time: 0, x: 0, y: 0 }, { time: 0.5, x: -40, y: 30 }, { time: 1, x: 0, y: 0 }] } } } } };
     assert.equal(jointSeparations(pulled, 'wave')[0]?.limb, 'upperArmR');
   } finally { s.done(); }
+});
+
+test('the default figure is waist-up: a torso that breathes at the waist, a head, eyes that blink, and arms that wave without coming apart', async () => {
+  const s = studio();
+  try {
+    const r = await s.call('draw_rig', { name: 'host', parts: [{ name: 'host', component: { component: 'figure', h: 360 }, at: [0, 0] }] });
+    assert.equal(r.error, undefined, JSON.stringify(r.error));
+    assert.deepEqual([...r.parts].sort(), [...UPPER_PARTS].sort());
+    assert.ok(!r.parts.some(n => /thigh|shin|foot/.test(n)), 'no legs');
+    const sk = JSON.parse(fs.readFileSync(path.join(s.dir, 'host.json'), 'utf8'));
+    const bone = Object.fromEntries(sk.bones.map(b => [b.name, b]));
+    for (const [child, up] of [['handR', 'forearmR'], ['forearmR', 'upperArmR'], ['upperArmR', 'body'], ['head', 'body'], ['eyes', 'head'], ['hairBack', 'head']]) assert.equal(bone[child].parent, up, child);
+    assert.ok(Math.abs(bone.body.y ?? 0) < 1, 'the body turns and breathes at the waist');
+    const order = sk.slots.map(x => x.name);
+    assert.ok(order.indexOf('hairBack') < order.indexOf('body') && order.indexOf('upperArmL') < order.indexOf('body') && order.indexOf('upperArmR') > order.indexOf('body'), 'the hair and the far arm draw behind the body, the near arm in front');
+    const wave = { bones: {
+      upperArmR: { rotate: [{ time: 0, value: 0 }, { time: 0.3, value: -150 }, { time: 1.2, value: -145 }, { time: 1.5, value: 0 }] },
+      forearmR: { rotate: [{ time: 0.3, value: 0 }, { time: 0.5, value: -30 }, { time: 0.7, value: 15 }, { time: 0.9, value: -30 }, { time: 1.1, value: 15 }, { time: 1.3, value: 0 }] },
+      head: { rotate: [{ time: 0, value: 0 }, { time: 0.6, value: 4 }, { time: 1.5, value: 0 }] },
+      body: { scale: [{ time: 0, x: 1, y: 1 }, { time: 0.75, x: 1, y: 1.02 }, { time: 1.5, x: 1, y: 1 }] },
+    } };
+    const posed = { ...sk, animations: { wave } };
+    assert.deepEqual(jointSeparations(posed, 'wave'), [], 'no limb comes apart');
+    const codes = critiqueAnimation(posed, 'wave', { subject: 'character' }).findings.map(f => f.code);
+    assert.ok(!codes.includes('low-wave') && !codes.includes('limb-separates'), codes.join(', '));
+  } finally { s.done(); }
+});
+
+test('the default look is clean: no dark outline, only an edge a shade darker than each fill, and plain text', () => {
+  const clean = validateStyle({ preset: DEFAULT_PRESET });
+  assert.equal(DEFAULT_PRESET, 'clean');
+  assert.equal(clean.stroke.color, 'tint');
+  assert.ok(clean.stroke.bold <= 2 && !clean.type.outline);
+  const { parts } = expandParts([{ name: 'play', component: { component: 'button', label: 'Play' }, at: [0, 0] }], clean);
+  const svg = parts[0].svg, ink = colorOf(clean, 'ink');
+  assert.ok(!svg.includes(`stroke="${ink}"`), 'nothing is outlined in ink');
+  const fill = colorOf(clean, 'primary');
+  assert.match(svg, new RegExp(`stroke="${darken(fill, 0.25)}"`), 'the edge is the fill a shade darker');
+  // The cartoon look stays one preset away.
+  const cartoon = validateStyle({ preset: 'casual-game' });
+  assert.ok(expandParts([{ name: 'play', component: { component: 'button', label: 'Play' }, at: [0, 0] }], cartoon).parts[0].svg.includes(`stroke="${colorOf(cartoon, 'ink')}"`));
 });
 
 test('the words and colours of AI-drawn parts are edited by hand and drawn again in the guide, keeping where the owner put them', () => {
