@@ -14,6 +14,9 @@ import { GLYPH_NAMES } from '../src/art/glyphs.js';
 import { componentParts, COMPONENTS } from '../src/art/components.js';
 import { expandParts, deriveShapes } from '../src/art/draw-spec.js';
 import { critiqueArt } from '../src/art/critique-art.js';
+import { FIGURE_PARTS } from '../src/art/figure.js';
+import { jointSeparations } from '../src/understand/joints.js';
+import { critiqueAnimation } from '../src/understand/critique.js';
 import { rasterizeSvg } from '../src/engine/svg.js';
 import { safeTree } from '../src/render/svg-safe.js';
 import { decodePng } from '../src/render/png.js';
@@ -208,6 +211,31 @@ test('text is set to fit its shape, centred on its ink, and critique_art catches
   assert.match(textsOf([{ text: 'PLAY', at: [130, 40] }]).join(' '), /right of the middle/);
   assert.match(textsOf([{ text: 'A VERY LONG LABEL TEXT', at: [100, 40], fit: false }]).join(' '), /cut off/);
   assert.match(textsOf([{ text: 'PLAY', at: [100, 22], size: 12 }]).join(' '), /above the middle/);
+});
+
+test('a figure is jointed: limbs in three parts with hands and feet, each turning at its joint, so a wave keeps the arm on', async () => {
+  const s = studio();
+  try {
+    const r = await s.call('draw_rig', { name: 'kid', parts: [{ name: 'kid', component: { component: 'figure', h: 320 }, at: [0, 0] }] });
+    assert.equal(r.error, undefined, JSON.stringify(r.error));
+    assert.deepEqual([...r.parts].sort(), [...FIGURE_PARTS].sort());
+    const sk = JSON.parse(fs.readFileSync(path.join(s.dir, 'kid.json'), 'utf8'));
+    const parent = Object.fromEntries(sk.bones.map(b => [b.name, b.parent]));
+    for (const [child, up] of [['handR', 'forearmR'], ['forearmR', 'upperArmR'], ['upperArmR', 'body'], ['footL', 'shinL'], ['shinL', 'thighL'], ['head', 'body']]) assert.equal(parent[child], up, child);
+    // Turned at the shoulder and elbow the arm stays on, and the hand clears the head: a wave that reads.
+    const wave = { bones: {
+      upperArmR: { rotate: [{ time: 0, value: 0 }, { time: 0.3, value: -165 }, { time: 1.2, value: -160 }, { time: 1.5, value: 0 }] },
+      forearmR: { rotate: [{ time: 0.3, value: 0 }, { time: 0.5, value: -25 }, { time: 0.7, value: 20 }, { time: 0.9, value: -25 }, { time: 1.1, value: 20 }, { time: 1.3, value: 0 }] },
+      body: { rotate: [{ time: 0, value: 0 }, { time: 0.6, value: 3 }, { time: 1.5, value: 0 }] },
+    } };
+    const posed = { ...sk, animations: { wave } };
+    assert.deepEqual(jointSeparations(posed, 'wave'), [], 'no limb comes apart');
+    const codes = critiqueAnimation(posed, 'wave', { subject: 'character' }).findings.map(f => f.code);
+    assert.ok(!codes.includes('low-wave') && !codes.includes('limb-separates'), codes.join(', '));
+    // Moving the arm instead of turning it pulls it off the shoulder.
+    const pulled = { ...sk, animations: { wave: { bones: { upperArmR: { translate: [{ time: 0, x: 0, y: 0 }, { time: 0.5, x: -40, y: 30 }, { time: 1, x: 0, y: 0 }] } } } } };
+    assert.equal(jointSeparations(pulled, 'wave')[0]?.limb, 'upperArmR');
+  } finally { s.done(); }
 });
 
 test('critique_art writes a contact sheet; export_art writes trimmed PNGs with pivots, a sprite sheet with its map, and clean SVG', async () => {

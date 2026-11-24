@@ -64,7 +64,7 @@ export function expandParts(parts, style) {
       const spec = typeof component === 'string' ? { component } : component;
       const at = Array.isArray(p.at) ? p.at : [0, 0];
       const subs = componentParts(spec, style, p.name);
-      const owner = subs.find(sub => sub.name === p.name) ?? subs[0];   // keeps how the whole component was drawn
+      const owner = subs.find(sub => sub.name === p.name) ?? subs.find(sub => sub.owner) ?? subs[0];   // keeps how the whole component was drawn
       for (const sub of subs) {
         const svgs = renderShapes({ box: sub.box, shapes: sub.shapes }, style);
         missing.push(...svgs.missing);

@@ -15,6 +15,8 @@ All notable changes to this project. The format follows
 - `export_art` kind `web`: an embeddable player for web pages and HTML games (`keyframe-player.js`, one classic script): `KeyframePlayer.create(canvas, ...)` with play, stop, pause, seek, speed, `setLook` for drawn states and `start`/`complete`/`loop`/`event` listeners, and a `<keyframe-player>` element.
 - `critique_animation` holds a figure to the minimums of its action (`src/understand/actions.js`): a strike moves the body behind it, winds up, lands fast and holds the hit; a jump rises a quarter of the height after a crouch; a hop falls into the ground instead of floating; a wave clears the head and swings; an idle breathes; a walk bobs. UI parts, effects and props are not judged as a body.
 - `critique_art` answers with an image of the drawing: the whole drawing assembled, then every part and state, so an agent sees static art and artboards without a clip. It also checks text: cut off by the part's edge, spilling out of its shape, off the middle, or shrunk to fit.
+- A `figure` component: the jointed body a character starts from (body, head, and arms and legs in three parts with hands and feet, each turning at its joint), in a kid or adult build.
+- `critique_animation` flags a limb that comes apart from the part it hangs from (`limb-separates`): an arm translated off the shoulder, or a pivot in the middle of a limb.
 - Parts reach the page as safe trees (`src/render/svg-safe.js`): only shapes, groups and gradients survive, so nothing in a drawing can run.
 
 ### Fixed

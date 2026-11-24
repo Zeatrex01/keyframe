@@ -25,6 +25,7 @@ import { StudioError } from '../shared/errors.js';
 import { principleFindings } from './principle-checks.js';
 import { conventionFindings } from './conventions.js';
 import { actionFindings } from './actions.js';
+import { jointSeparations } from './joints.js';
 
 const round3 = v => Math.round(v * 1000) / 1000;
 const isNumber = v => typeof v === 'number' && Number.isFinite(v);
@@ -390,6 +391,13 @@ export function critiqueAnimation(sk, name, options = {}) {
   if (!NOT_A_BODY.has(options.subject)) {
     for (const a of actionFindings(sk, name, { action: options.action })) {
       findings.push(finding('warn', a.code, at, a.message, { severity: a.severity, measure: a.measure, fix: a.fix, principle: a.principle }));
+    }
+    // A limb that comes off the part it hangs from is broken whatever the motion means.
+    for (const j of jointSeparations(sk, name)) {
+      add('weak', 'limb-separates', `${at}/slots/${j.limb}`,
+        `${j.limb} comes apart from ${j.parent}: its joint leaves ${j.parent} by ${j.separation} units at ${j.time} s (the part is ${j.size} across).`,
+        { limb: j.limb, parent: j.parent, bone: j.bone, separation: j.separation, time: j.time },
+        `Turn ${j.bone} (rotate), do not move it (translate), and put its origin at the joint with ${j.parent}: a pivot in the middle of a limb swings its end off the body. If the joint moves on purpose (a stretch), keep it under 15% of the part.`);
     }
   }
 

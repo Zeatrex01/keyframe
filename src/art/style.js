@@ -22,7 +22,7 @@ export const STYLE_PRESETS = Object.freeze({
     note: 'Chunky, friendly game UI: thick dark outline, pill and soft corners, light from the top, a glossy shine.',
     palette: {
       primary: '#4cc461', secondary: '#4d9cf0', accent: '#ffc83d', danger: '#f0524d', reward: '#ffb627',
-      surface: '#3b3f6b', surfaceAlt: '#525791', panel: '#f4ecdf', ink: '#1e1b33', text: '#ffffff', textDark: '#2c2846', muted: '#a6a3c2',
+      surface: '#3b3f6b', surfaceAlt: '#525791', panel: '#f4ecdf', ink: '#1e1b33', text: '#ffffff', textDark: '#2c2846', muted: '#a6a3c2', skin: '#f6c9a0',
     },
     stroke: { thin: 3, regular: 5, bold: 8, color: 'ink' },
     radius: { sm: 8, md: 18, lg: 30, pill: 999 },
@@ -36,7 +36,7 @@ export const STYLE_PRESETS = Object.freeze({
     note: 'Clean web UI: no outline, small radii, flat fills with a soft shadow, sentence case.',
     palette: {
       primary: '#3b6cf6', secondary: '#7a5af8', accent: '#f5a524', danger: '#e5484d', reward: '#f5a524',
-      surface: '#ffffff', surfaceAlt: '#f1f3f8', panel: '#ffffff', ink: '#1c2033', text: '#ffffff', textDark: '#1c2033', muted: '#8b90a5',
+      surface: '#ffffff', surfaceAlt: '#f1f3f8', panel: '#ffffff', ink: '#1c2033', text: '#ffffff', textDark: '#1c2033', muted: '#8b90a5', skin: '#f1c7a6',
     },
     stroke: { thin: 1.5, regular: 2, bold: 3, color: 'none' },
     radius: { sm: 6, md: 10, lg: 16, pill: 999 },
@@ -50,7 +50,7 @@ export const STYLE_PRESETS = Object.freeze({
     note: 'Sci-fi HUD: sharp corners, thin bright lines on dark panels, glow instead of shadow.',
     palette: {
       primary: '#21d4c4', secondary: '#7b61ff', accent: '#ffd23f', danger: '#ff4f6d', reward: '#ffd23f',
-      surface: '#121a2b', surfaceAlt: '#1c2740', panel: '#0e1524', ink: '#05080f', text: '#e8fbff', textDark: '#05080f', muted: '#5f7290',
+      surface: '#121a2b', surfaceAlt: '#1c2740', panel: '#0e1524', ink: '#05080f', text: '#e8fbff', textDark: '#05080f', muted: '#5f7290', skin: '#d8b49a',
     },
     stroke: { thin: 2, regular: 3, bold: 5, color: 'primary' },
     radius: { sm: 2, md: 4, lg: 8, pill: 999 },

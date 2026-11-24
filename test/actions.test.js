@@ -4,6 +4,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { actionFindings, actionOf } from '../src/understand/actions.js';
 import { critiqueAnimation } from '../src/understand/critique.js';
+import { jointSeparations } from '../src/understand/joints.js';
 
 // A small standing figure: hips at 100 pointing up, a head above, one arm hanging, one leg.
 const bones = [
@@ -97,4 +98,32 @@ test('a walk whose body does not rise and fall is flagged; a bob on the hips is 
   assert.ok(codes(rig('walk', { bones: legs }), 'walk').includes('no-bob'));
   const bob = keys([0, 0.25, 0.5, 0.75, 1], [0, 6, 0, 6, 0], 'y');
   assert.ok(!codes(rig('walk', { bones: { ...legs, hips: { translate: bob } } }), 'walk').includes('no-bob'));
+});
+
+// An arm drawn as a region on its bone, hanging from a drawn body: turned at the shoulder it stays on,
+// moved or turned about its middle it comes off.
+const drawn = (armBone, animation) => ({
+  skeleton: { height: 220 },
+  bones: [{ name: 'root' }, { name: 'body', parent: 'root', y: 100, length: 80 }, armBone],
+  slots: [{ name: 'body', bone: 'body', attachment: 'body' }, { name: 'arm', bone: 'arm', attachment: 'arm' }],
+  skins: [{ name: 'default', attachments: {
+    body: { body: { y: 40, width: 60, height: 90 } },
+    arm: { arm: { x: armBone.armX ?? 30, rotation: 0, width: 60, height: 16 } },
+  } }],
+  animations: { wave: animation },
+});
+
+test('a limb that comes apart from the part it hangs from is flagged; one turned at its joint is not', () => {
+  const shoulder = { name: 'arm', parent: 'body', x: 24, y: 70 };   // the pivot at the shoulder, inside the body's art
+  const limb = sk => jointSeparations(sk, 'wave');
+  assert.deepEqual(limb(drawn(shoulder, { bones: { arm: { rotate: keys([0, 0.5, 1], [0, 70, 0]) } } })), [], 'turned at the shoulder');
+  const moved = limb(drawn(shoulder, { bones: { arm: { translate: keys([0, 0.5, 1], [0, 40, 0], 'x') } } }));
+  assert.equal(moved.length, 1);
+  assert.equal(moved[0].limb, 'arm');
+  assert.ok(moved[0].separation > 20, JSON.stringify(moved));
+  const middle = { name: 'arm', parent: 'body', x: 54, y: 70, armX: 0 };   // the pivot in the middle of the arm
+  assert.equal(limb(drawn(middle, { bones: { arm: { rotate: keys([0, 0.5, 1], [0, 90, 0]) } } })).length, 1, 'a pivot mid-limb swings it off');
+  const result = critiqueAnimation(drawn(shoulder, { bones: { arm: { translate: keys([0, 0.5, 1], [0, 40, 0], 'x') } } }), 'wave', { subject: 'character' });
+  assert.ok(result.findings.some(f => f.code === 'limb-separates'));
+  assert.equal(result.verdict, 'mechanical');
 });

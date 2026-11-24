@@ -14,6 +14,7 @@ import { StudioError } from '../shared/errors.js';
 import { GLYPHS, GLYPH_NAMES } from './glyphs.js';
 import { readableOn } from './style.js';
 import { layoutText } from './font.js';
+import { figureParts } from './figure.js';
 
 export const COMPONENTS = Object.freeze({
   button: 'A button with a label and/or an icon; states hover, pressed, disabled. One part.',
@@ -24,6 +25,7 @@ export const COMPONENTS = Object.freeze({
   toggle: 'A switch: track with on/off states and a knob that slides. Two parts.',
   badge: 'A reward badge: a glow behind (hidden, additive), the icon on a plate, a value, and two sparkles (hidden, additive). Four parts.',
   icon: 'One icon from the family, optionally on a round or square plate. One part.',
+  figure: 'A jointed character body to start from: body, head, and each arm and leg as upper, lower and hand or foot, every part turning at its joint (h, build: kid | adult, skin, shirt, pants, hair, shoes, prefix). Fourteen parts.',
 });
 export const BUTTON_STATES = Object.freeze(['hover', 'pressed', 'disabled']);
 
@@ -79,6 +81,8 @@ export function componentParts(c, style, name) {
     const states = Object.fromEntries(BUTTON_STATES.map(s => [s, { box: [w, h + drop], shapes: buttonShapes(style, { ...params, state: s }) }]));
     return [{ name, box: [w, h + drop], shapes: buttonShapes(style, { ...params, state: 'normal' }), offset: [0, -drop / 2], states }];
   }
+
+  if (kind === 'figure') return figureParts(c, style);
 
   if (kind === 'icon') {
     const size = num(c.size, typeof style.sizes.icon === 'number' ? style.sizes.icon : 64);
