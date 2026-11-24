@@ -7,6 +7,7 @@
 //   silhouette parts that fall apart when shown small (too thin to read at icon size)
 //   states     states of a part that look too much like its normal look (a press nobody sees)
 //   contrast   a part that disappears on the colour behind it (surface)
+//   text       text cut off by the part's edge, spilling out of its shape, off the middle, or shrunk to fit
 //
 // Each finding names the part, what was measured, the guide's number and the fix. Pure and
 // isomorphic: it reads the parts document (src/render/svg-rig.js) and draws with the studio's own
@@ -82,9 +83,30 @@ function solidity(svg, w, h) {
   return any > 8 ? solid / any : 1;
 }
 
+/** The text checks of one laid-out text (src/art/shapes.js `texts`), in the part's units. */
+function textFindings(t, part, add, all) {
+  const [x0, y0, x1, y1] = t.ink, [f0, g0, f1, g1] = t.frame, [W, H] = t.box ?? [Infinity, Infinity];
+  const label = `"${String(t.text).slice(0, 24)}"`;
+  const tol = 0.5;
+  if (x0 < -tol || y0 < -tol || x1 > W + tol || y1 > H + tol) {
+    add('text', 'warn', part.name, `${label} is cut off: its letters reach past the part's edge (ink ${r1(x0)}..${r1(x1)} of 0..${r1(W)} across).`, 'shorten the text, set it smaller, or widen the part; leave fit on so text is set to its frame.');
+    return;
+  }
+  if (x0 < f0 - tol || x1 > f1 + tol) add('text', 'warn', part.name, `${label} spills out of the shape it sits on (ink ${r1(x0)}..${r1(x1)}, shape ${r1(f0)}..${r1(f1)}).`, 'leave fit on (the default), shorten the text or widen the shape.');
+  if (t.align === 'middle') {
+    const off = (x0 + x1) / 2 - (f0 + f1) / 2, fw = f1 - f0;
+    if (Math.abs(off) > Math.max(2, fw * 0.04)) add('text', 'warn', part.name, `${label} sits ${r1(Math.abs(off))} units ${off > 0 ? 'right' : 'left'} of the middle of its shape (${Math.round(Math.abs(off) / fw * 100)}% of its width).`, 'put the anchor (at[0]) on the middle of the shape it sits on.');
+    // Vertically only when it is the only text on its shape (lines of body text are stacked by design).
+    const alone = all.filter(o => String(o.frame) === String(t.frame)).length === 1;
+    const vOff = (y0 + y1) / 2 - (g0 + g1) / 2, fh = g1 - g0;
+    if (alone && fh < (y1 - y0) * 3 && Math.abs(vOff) > Math.max(2, fh * 0.12)) add('text', 'warn', part.name, `${label} sits ${r1(Math.abs(vOff))} units ${vOff > 0 ? 'below' : 'above'} the middle of its shape.`, 'put the baseline (at[1]) at the middle of the shape plus half the text size.');
+  }
+  if (t.asked && t.size < t.asked * 0.75) add('text', 'info', part.name, `${label} was set at ${r1(t.size)} instead of ${r1(t.asked)} to fit its shape.`, 'shorten the text or widen the shape if it reads too small.');
+}
+
 /**
  * Critique a drawing.
- * @param {{ name: string, kind?: string, parts: Array<{ name: string, svg: string, at: number[], size: number[], states?: Record<string, string>, hidden?: boolean, blend?: string }> }} doc
+ * @param {{ name: string, kind?: string, parts: Array<{ name: string, svg: string, at: number[], size: number[], states?: Record<string, string>, hidden?: boolean, blend?: string, source?: any }> }} doc
  * @param {object} style  a validated style guide
  * @returns {{ findings: object[], counts: object, checked: string[] }}
  */
@@ -120,6 +142,8 @@ export function critiqueArt(doc, style) {
         if (atSmall < 0.35 && atFull >= 0.6) add('silhouette', 'warn', p.name, `at ${small} px across only ${Math.round(atSmall * 100)}% of the part stays solid (${Math.round(atFull * 100)}% at full size): thin pieces blur away when it is shown small.`, 'fill the shape (a solid body with an outline) or make the thin pieces heavier.');
       }
     }
+    // text: never cut off, centred where it is meant to be, not shrunk past reading to fit
+    for (const t of Array.isArray(p.source?.texts) ? p.source.texts : []) textFindings(t, p, add, p.source.texts);
     // states: each must read as different from the normal look
     if (p.states) {
       const w = Math.max(8, Math.round(Math.min(96, p.size[0]))), h = Math.max(8, Math.round(p.size[1] * w / p.size[0]));
@@ -164,5 +188,5 @@ export function critiqueArt(doc, style) {
   if (offGrid.length) add('align', 'info', null, `${offGrid.length} part${offGrid.length > 1 ? 's sit' : ' sits'} off the ${style.grid}-unit grid (${offGrid.slice(0, 5).map(p => p.name).join(', ')}).`, `place corners on multiples of ${style.grid}.`);
 
   const counts = { warn: findings.filter(f => f.level === 'warn').length, info: findings.filter(f => f.level === 'info').length };
-  return { findings, counts, checked: ['palette', 'stroke', 'align', 'silhouette', 'states', 'contrast'] };
+  return { findings, counts, checked: ['palette', 'stroke', 'align', 'silhouette', 'states', 'contrast', 'text'] };
 }

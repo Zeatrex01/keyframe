@@ -91,7 +91,12 @@ function studio() {
   const sent = [];
   const { wire } = createServer({ session: { dir, writable: () => true }, version: 'test', write: m => sent.push(m), all: true });
   let chars = 0;
-  const call = async (name, args) => { chars += JSON.stringify(args).length; sent.length = 0; await wire.handle({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name, arguments: args } }); return sent[0].result.structuredContent; };
+  const call = async (name, args) => { chars += JSON.stringify(args).length; sent.length = 0; await wire.handle({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name, arguments: args } }); const r = sent[0].result;
+    // A tool that shows an image answers with the image and its result as text.
+    if (r.structuredContent) return r.structuredContent;
+    const image = r.content?.find(c => c.type === 'image'), text = r.content?.find(c => c.type === 'text');
+    return image ? { image, meta: JSON.parse(text.text) } : JSON.parse(text?.text ?? 'null');
+  };
   return { dir, call, chars: () => chars, done: () => fs.rmSync(dir, { recursive: true, force: true }) };
 }
 
@@ -177,14 +182,45 @@ test('critique_art flags off-palette colours, states that look alike and near-mi
   assert.ok(checks.includes('align'), 'two parts 2 units apart');
 });
 
+test('text is set to fit its shape, centred on its ink, and critique_art catches text cut off or off the middle', () => {
+  // A popup title is measured, never guessed from its letter count: the ribbon holds it, centred.
+  for (const preset of ['casual-game', 'flat-web', 'dark-sci']) {
+    const st = validateStyle(presetStyle(preset));
+    const { parts } = expandParts([{ name: 'win', component: { component: 'popup', title: 'YOU WON 250', lines: ['Coins added to your bank'] } },
+      { name: 'go', component: { component: 'button', label: 'CONTINUE TO THE NEXT LEVEL', icon: 'play', w: 200 } }], st);
+    for (const p of parts) for (const t of p.source?.texts ?? []) {
+      assert.ok(t.ink[0] >= t.frame[0] - 0.5 && t.ink[2] <= t.frame[2] + 0.5, `${preset} ${p.name}: "${t.text}" stays inside its shape`);
+      if (t.align === 'middle') assert.ok(Math.abs((t.ink[0] + t.ink[2]) / 2 - (t.frame[0] + t.frame[2]) / 2) < 1, `${preset} ${p.name}: "${t.text}" is centred`);
+      if (p.name === 'win_title') assert.equal(t.size, t.asked, `${preset}: the ribbon is made wide enough for its title`);
+    }
+    const doc = { name: 'w', parts: parts.map(p => ({ ...p, size: p.source?.texts?.[0]?.box ?? [100, 100] })) };
+    assert.deepEqual(critiqueArt(doc, st).findings.filter(f => f.check === 'text' && f.level === 'warn'), [], preset);
+  }
+  const one = layoutText('1', { size: 20 });
+  assert.ok(Math.abs((one.bounds[0] + one.bounds[2]) / 2) < 0.05, 'centred text is centred on its ink');
+  // A long label in a small box is set smaller, and says so.
+  const long = renderShapes({ box: [120, 40], shapes: [{ rect: [0, 0, 120, 40], fill: 'primary' }, { text: 'A VERY LONG LABEL', at: [60, 28], size: 20 }] }, style).texts[0];
+  assert.ok(long.size < long.asked && long.ink[2] <= 120, 'shrunk to fit');
+  const part = (texts, svg) => ({ name: 'p', svg, at: [0, 0], pivot: [0, 0], size: [200, 60], source: { texts } });
+  const draw = shapes => renderShapes({ box: [200, 60], shapes: [{ rect: [0, 0, 200, 60], fill: 'primary' }, ...shapes] }, style);
+  const textsOf = shapes => { const d = draw(shapes); return critiqueArt({ name: 'x', parts: [part(d.texts, d.svg)] }, style).findings.filter(f => f.check === 'text').map(f => f.message); };
+  assert.deepEqual(textsOf([{ text: 'PLAY', at: [100, 40] }]), [], 'centred');
+  assert.match(textsOf([{ text: 'PLAY', at: [130, 40] }]).join(' '), /right of the middle/);
+  assert.match(textsOf([{ text: 'A VERY LONG LABEL TEXT', at: [100, 40], fit: false }]).join(' '), /cut off/);
+  assert.match(textsOf([{ text: 'PLAY', at: [100, 22], size: 12 }]).join(' '), /above the middle/);
+});
+
 test('critique_art writes a contact sheet; export_art writes trimmed PNGs with pivots, a sprite sheet with its map, and clean SVG', async () => {
   const s = studio();
   try {
     await s.call('draw_rig', { name: 'ui', parts: PACK.slice(0, 4) });
-    const c = await s.call('critique_art', { file: 'ui.parts.json' });
+    const seen = await s.call('critique_art', { file: 'ui.parts.json' });
+    const c = seen.meta;
     assert.ok(Array.isArray(c.findings));
     const sheet = decodePng(fs.readFileSync(path.join(s.dir, c.sheet)));
     assert.ok(sheet.width > 300 && sheet.height > 150);
+    assert.equal(seen.image.mimeType, 'image/png', 'the agent sees the drawing without a clip');
+    assert.deepEqual(decodePng(Buffer.from(seen.image.data, 'base64')).width, sheet.width);
     const e = await s.call('export_art', { file: 'ui.parts.json', scales: [1, 3] });
     assert.equal(e.error, undefined, JSON.stringify(e.error));
     const out = path.join(s.dir, 'ui-export');

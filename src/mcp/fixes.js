@@ -22,6 +22,7 @@ const SPECIFIC = {
   'agent-off': 'The slot has no agent: choose Claude Code, Codex CLI or Gemini CLI for it in Settings.',
   'agent-busy': 'The slot is still working: wait for its answer, or stop it first.',
   'unknown-asset': 'Use a reference from `available`, written asset:<pack>/<item>.',
+  'stale-drawing': 'Open the drawing again to see the newer version, or save the board\'s copy under another name.',
   'not-ours': 'draw_rig only redraws files it drew (a <name>.parts.json sits beside them): choose another `name` or `folder`.',
   'check-failed': 'The findings name what the check rejects in the drawing: fix those parts and call again.',
   'bad-parts': 'Fix the parts the message lists (unique names, an existing parent, one SVG with a viewBox each) and call again.',

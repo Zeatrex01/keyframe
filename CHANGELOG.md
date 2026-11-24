@@ -14,9 +14,12 @@ All notable changes to this project. The format follows
   - `export_art`: trimmed PNGs per part and state at any scale with pivots, sprite sheets with a JSON map, clean SVG, and clips as PNG sequences and sheets.
 - `export_art` kind `web`: an embeddable player for web pages and HTML games (`keyframe-player.js`, one classic script): `KeyframePlayer.create(canvas, ...)` with play, stop, pause, seek, speed, `setLook` for drawn states and `start`/`complete`/`loop`/`event` listeners, and a `<keyframe-player>` element.
 - `critique_animation` holds a figure to the minimums of its action (`src/understand/actions.js`): a strike moves the body behind it, winds up, lands fast and holds the hit; a jump rises a quarter of the height after a crouch; a hop falls into the ground instead of floating; a wave clears the head and swings; an idle breathes; a walk bobs. UI parts, effects and props are not judged as a body.
+- `critique_art` answers with an image of the drawing: the whole drawing assembled, then every part and state, so an agent sees static art and artboards without a clip. It also checks text: cut off by the part's edge, spilling out of its shape, off the middle, or shrunk to fit.
 - Parts reach the page as safe trees (`src/render/svg-safe.js`): only shapes, groups and gradients survive, so nothing in a drawing can run.
 
 ### Fixed
+- Text is set to fit the shape it sits on and centred on its ink; a popup's title ribbon is measured from its title, so "YOU WON 250" is no longer clipped.
+- The Draw board never loses the AI's drawing: Undo back to the saved drawing is no longer an unsaved change, a drawing the AI changes while the board holds edits shows a notice (load the AI's version, or keep yours as a copy), and the board's save is refused if the AI drew on the file since it was opened.
 - Labels and popup text pick the readable text colour for their fill in every style.
 - Pip's jump rises a quarter of the body's height (it read as a hop); Mika's wave clears her head.
 - The privacy gate no longer reads image file names such as `ui@3x.json` as e-mail addresses.

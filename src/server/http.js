@@ -12,6 +12,7 @@
 import { readFeed } from '../core/draw-feed.js';
 import { safeTree } from '../render/svg-safe.js';
 import http from 'node:http';
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -153,7 +154,12 @@ export function createStudioServer({ projectDir, version, configFile, maxUpload 
     if (doc.format !== PARTS_FORMAT) throw new StudioError('bad-argument', `${file} is not a drawing.`, { file });
     // Each part's safe SVG tree, so the board can trace it again (Replay) without parsing SVG itself.
     const trees = Object.fromEntries((doc.parts ?? []).map(p => { try { return [p.name, safeTree(p.svg, p.name)]; } catch { return [p.name, null]; } }));
-    return { file, folder: path.posix.dirname(file).replace(/^\.$/, ''), ...doc, trees };
+    return { file, folder: path.posix.dirname(file).replace(/^\.$/, ''), ...doc, trees, version: drawingVersion(abs) };
+  }
+
+  /** A drawing's version: a short hash of its file, so a save from an old copy is refused, not silently written over. */
+  function drawingVersion(abs) {
+    try { return createHash('sha1').update(fs.readFileSync(abs)).digest('hex').slice(0, 16); } catch { return null; }
   }
 
   // An example: a copy of it in the studio's own data folder, so a first start has something to
@@ -253,7 +259,17 @@ export function createStudioServer({ projectDir, version, configFile, maxUpload 
     'POST /api/drawing': { project: true, run: async ({ body }) => {
       const b = await body();
       const parts = Array.isArray(b.parts) ? b.parts.map(p => Object.fromEntries(Object.entries(p ?? {}).filter(([, v]) => v !== null && v !== undefined))) : b.parts;
-      return tool('draw_rig', { name: text(b, 'name'), parts, ...(typeof b.folder === 'string' && b.folder ? { folder: b.folder } : {}), ...(Number.isFinite(b.resolution) ? { resolution: b.resolution } : {}) });
+      const name = text(b, 'name'), folder = typeof b.folder === 'string' && b.folder ? b.folder : '';
+      const file = `${folder ? `${folder}/` : ''}${name}.parts.json`;
+      let abs = null;
+      try { abs = project.resolve(file); } catch { abs = null; }
+      // The board saves over the version it opened, never over one the AI drew since.
+      if (typeof b.base === 'string' && abs) {
+        const now = drawingVersion(abs);
+        if (now && now !== b.base) throw new StudioError('stale-drawing', `${file} changed since the board opened it (the AI drew on it). Load the new version, or save yours under another name.`, { file, version: now });
+      }
+      const result = await tool('draw_rig', { name, parts, ...(folder ? { folder } : {}), ...(Number.isFinite(b.resolution) ? { resolution: b.resolution } : {}) });
+      return abs && result && !result.error ? { ...result, version: drawingVersion(abs) } : result;
     } },
     'POST /api/restore': { project: true, run: async ({ body }) => { const b = await body(); return tool('restore_file', { file: b.file, backup: b.backup }); } },
     'POST /api/reference/link': { project: true, run: async ({ body }) => { const b = await body(); return fetchReference(dir, b.url, { from: b.from, to: b.to, ytdlp }); } },

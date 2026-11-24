@@ -4,9 +4,10 @@
 // files are never touched. The rules live in draw-model.js; this module draws and listens.
 
 import { S, el } from './store.js';
+import { showConflict, initConflict, confirmLeave } from './draw-conflict.js';
 import { api, button, node, t } from './ui.js';
 import { addShape, withNamespace, bonesOf, boxOf, drawingBounds, fitView, movePart, parentChoices, partAt, readShape, removePart, renamePart, reorder,
-  resizePart, restyle, savePayload, setParent, setPivot, toRig, toScreen, uniqueName, formatNumber, parseNumber, PALETTE, NAME, MAX_PARTS } from './draw-model.js';
+  resizePart, restyle, savePayload, drawingFile, setParent, setPivot, toRig, toScreen, uniqueName, formatNumber, parseNumber, PALETTE, NAME, MAX_PARTS } from './draw-model.js';
 
 const SVG = 'http://www.w3.org/2000/svg';
 const UNDO_KEEP = 60;
@@ -20,6 +21,7 @@ const D = {
   parts: [], sel: null, tool: 'select', bones: true,
   view: null, undo: [], dirty: false, busy: false, gesture: null, project: undefined, leaving: false,
   trees: {}, pending: new Set(), feedSkip: 0, fitted: false,   // the live drawing (draw-live.js): safe SVG trees, parts not drawn yet
+  version: null, saved: [], conflict: '',   // the opened file's version and parts (Undo back to them is no change); draw-conflict.js
 };
 
 const svgNode = (tag, attrs = {}) => {
@@ -45,7 +47,7 @@ function commit(parts, { keep = true } = {}) {
 function undo() {
   if (!D.undo.length) return;
   D.parts = D.undo.pop();
-  D.dirty = true;
+  D.dirty = D.parts !== D.saved;
   if (D.sel && !D.parts.some(p => p.name === D.sel)) D.sel = null;
   render();
 }
@@ -75,12 +77,15 @@ export async function showDraw() {
 
 async function openDrawing(file) {
   if (!file) {
-    Object.assign(D, { file: '', name: uniqueName((D.list ?? []).map(d => ({ name: d.name })), 'drawing'), folder: 'art', parts: [], sel: null, undo: [], dirty: false });
+    Object.assign(D, { file: '', name: uniqueName((D.list ?? []).map(d => ({ name: d.name })), 'drawing'), folder: 'art', parts: [], sel: null, undo: [], dirty: false, version: null, saved: [] });
+    showConflict('');
     fit();
     return;
   }
   const doc = await api(`/api/drawing?file=${encodeURIComponent(file)}`);
-  Object.assign(D, { file, name: doc.name, folder: doc.folder ?? '', parts: doc.parts ?? [], trees: doc.trees ?? {}, sel: null, undo: [], dirty: false });
+  Object.assign(D, { file, name: doc.name, folder: doc.folder ?? '', parts: doc.parts ?? [], trees: doc.trees ?? {}, sel: null, undo: [], dirty: false, version: doc.version ?? null });
+  D.saved = D.parts;
+  showConflict('');
   fit();
 }
 
@@ -91,15 +96,22 @@ async function save() {
   D.busy = true; render();
   say('draw.saving');
   try {
-    const result = await api('/api/drawing', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(savePayload({ name, folder: D.folder, parts: D.parts })) });
+    const target = drawingFile(name, D.folder);
+    // Over the version it opened only: if the AI drew on it since, the server refuses (stale-drawing).
+    const base = target === D.file ? D.version : undefined;
+    const result = await api('/api/drawing', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(savePayload({ name, folder: D.folder, parts: D.parts, base })) });
     D.name = name;
-    D.file = `${D.folder ? `${D.folder}/` : ''}${name}.parts.json`;
+    D.file = target;
     D.dirty = false;
+    D.version = result.version ?? null;
+    D.saved = D.parts;
+    showConflict('');
     D.feedSkip = Math.max(D.feedSkip, result.feed ?? 0);
     D.list = (await api('/api/drawings')).drawings;
     say('draw.saved', { file: result.file }, 'ok');
   } catch (err) {
-    say(err.code === 'not-ours' ? 'draw.notOurs' : 'draw.saveFailed', { reason: err.message, name }, 'bad');
+    if (err.code === 'stale-drawing') { say(''); showConflict(D.file); }
+    else say(err.code === 'not-ours' ? 'draw.notOurs' : 'draw.saveFailed', { reason: err.message, name }, 'bad');
   }
   D.busy = false;
   render();
@@ -396,6 +408,8 @@ el.drawTools.addEventListener('click', event => {
 });
 el.drawBones.addEventListener('click', () => { D.bones = !D.bones; render(); });
 el.drawZoom.addEventListener('click', fit);
+initConflict({ D, openDrawing, save, say });
+
 el.drawUndo.addEventListener('click', undo);
 el.drawSave.addEventListener('click', save);
 el.drawName.addEventListener('change', () => { D.name = el.drawName.value.trim() || D.name; D.dirty = true; });
@@ -403,13 +417,6 @@ el.drawPick.addEventListener('change', async () => {
   if (D.dirty && !confirmLeave()) { el.drawPick.value = D.file; return; }
   try { await openDrawing(el.drawPick.value); } catch (err) { say('draw.loadFailed', { reason: err.message }, 'bad'); }
 });
-// Leaving unsaved changes asks once, in the page (no browser dialog).
-function confirmLeave() {
-  if (D.leaving) { D.leaving = false; return true; }
-  D.leaving = true;
-  say('draw.unsaved', {}, 'bad');
-  return false;
-}
 
 document.addEventListener('keydown', event => {
   if (el.draw.hidden || event.altKey) return;
@@ -439,4 +446,4 @@ export function askToDraw(showWork) {
 
 export const drawState = D; // for the e2e gate
 /** What the live drawing (draw-live.js) drives on the board. */
-export const board = { D, render, openDrawing, size, say };
+export const board = { D, render, openDrawing, size, say, showConflict };

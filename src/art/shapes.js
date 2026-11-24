@@ -61,13 +61,14 @@ function geometry(s, style, where) {
  * One part's shapes as an SVG document.
  * @param {{ box: number[], shapes: object[] }} spec  box: [w, h] of the part's drawing space
  * @param {object} style  a validated style guide
- * @returns {{ svg: string, missing: string[] }}
+ * @returns {{ svg: string, missing: string[], texts: object[] }}  texts: each text's size (and the size asked
+ *   for, when it was set smaller to fit), its ink box and the frame it sits in, in the part's units
  */
 export function renderShapes(spec, style) {
   const [W, H] = nums(spec?.box, 2, 'box [w, h]');
   if (!(W > 0 && H > 0)) throw new StudioError('bad-argument', 'box must be positive.', { box: spec.box });
   if (!Array.isArray(spec.shapes) || !spec.shapes.length || spec.shapes.length > 80) throw new StudioError('bad-argument', 'shapes is a list of 1-80 shapes.', {});
-  const defs = [], body = [], missing = [];
+  const defs = [], body = [], missing = [], texts = [], frames = [];
   let gid = 0;
   const lightDx = style.light.from === 'top-left' ? 0.5 : style.light.from === 'top-right' ? -0.5 : 0;
   const gradient = (top, bottom) => {
@@ -88,17 +89,37 @@ export function renderShapes(spec, style) {
       const size = typeof s.size === 'number' ? s.size : style.type.size[s.size ?? 'md'];
       if (!(size > 0)) throw new StudioError('bad-argument', `${where}.size is sm, md, lg or a number.`, { size: s.size });
       const [x, y] = nums(s.at, 2, `${where}.at [x, y] (baseline)`);
-      const laid = layoutText(s.text, { size, upper: style.type.case === 'upper', align: s.align ?? 'middle', x, y });
+      const align = s.align ?? 'middle';
+      const outline = s.outline ?? style.type.outline;
+      const strokeOf = k => k * (style.type.weight === 'bold' ? 0.2 : 0.13) * (s.weight === 'thin' ? 0.7 : 1);
+      const outlineOf = k => (outline ? Math.max(strokeOf(k) * 0.55, style.stroke.regular * 0.6) : 0);
+      const lay = k => layoutText(s.text, { size: k, upper: style.type.case === 'upper', align, x, y });
+      // The frame the text sits in: the last filled shape drawn under its middle, else the part's box.
+      const mid = [x, y - size / 2];
+      const frame = [...frames].reverse().find(f => mid[0] >= f[0] && mid[0] <= f[2] && mid[1] >= f[1] && mid[1] <= f[3]) ?? [0, 0, W, H];
+      // Text never spills out of its frame: it is set smaller until its ink fits, with a margin.
+      let laid = lay(size), k = size;
+      const room = kk => {
+        const pad = Math.max(kk * 0.25, style.stroke.thin);
+        return align === 'middle' ? 2 * Math.min(x - frame[0], frame[2] - x) - 2 * pad : align === 'end' ? x - frame[0] - pad : frame[2] - x - pad;
+      };
+      const inkWidth = (l, kk) => l.bounds[2] - l.bounds[0] + strokeOf(kk) + 2 * outlineOf(kk);
+      for (let i = 0; i < 4 && s.fit !== false && laid.strokes.length && inkWidth(laid, k) > room(k) && room(k) > 0; i++) {
+        k = Math.max(size * 0.3, k * room(k) / inkWidth(laid, k) * 0.99);
+        laid = lay(k);
+      }
       missing.push(...laid.missing);
       const d = strokesPath(laid.strokes);
       if (!d) return;
-      const w = size * (style.type.weight === 'bold' ? 0.2 : 0.13) * (s.weight === 'thin' ? 0.7 : 1);
+      const w = strokeOf(k);
+      const half = w / 2 + outlineOf(k);
+      texts.push({ text: String(s.text), align, size: r2(k), asked: r2(size),
+        ink: [laid.bounds[0] - half, laid.bounds[1] - half, laid.bounds[2] + half, laid.bounds[3] + half].map(r2), frame: frame.map(r2), box: [W, H] });
       const color = colorOf(style, s.color ?? 'text');
-      const outline = s.outline ?? style.type.outline;
       const line = { fill: 'none', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', opacity };
       if (outline) {
-        const ow = Math.max(w * 0.55, style.stroke.regular * 0.6);
-        if (style.light.shadow > 0) body.push(el('path', { d, ...line, stroke: ink, 'stroke-width': w + ow * 2, transform: `translate(${r2(lightDx * size * 0.12)} ${r2(size * 0.12)})` }));
+        const ow = outlineOf(k);
+        if (style.light.shadow > 0) body.push(el('path', { d, ...line, stroke: ink, 'stroke-width': w + ow * 2, transform: `translate(${r2(lightDx * k * 0.12)} ${r2(k * 0.12)})` }));
         body.push(el('path', { d, ...line, stroke: ink, 'stroke-width': w + ow * 2 }));
       }
       body.push(el('path', { d, ...line, stroke: color, 'stroke-width': w }));
@@ -136,6 +157,11 @@ export function renderShapes(spec, style) {
 
     const fillName = s.fill ?? (g.kind === 'line' ? 'none' : 'primary');
     const fill = g.kind === 'line' ? 'none' : colorOf(style, fillName);
+    // A filled box text may sit in (and be fitted to); a frame inside the stroke.
+    if (fill !== 'none' && g.box && (g.kind === 'rect' || g.kind === 'circle' || g.kind === 'ellipse')) {
+      const [bx, by, bw, bh] = g.box, inset = s.stroke === 'none' ? 0 : sw / 2;
+      frames.push([bx + inset, by + inset, bx + bw - inset, by + bh - inset]);
+    }
     const strokeColor = s.stroke === false ? 'none' : colorOf(style, s.stroke ?? (style.stroke.color === 'none' ? 'none' : style.stroke.color));
     const shaded = fill !== 'none' && (s.shade ?? style.light.shade > 0) && !s.grad;
     const paint = s.grad ? gradient(colorOf(style, s.grad[0]), colorOf(style, s.grad[1]))
@@ -160,5 +186,5 @@ export function renderShapes(spec, style) {
     }
   });
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${r2(W)} ${r2(H)}" width="${r2(W)}" height="${r2(H)}">${defs.length ? `<defs>${defs.join('')}</defs>` : ''}${body.join('')}</svg>`;
-  return { svg, missing: [...new Set(missing)] };
+  return { svg, missing: [...new Set(missing)], texts };
 }

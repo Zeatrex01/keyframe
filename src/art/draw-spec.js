@@ -44,6 +44,9 @@ export function deriveShapes(shapes, state, style) {
 
 const add = (a, b) => [r2(a[0] + b[0]), r2(a[1] + b[1])];
 
+/** The text metrics a drawn part keeps (for critique_art: clipped, off-centre or shrunk text). */
+const textsOf = drawn => (drawn.texts?.length ? { texts: drawn.texts } : {});
+
 /**
  * Expand the parts of a draw_rig call: parametric shapes and components become SVG parts.
  * @param {object[]} parts  as draw_rig receives them (asset references already read)
@@ -72,7 +75,7 @@ export function expandParts(parts, style) {
           parent: sub.parent ?? p.parent,
           ...(sub.blend ? { blend: sub.blend } : {}), ...(sub.hidden || (p.hidden && sub === owner) ? { hidden: true } : {}),
           ...(sub.states ? { states: Object.fromEntries(Object.entries(sub.states).map(([k, v]) => [k, renderShapes(v, style).svg])) } : {}),
-          ...(sub === owner ? { source: { component: spec, of: p.name, at, ...(p.pivot ? { pivot: p.pivot } : {}), ...(p.parent ? { parent: p.parent } : {}) } } : { source: { of: p.name } }),
+          ...(sub === owner ? { source: { component: spec, of: p.name, at, ...(p.pivot ? { pivot: p.pivot } : {}), ...(p.parent ? { parent: p.parent } : {}), ...textsOf(svgs) } } : { source: { of: p.name, ...textsOf(svgs) } }),
         });
       }
       continue;
@@ -92,7 +95,7 @@ export function expandParts(parts, style) {
           else throw new StudioError('bad-argument', `${p.name}: state "${state}" is derived only for ${DERIVED_STATES.join(', ')}; give its own { shapes } otherwise.`, { state });
         }
       }
-      out.push({ ...rest, svg: drawn.svg, ...(stateSvgs ? { states: stateSvgs } : {}), source: { box, shapes, ...(states !== undefined ? { states } : {}) } });
+      out.push({ ...rest, svg: drawn.svg, ...(stateSvgs ? { states: stateSvgs } : {}), source: { box, shapes, ...(states !== undefined ? { states } : {}), ...textsOf(drawn) } });
       continue;
     }
     out.push(p.states && typeof p.states === 'object' && !Array.isArray(p.states) ? p : rest);

@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { formatNumber, parseNumber, shapeSvg, readShape, uniqueName, addShape, movePart, setPivot, resizePart, restyle, renamePart, removePart, reorder,
-  parentChoices, setParent, bonesOf, drawingBounds, fitView, toScreen, toRig, partAt, savePayload } from '../web/draw-model.js';
+  parentChoices, setParent, bonesOf, drawingBounds, fitView, toScreen, toRig, partAt, savePayload, incomingAction, drawingFile } from '../web/draw-model.js';
 import { validateParts, buildSvgRig } from '../src/render/svg-rig.js';
 
 const box = (x, y, width, height) => ({ x, y, width, height });
@@ -89,4 +89,14 @@ test('the board writes numbers with a point and reads a point or a comma, whatev
   for (const bad of ['', 'abc', '1,2,3', '1.2.3', '--1']) assert.equal(parseNumber(bad), null, bad);
   const board = fs.readFileSync(new URL('../web/draw.js', import.meta.url), 'utf8');
   assert.doesNotMatch(board, /type = 'number'/, 'a number field would show the system decimal comma');
+});
+
+test('a save names the version it opened, and a drawing the AI makes over unsaved edits is a conflict, never a drop', () => {
+  const parts = [{ name: 'a', svg: '<svg/>', at: [0, 0] }];
+  assert.equal(savePayload({ name: 'ui', folder: 'art', parts, base: 'abc123' }).base, 'abc123');
+  assert.equal('base' in savePayload({ name: 'ui', parts }), false, 'a new drawing has no base');
+  assert.equal(drawingFile('ui', 'art'), 'art/ui.parts.json');
+  assert.equal(drawingFile('ui', ''), 'ui.parts.json');
+  assert.equal(incomingAction({ dirty: false }), 'play');
+  assert.equal(incomingAction({ dirty: true }), 'conflict');
 });

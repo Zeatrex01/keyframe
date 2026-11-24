@@ -87,7 +87,7 @@ function glyph(ch) {
  * @param {string} text
  * @param {{ size: number, upper?: boolean, align?: 'start' | 'middle' | 'end', x?: number, y?: number, tracking?: number }} options
  *   size: cap height in units; (x, y): the anchor on the baseline's middle (align middle) or ends
- * @returns {{ strokes: number[][][], width: number, missing: string[] }}
+ * @returns {{ strokes: number[][][], width: number, bounds: number[], missing: string[] }}  bounds: the ink [x0, y0, x1, y1]
  */
 export function layoutText(text, { size, upper = true, align = 'middle', x = 0, y = 0, tracking = 0 }) {
   const s = size / 10, strokes = [], missing = [];
@@ -106,7 +106,15 @@ export function layoutText(text, { size, upper = true, align = 'middle', x = 0, 
     for (const stroke of c.g[1]) strokes.push(stroke.map(([gx, gy]) => [round(pen + gx * k), round(y - (10 - gy) * k)]));
     pen += widthOf(c);
   }
-  return { strokes, width: round(total), missing: [...new Set(missing)] };
+  // The ink's own box; centred text is centred on its ink, not on its advance widths (a glyph's
+  // side bearings would push a short word off the middle).
+  const xs = strokes.flat().map(p => p[0]), ys = strokes.flat().map(p => p[1]);
+  let bounds = xs.length ? [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)] : [x, y, x, y];
+  if (align === 'middle' && xs.length) {
+    const dx = round(x - (bounds[0] + bounds[2]) / 2);
+    if (dx) { for (const st of strokes) for (const p of st) p[0] = round(p[0] + dx); bounds = [bounds[0] + dx, bounds[1], bounds[2] + dx, bounds[3]].map(round); }
+  }
+  return { strokes, width: round(total), bounds, missing: [...new Set(missing)] };
 }
 const round = v => Math.round(v * 100) / 100;
 

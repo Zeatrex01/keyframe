@@ -33,7 +33,7 @@ const BY_CODE = new Map(Object.entries({
   'too-large': 413, 'unsupported-type': 415, 'method-not-allowed': 405,
   'outside-project': 403, 'foreign-host': 403, 'foreign-origin': 403, 'cross-site': 403,
   'busy': 409, 'no-project': 409, 'changed-during-write': 409, 'target-exists': 409, 'delivery-exists': 409,
-  'name-taken': 409, 'folder-in-use': 409, 'agent-busy': 409, 'agent-off': 409, 'stale-paint': 409, 'stale-repair': 409, 'base-protected': 409, 'not-ours': 409,
+  'name-taken': 409, 'folder-in-use': 409, 'agent-busy': 409, 'agent-off': 409, 'stale-paint': 409, 'stale-repair': 409, 'base-protected': 409, 'not-ours': 409, 'stale-drawing': 409,
   'no-ffmpeg': 501, 'no-yt-dlp': 501, 'no-spine-cli': 501, 'no-agent-cli': 501, 'spine-addon-off': 501, 'spine-license-required': 400,
   'timeout': 504, 'tool-failed': 500, 'internal-error': 500,
 }));

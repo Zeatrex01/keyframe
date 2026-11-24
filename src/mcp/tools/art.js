@@ -28,19 +28,28 @@ function readDrawing(project, file) {
   return { doc, abs };
 }
 
-/** Every part and state of a drawing side by side on the surface colour, each named underneath. */
-export function contactSheet(doc, style, cell = 150) {
+/**
+ * What a drawing looks like: the whole drawing assembled on the surface colour at the top, then
+ * every part and state side by side, each named underneath. One PNG an agent can look at.
+ */
+export function contactSheet(doc, style, cell = 170) {
   const looks = doc.parts.flatMap(p => [{ p, name: p.name, svg: p.svg }, ...Object.entries(p.states ?? {}).map(([k, svg]) => ({ p, name: `${p.name}_${k}`, svg }))]);
   const cols = Math.min(6, looks.length), rows = Math.ceil(looks.length / cols), label = 22;
-  const W = cols * cell, H = rows * (cell + label);
+  const W = Math.max(cols * cell, 640);
+  const whole = drawingSvg(doc, { padding: 6 });
+  const k0 = Math.min((W - 40) / whole.size[0], 380 / whole.size[1], 2);
+  const head = Math.round(whole.size[1] * k0) + 20 + label;
+  const H = head + rows * (cell + label);
   const parts = [{ name: 'sheet_bg', svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}"><rect width="${W}" height="${H}" fill="${colorOf(style, 'surface')}"/></svg>`, at: [W / 2, -H / 2], size: [W, H] }];
-  const labels = [];
+  parts.push({ name: 'whole', svg: whole.svg, at: [W / 2, -(10 + whole.size[1] * k0 / 2)], size: [whole.size[0] * k0, whole.size[1] * k0] });
+  const ink = colorOf(style, readableOn(style, 'surface'));
+  const caption = (text, x, y) => `<path d="${strokesPath(layoutText(text.slice(0, 26), { size: 9, upper: false, x, y }).strokes)}" fill="none" stroke="${ink}" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>`;
+  const labels = [caption(`${doc.name} assembled`, W / 2, head - 8)];
   looks.forEach((l, i) => {
-    const cx = (i % cols) * cell + cell / 2, top = Math.floor(i / cols) * (cell + label);
+    const cx = (i % cols) * (W / cols) + W / cols / 2, top = head + Math.floor(i / cols) * (cell + label);
     const k = Math.min(1, (cell - 20) / Math.max(l.p.size[0], l.p.size[1]));
     parts.push({ name: `c${i}`, svg: l.svg, at: [cx, -(top + cell / 2)], size: [l.p.size[0] * k, l.p.size[1] * k] });
-    const text = layoutText(l.name.slice(0, 22), { size: 9, upper: false, x: cx, y: top + cell + 12 });
-    labels.push(`<path d="${strokesPath(text.strokes)}" fill="none" stroke="${colorOf(style, readableOn(style, 'surface'))}" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>`);
+    labels.push(caption(l.name, cx, top + cell + 12));
   });
   const sheet = drawingSvg({ name: 'sheet', parts });
   const svg = sheet.svg.replace('</svg>', `${labels.join('')}</svg>`);
@@ -64,11 +73,16 @@ export const critiqueArtTool = {
     const result = critiqueArt(doc, style);
     const sheetAbs = path.join(project.dir, '.keyframe', 'art', `${doc.name}-sheet.png`);
     fs.mkdirSync(path.dirname(sheetAbs), { recursive: true });
-    fs.writeFileSync(sheetAbs, contactSheet(doc, style));
+    const png = contactSheet(doc, style);
+    fs.writeFileSync(sheetAbs, png);
+    // The sheet comes back as an image: a drawing with no clip is seen here, not with see_animation.
     return {
-      file, style: style.name, ...result, sheet: project.rel(sheetAbs),
-      verdict: result.counts.warn ? `${result.counts.warn} thing${result.counts.warn > 1 ? 's' : ''} to fix before it is done.` : 'Consistent with the style guide. Look at the sheet before calling it done.',
-      next: result.counts.warn ? 'Fix with draw_rig (merge: true for single parts), then critique_art again.' : 'write_animation to animate it, or export_art for engines and the web.',
+      image: { data: Buffer.from(png).toString('base64'), mimeType: 'image/png' },
+      meta: {
+        file, style: style.name, ...result, sheet: project.rel(sheetAbs),
+        verdict: result.counts.warn ? `${result.counts.warn} thing${result.counts.warn > 1 ? 's' : ''} to fix before it is done.` : 'Consistent with the style guide. Look at the image (the drawing assembled, then each part and state) before calling it done.',
+        next: result.counts.warn ? 'Fix with draw_rig (merge: true for single parts), then critique_art again and look at the image.' : 'write_animation to animate it, or export_art for engines and the web.',
+      },
     };
   },
 };

@@ -316,6 +316,11 @@
       <button type="button" class="btn primary" id="drawSave"><svg class="ic" aria-hidden="true"><use href="#i-box"/></svg><span data-i18n="draw.save"></span></button>
     </div>
     <p class="status" id="drawStatus" role="status"></p>
+    <div class="draw-conflict" id="drawConflict" role="alert" hidden>
+      <span id="drawConflictText"></span><span class="grow"></span>
+      <button type="button" class="btn sm" id="drawConflictLoad"><span data-i18n="draw.conflictLoad"></span></button>
+      <button type="button" class="btn sm" id="drawConflictCopy"><span data-i18n="draw.conflictCopy"></span></button>
+    </div>
   </section>
   <aside class="props panel-flat" data-i18n-label="draw.settings">
     <div class="phead"><b class="t-section" id="drawPartTitle"></b><span class="grow"></span><span class="chip" id="drawPartKind" hidden></span></div>

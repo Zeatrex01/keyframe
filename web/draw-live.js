@@ -11,7 +11,7 @@ import { S, el } from './store.js';
 import { api, t } from './ui.js';
 import { board } from './draw.js';
 import { showView } from './views.js';
-import { boxOf, fitView, drawingBounds, toScreen } from './draw-model.js';
+import { boxOf, fitView, drawingBounds, toScreen, incomingAction } from './draw-model.js';
 import { SPEEDS, DEFAULT_SPEED, speedOf, revealSchedule, gapAfter, sessionsOf, follow } from './draw-live-model.js';
 
 const SVG = 'http://www.w3.org/2000/svg';
@@ -102,14 +102,17 @@ async function play() {
 /** A session from the feed: open its drawing (its new parts hidden), then draw them in order. */
 async function playSession(session) {
   if (!session.parts.length) return;
-  if (D.dirty) return;   // never take the board from unsaved edits
+  // Never take the board from unsaved edits, and never drop the AI's drawing in silence either.
+  if (incomingAction(D) === 'conflict') { board.showConflict(session.file); return; }
   // Hidden before the board opens, so the new parts never flash in whole before they are drawn.
   const names = new Set(session.parts.map(e => e.part.name));
   for (const n of names) D.pending.add(n);
   if (S.view !== 'draw') showView('draw');
   try {
     const doc = await api(`/api/drawing?file=${encodeURIComponent(session.file)}`);
-    Object.assign(D, { file: session.file, name: doc.name, folder: doc.folder ?? '', parts: doc.parts ?? [], trees: doc.trees ?? {}, sel: null, undo: [], dirty: false });
+    Object.assign(D, { file: session.file, name: doc.name, folder: doc.folder ?? '', parts: doc.parts ?? [], trees: doc.trees ?? {}, sel: null, undo: [], dirty: false, version: doc.version ?? null });
+    D.saved = D.parts;
+    board.showConflict('');
     D.list = (await api('/api/drawings')).drawings;
   } catch { for (const n of names) D.pending.delete(n); board.render(); return; }
   if (!D.view) { const { w, h } = board.size(); D.view = fitView(drawingBounds(D.parts), w, h); }

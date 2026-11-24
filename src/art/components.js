@@ -13,6 +13,7 @@
 import { StudioError } from '../shared/errors.js';
 import { GLYPHS, GLYPH_NAMES } from './glyphs.js';
 import { readableOn } from './style.js';
+import { layoutText } from './font.js';
 
 export const COMPONENTS = Object.freeze({
   button: 'A button with a label and/or an icon; states hover, pressed, disabled. One part.',
@@ -43,7 +44,11 @@ function buttonShapes(style, { w, h, r, color, label, icon, size, state, round }
   const textColor = disabled ? 'muted' : ink;
   const iconSize = round ? h * 0.56 : h * 0.52;
   if (icon && label) {
-    const lw = label.length * size * 0.72;
+    // Icon and label centred together, on the label's measured ink; a long label is set smaller.
+    const measure = k => { const b = layoutText(label, { size: k, upper: style.type.case === 'upper', align: 'start' }).bounds; return b[2] - b[0] + k * 0.3; };
+    const room = w - style.stroke.bold * 2 - h * 0.3 - iconSize - size * 0.4;
+    if (measure(size) > room && room > 0) size = Math.max(size * 0.4, size * room / measure(size));
+    const lw = measure(size);
     const total = iconSize + size * 0.4 + lw, x0 = w / 2 - total / 2;
     out.push({ icon, box: [x0, y + h / 2 - iconSize / 2, iconSize], fill: disabled ? 'muted' : ink });
     out.push({ text: label, at: [x0 + iconSize + size * 0.4, y + h / 2 + size / 2], size, align: 'start', color: textColor });
@@ -101,7 +106,10 @@ export function componentParts(c, style, name) {
     /** @type {any[]} */
     const parts = [{ name, box: [w, h + drop], shapes, offset: [0, -drop / 2] }];
     if (title) {
-      const tw = Math.min(w * 0.86, title.length * band * 0.36 + band * 1.4), ty = 0;
+      // The ribbon is as wide as the title's ink (measured, not guessed from its letter count), up to
+      // most of the panel; a title longer than that is set smaller to fit (src/art/shapes.js).
+      const inkW = layoutText(title, { size: band * 0.44, upper: style.type.case === 'upper' }).bounds;
+      const tw = Math.min(w * 0.86, inkW[2] - inkW[0] + band * 1.6), ty = 0;
       parts.push({ name: `${name}_title`, box: [tw, band + drop], offset: [0, h / 2 - ty - band * 0.1 - drop / 2], shapes: [
         ...(drop > 0 ? [{ rect: [0, drop, tw, band], r: 'md', fill: 'ink', stroke: false, shade: false, opacity: style.light.shadowAlpha }] : []),
         { rect: [sw / 2, sw / 2, tw - sw, band - sw], r: 'md', fill: c.titleColor ?? 'secondary', sw: 'bold', shine: true },

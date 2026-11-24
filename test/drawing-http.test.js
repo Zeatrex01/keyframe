@@ -42,6 +42,19 @@ test('the drawing board lists, reads and saves drawings through draw_rig', async
     assert.equal(again.status, 200);
     const sk = JSON.parse(fs.readFileSync(path.join(dir, 'art', 'pal.json'), 'utf8'));
     assert.deepEqual([sk.bones[2].x, sk.bones[2].y], [10, 120]);
+    // A board that opened an older version cannot save over a newer one (the AI drew on it since).
+    assert.match(doc.version, /^[0-9a-f]{16}$/);
+    const opened = (await call(port, 'GET', '/api/drawing?file=art/pal.parts.json')).json;
+    assert.equal(again.json.version, opened.version, 'a save answers with the new version');
+    const ai = await call(port, 'POST', '/api/drawing', { name: 'pal', folder: 'art', parts: opened.parts.map(p => (p.name === 'head' ? { ...p, at: [20, 170] } : p)) });
+    assert.equal(ai.status, 200);
+    const stale = await call(port, 'POST', '/api/drawing', { name: 'pal', folder: 'art', parts: opened.parts, base: opened.version });
+    assert.equal(stale.status, 409);
+    assert.equal(stale.json.error.code, 'stale-drawing');
+    const kept = JSON.parse(fs.readFileSync(path.join(dir, 'art', 'pal.parts.json'), 'utf8'));
+    assert.deepEqual(kept.parts.find(p => p.name === 'head').at, [20, 170], 'the newer drawing is kept');
+    const fresh = await call(port, 'POST', '/api/drawing', { name: 'pal', folder: 'art', parts: opened.parts, base: ai.json.version });
+    assert.equal(fresh.status, 200, 'saving over the version it opened is fine');
     fs.writeFileSync(path.join(dir, 'mine.json'), '{"owner":true}');
     const refused = await call(port, 'POST', '/api/drawing', { name: 'mine', parts });
     assert.equal(refused.status, 409);

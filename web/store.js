@@ -21,7 +21,7 @@ for (const id of ['app', 'projectName', 'projectSwitch', 'projectThumb', 'barSep
   'projectList', 'addonList', 'spineAddon', 'spineState', 'spineAccept', 'spineToggle', 'spineLicense', 'spineStatus', 'checkDot', 'checkText', 'checkButton', 'settingsLang', 'settingsTheme', 'aboutTitle', 'aboutFolder', 'aboutData', 'settingsNav', 'settingsClient', 'clientWhere', 'clientCode', 'clientJson', 'clientMore',
   'agentSlots', 'slotList', 'slotAdd', 'slotStatus', 'externalTitle', 'splash', 'splashPlayer', 'splashSkip', 'splashStatus',
   'modeSwitch', 'modeAnimate', 'modeDraw', 'draw', 'drawTools', 'drawAsk', 'drawPick', 'drawCount', 'drawParts', 'drawStage', 'drawSvg', 'drawEmpty', 'drawBones', 'drawZoom',
-  'drawLive', 'drawLiveLabel', 'drawReplay', 'drawSpeed', 'drawName', 'drawSummary', 'drawUndo', 'drawSave', 'drawStatus', 'drawPartTitle', 'drawPartKind', 'drawProps']) el[id] = $(id);
+  'drawLive', 'drawLiveLabel', 'drawReplay', 'drawSpeed', 'drawName', 'drawSummary', 'drawUndo', 'drawSave', 'drawStatus', 'drawConflict', 'drawConflictText', 'drawConflictLoad', 'drawConflictCopy', 'drawPartTitle', 'drawPartKind', 'drawProps']) el[id] = $(id);
 
 export const S = {
   lang: DEFAULT_LANG, dict: {},

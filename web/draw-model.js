@@ -199,7 +199,19 @@ export function partAt(parts, [x, y]) {
 }
 
 /** What the board sends to POST /api/drawing: the parts with only the fields draw_rig takes. */
-export function savePayload({ name, folder, parts }) {
+export function savePayload({ name, folder, parts, base }) {
   const keep = ['name', 'svg', 'at', 'pivot', 'parent', 'size', 'blend', 'hidden', 'states', 'source'];
-  return { name, ...(folder ? { folder } : {}), parts: parts.map(p => Object.fromEntries(keep.filter(k => p[k] !== undefined && p[k] !== null).map(k => [k, p[k]]))) };
+  return { name, ...(folder ? { folder } : {}), ...(typeof base === 'string' && base ? { base } : {}),
+    parts: parts.map(p => Object.fromEntries(keep.filter(k => p[k] !== undefined && p[k] !== null).map(k => [k, p[k]]))) };
 }
+
+/**
+ * What the board does with a drawing the AI just drew: play it, or (when the board holds unsaved
+ * edits) show a conflict the owner settles. Never a silent drop.
+ * @param {{ dirty: boolean }} board
+ * @returns {'play' | 'conflict'}
+ */
+export const incomingAction = board => (board.dirty ? 'conflict' : 'play');
+
+/** The file a save writes: <folder>/<name>.parts.json. */
+export const drawingFile = (name, folder) => `${folder ? `${folder}/` : ''}${name}.parts.json`;
