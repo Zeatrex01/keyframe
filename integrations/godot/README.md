@@ -36,6 +36,23 @@ The demo project in this folder shows it: open `integrations/godot/` in Godot an
 | Events | a method track; connect to the root's `keyframe_event(event_name, int_value, float_value, string_value)` signal |
 | A clip whose last pose is its first | `loop_mode` linear |
 
+### Dressing a rig at run time
+
+A rig drawn with other looks of its parts (armour in plate and leather, several weapons in one
+slot) keeps them all as `Polygon2D` nodes, one shown per slot. The root swaps them:
+
+```gdscript
+var rig = $Warrior
+rig.set_look("leather")                     # every piece with a leather look wears it
+rig.set_look("")                            # back to the look it was drawn in
+rig.set_attachment("helmet", "")            # take the helmet off
+rig.set_attachment("weapon", "weapon_spear")
+rig.get_attachments("weapon")               # weapon, weapon_spear, weapon_bow, weapon_axe
+```
+
+A clip that keys a slot shows what the clip says while it plays: each stance of the Warrior
+example keys its own weapon, so playing `idle_spear` puts the spear in the hand.
+
 Godot's 2D stack has no counterpart for IK constraints, inherit modes other than normal or shear
 under rotation, so the bones they move are baked into position, rotation, scale and skew keys at
 the export rate (`--fps`, default 30). Clipping attachments and tint-black are not imported. The

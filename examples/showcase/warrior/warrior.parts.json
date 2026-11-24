@@ -46,21 +46,21 @@
   },
   {
    "name": "bracerBack",
-   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 21.42 22.32\" width=\"21.42\" height=\"22.32\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#a2a9b2\"/><stop offset=\"1\" stop-color=\"#8e959e\"/></linearGradient></defs><rect x=\"0\" y=\"0\" width=\"21.42\" height=\"22.32\" rx=\"6\" fill=\"url(#g1)\" stroke=\"#747a81\" stroke-width=\"1.5\" stroke-linejoin=\"round\"/><line x1=\"2.57\" y1=\"6.7\" x2=\"18.85\" y2=\"6.7\" fill=\"none\" stroke=\"#70767c\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><line x1=\"2.57\" y1=\"15.62\" x2=\"18.85\" y2=\"15.62\" fill=\"none\" stroke=\"#cd9634\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></svg>",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 20.58 28.8\" width=\"20.58\" height=\"28.8\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#a2a9b2\"/><stop offset=\"1\" stop-color=\"#8e959e\"/></linearGradient></defs><path d=\"M0.41 1.15 L20.17 1.15 L18.93 27.65 L1.65 27.65 Z\" fill=\"url(#g1)\" stroke=\"#747a81\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><line x1=\"2.47\" y1=\"8.64\" x2=\"18.11\" y2=\"8.64\" fill=\"none\" stroke=\"#70767c\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><line x1=\"2.88\" y1=\"20.74\" x2=\"17.7\" y2=\"20.74\" fill=\"none\" stroke=\"#cd9634\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></svg>",
    "at": [
     4.5,
-    102.39
+    104.55
    ],
    "pivot": [
     4.5,
-    102.39
+    104.55
    ],
    "size": [
-    21.42,
-    22.32
+    20.58,
+    28.8
    ],
    "states": {
-    "leather": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 21.42 22.32\" width=\"21.42\" height=\"22.32\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#7e593f\"/><stop offset=\"1\" stop-color=\"#6a462d\"/></linearGradient></defs><rect x=\"0\" y=\"0\" width=\"21.42\" height=\"22.32\" rx=\"6\" fill=\"url(#g1)\" stroke=\"#573925\" stroke-width=\"1.5\" stroke-linejoin=\"round\"/><line x1=\"2.57\" y1=\"6.7\" x2=\"18.85\" y2=\"6.7\" fill=\"none\" stroke=\"#513522\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><line x1=\"2.57\" y1=\"15.62\" x2=\"18.85\" y2=\"15.62\" fill=\"none\" stroke=\"#513522\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></svg>"
+    "leather": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 20.58 28.8\" width=\"20.58\" height=\"28.8\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#7e593f\"/><stop offset=\"1\" stop-color=\"#6a462d\"/></linearGradient></defs><path d=\"M0.41 1.15 L20.17 1.15 L18.93 27.65 L1.65 27.65 Z\" fill=\"url(#g1)\" stroke=\"#573925\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><line x1=\"2.47\" y1=\"8.64\" x2=\"18.11\" y2=\"8.64\" fill=\"none\" stroke=\"#513522\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><line x1=\"2.88\" y1=\"20.74\" x2=\"17.7\" y2=\"20.74\" fill=\"none\" stroke=\"#513522\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></svg>"
    },
    "source": {
     "of": "warrior"
@@ -129,6 +129,29 @@
     "of": "warrior"
    },
    "parent": "body"
+  },
+  {
+   "name": "tassetBack",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 27.54 27.9\" width=\"27.54\" height=\"27.9\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#a2a9b2\"/><stop offset=\"1\" stop-color=\"#8e959e\"/></linearGradient></defs><path d=\"M1.1 0.56 L26.44 0.56 L25.34 25.11 Q13.77 27.9 2.2 25.11 Z\" fill=\"url(#g1)\" stroke=\"#747a81\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><line x1=\"2.2\" y1=\"10.04\" x2=\"25.34\" y2=\"10.04\" fill=\"none\" stroke=\"#70767c\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><line x1=\"2.75\" y1=\"18.41\" x2=\"24.79\" y2=\"18.41\" fill=\"none\" stroke=\"#70767c\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></svg>",
+   "at": [
+    6,
+    89.33
+   ],
+   "pivot": [
+    6,
+    89.33
+   ],
+   "size": [
+    27.54,
+    27.9
+   ],
+   "states": {
+    "leather": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 27.54 27.9\" width=\"27.54\" height=\"27.9\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#7e593f\"/><stop offset=\"1\" stop-color=\"#6a462d\"/></linearGradient></defs><path d=\"M1.1 0.56 L26.44 0.56 L25.34 25.11 Q13.77 27.9 2.2 25.11 Z\" fill=\"url(#g1)\" stroke=\"#573925\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><line x1=\"2.2\" y1=\"10.04\" x2=\"25.34\" y2=\"10.04\" fill=\"none\" stroke=\"#513522\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><line x1=\"2.75\" y1=\"18.41\" x2=\"24.79\" y2=\"18.41\" fill=\"none\" stroke=\"#513522\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></svg>"
+   },
+   "source": {
+    "of": "warrior"
+   },
+   "parent": "thighBack"
   },
   {
    "name": "shinBack",
@@ -233,7 +256,7 @@
   },
   {
    "name": "cuirass",
-   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 57 87\" width=\"57\" height=\"87\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#bec6d1\"/><stop offset=\"1\" stop-color=\"#a9b2bc\"/></linearGradient></defs><path d=\"M9.12 5.22 L37.62 5.22 Q55.29 9.57 55.29 36.54 L53.58 69.6 L2.85 69.6 L1.71 24.36 Q1.71 5.22 9.12 5.22 Z\" fill=\"url(#g1)\" stroke=\"#8b929a\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><path d=\"M28.5 10.44 Q49.02 29.58 45.6 57.42\" fill=\"none\" stroke=\"#858c94\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><rect x=\"1.71\" y=\"62.64\" width=\"53.58\" height=\"10.44\" rx=\"5.22\" fill=\"#8a5a3a\" stroke=\"#68442c\" stroke-width=\"1.5\" stroke-linejoin=\"round\"/><rect x=\"42.18\" y=\"60.9\" width=\"7.98\" height=\"13.92\" rx=\"3.99\" fill=\"#f4b23e\" stroke=\"#b7862f\" stroke-width=\"1\" stroke-linejoin=\"round\"/></svg>",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 62 87\" width=\"62\" height=\"87\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#bec6d1\"/><stop offset=\"1\" stop-color=\"#a9b2bc\"/></linearGradient></defs><path d=\"M9.34 1.74 L42.4 1.74 Q61 6.09 61 34.8 L57.79 71.34 L4.21 71.34 L1 21.75 Q1 1.74 9.34 1.74 Z\" fill=\"url(#g1)\" stroke=\"#8b929a\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><path d=\"M31 10.44 Q53.32 29.58 49.6 57.42\" fill=\"none\" stroke=\"#858c94\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><rect x=\"1.86\" y=\"62.64\" width=\"58.28\" height=\"10.44\" rx=\"5.22\" fill=\"#8a5a3a\" stroke=\"#68442c\" stroke-width=\"1.5\" stroke-linejoin=\"round\"/><rect x=\"45.88\" y=\"60.9\" width=\"8.68\" height=\"13.92\" rx=\"4.34\" fill=\"#f4b23e\" stroke=\"#b7862f\" stroke-width=\"1\" stroke-linejoin=\"round\"/></svg>",
    "at": [
     0,
     132.75
@@ -243,11 +266,11 @@
     132.75
    ],
    "size": [
-    57,
+    62,
     87
    ],
    "states": {
-    "leather": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 57 87\" width=\"57\" height=\"87\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#926648\"/><stop offset=\"1\" stop-color=\"#7e5235\"/></linearGradient></defs><path d=\"M9.12 5.22 L37.62 5.22 Q55.29 9.57 55.29 36.54 L53.58 69.6 L2.85 69.6 L1.71 24.36 Q1.71 5.22 9.12 5.22 Z\" fill=\"url(#g1)\" stroke=\"#68442c\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><path d=\"M4.56 29.58 L54.15 29.58 M3.99 46.98 L54.15 46.98\" fill=\"none\" stroke=\"#613f29\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><rect x=\"1.71\" y=\"62.64\" width=\"53.58\" height=\"10.44\" rx=\"5.22\" fill=\"#6e482e\" stroke=\"#533623\" stroke-width=\"1.5\" stroke-linejoin=\"round\"/><rect x=\"42.18\" y=\"60.9\" width=\"7.98\" height=\"13.92\" rx=\"3.99\" fill=\"#68442c\" stroke=\"#4e3321\" stroke-width=\"1\" stroke-linejoin=\"round\"/></svg>"
+    "leather": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 62 87\" width=\"62\" height=\"87\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#926648\"/><stop offset=\"1\" stop-color=\"#7e5235\"/></linearGradient></defs><path d=\"M9.34 1.74 L42.4 1.74 Q61 6.09 61 34.8 L57.79 71.34 L4.21 71.34 L1 21.75 Q1 1.74 9.34 1.74 Z\" fill=\"url(#g1)\" stroke=\"#68442c\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><path d=\"M4.96 29.58 L58.9 29.58 M4.34 46.98 L58.9 46.98\" fill=\"none\" stroke=\"#613f29\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><rect x=\"1.86\" y=\"62.64\" width=\"58.28\" height=\"10.44\" rx=\"5.22\" fill=\"#6e482e\" stroke=\"#533623\" stroke-width=\"1.5\" stroke-linejoin=\"round\"/><rect x=\"45.88\" y=\"60.9\" width=\"8.68\" height=\"13.92\" rx=\"4.34\" fill=\"#68442c\" stroke=\"#4e3321\" stroke-width=\"1\" stroke-linejoin=\"round\"/></svg>"
    },
    "source": {
     "of": "warrior"
@@ -336,6 +359,29 @@
     "of": "warrior"
    },
    "parent": "body"
+  },
+  {
+   "name": "tassetFront",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 27.54 27.9\" width=\"27.54\" height=\"27.9\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#bec6d1\"/><stop offset=\"1\" stop-color=\"#a9b2bc\"/></linearGradient></defs><path d=\"M1.1 0.56 L26.44 0.56 L25.34 25.11 Q13.77 27.9 2.2 25.11 Z\" fill=\"url(#g1)\" stroke=\"#8b929a\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><line x1=\"2.2\" y1=\"10.04\" x2=\"25.34\" y2=\"10.04\" fill=\"none\" stroke=\"#858c94\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><line x1=\"2.75\" y1=\"18.41\" x2=\"24.79\" y2=\"18.41\" fill=\"none\" stroke=\"#858c94\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></svg>",
+   "at": [
+    -3,
+    89.33
+   ],
+   "pivot": [
+    -3,
+    89.33
+   ],
+   "size": [
+    27.54,
+    27.9
+   ],
+   "states": {
+    "leather": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 27.54 27.9\" width=\"27.54\" height=\"27.9\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#926648\"/><stop offset=\"1\" stop-color=\"#7e5235\"/></linearGradient></defs><path d=\"M1.1 0.56 L26.44 0.56 L25.34 25.11 Q13.77 27.9 2.2 25.11 Z\" fill=\"url(#g1)\" stroke=\"#68442c\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><line x1=\"2.2\" y1=\"10.04\" x2=\"25.34\" y2=\"10.04\" fill=\"none\" stroke=\"#613f29\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><line x1=\"2.75\" y1=\"18.41\" x2=\"24.79\" y2=\"18.41\" fill=\"none\" stroke=\"#613f29\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></svg>"
+   },
+   "source": {
+    "of": "warrior"
+   },
+   "parent": "thighFront"
   },
   {
    "name": "shinFront",
@@ -442,21 +488,21 @@
   },
   {
    "name": "bracerFront",
-   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 21.42 22.32\" width=\"21.42\" height=\"22.32\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#bec6d1\"/><stop offset=\"1\" stop-color=\"#a9b2bc\"/></linearGradient></defs><rect x=\"0\" y=\"0\" width=\"21.42\" height=\"22.32\" rx=\"6\" fill=\"url(#g1)\" stroke=\"#8b929a\" stroke-width=\"1.5\" stroke-linejoin=\"round\"/><line x1=\"2.57\" y1=\"6.7\" x2=\"18.85\" y2=\"6.7\" fill=\"none\" stroke=\"#858c94\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><line x1=\"2.57\" y1=\"15.62\" x2=\"18.85\" y2=\"15.62\" fill=\"none\" stroke=\"#f4b23e\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></svg>",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 20.58 28.8\" width=\"20.58\" height=\"28.8\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#bec6d1\"/><stop offset=\"1\" stop-color=\"#a9b2bc\"/></linearGradient></defs><path d=\"M0.41 1.15 L20.17 1.15 L18.93 27.65 L1.65 27.65 Z\" fill=\"url(#g1)\" stroke=\"#8b929a\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><line x1=\"2.47\" y1=\"8.64\" x2=\"18.11\" y2=\"8.64\" fill=\"none\" stroke=\"#858c94\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><line x1=\"2.88\" y1=\"20.74\" x2=\"17.7\" y2=\"20.74\" fill=\"none\" stroke=\"#f4b23e\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></svg>",
    "at": [
     -3,
-    102.39
+    104.55
    ],
    "pivot": [
     -3,
-    102.39
+    104.55
    ],
    "size": [
-    21.42,
-    22.32
+    20.58,
+    28.8
    ],
    "states": {
-    "leather": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 21.42 22.32\" width=\"21.42\" height=\"22.32\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#926648\"/><stop offset=\"1\" stop-color=\"#7e5235\"/></linearGradient></defs><rect x=\"0\" y=\"0\" width=\"21.42\" height=\"22.32\" rx=\"6\" fill=\"url(#g1)\" stroke=\"#68442c\" stroke-width=\"1.5\" stroke-linejoin=\"round\"/><line x1=\"2.57\" y1=\"6.7\" x2=\"18.85\" y2=\"6.7\" fill=\"none\" stroke=\"#613f29\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><line x1=\"2.57\" y1=\"15.62\" x2=\"18.85\" y2=\"15.62\" fill=\"none\" stroke=\"#613f29\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></svg>"
+    "leather": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 20.58 28.8\" width=\"20.58\" height=\"28.8\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#926648\"/><stop offset=\"1\" stop-color=\"#7e5235\"/></linearGradient></defs><path d=\"M0.41 1.15 L20.17 1.15 L18.93 27.65 L1.65 27.65 Z\" fill=\"url(#g1)\" stroke=\"#68442c\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><line x1=\"2.47\" y1=\"8.64\" x2=\"18.11\" y2=\"8.64\" fill=\"none\" stroke=\"#613f29\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><line x1=\"2.88\" y1=\"20.74\" x2=\"17.7\" y2=\"20.74\" fill=\"none\" stroke=\"#613f29\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></svg>"
    },
    "source": {
     "of": "warrior"

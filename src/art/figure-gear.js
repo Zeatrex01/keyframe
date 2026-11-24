@@ -3,7 +3,7 @@
 //
 //   { component: 'figure', build: 'side', armor: 'plate', weapons: ['sword', 'spear', 'bow'] }
 //
-// Armour: helmet (on the head), cuirass (on the body, with a belt), pauldron, bracer and greave on
+// Armour: helmet (on the head), cuirass (on the body, with a belt), pauldron, bracer, tasset and greave on
 // each arm and leg, the far ones a tone darker. `armor` picks the look the figure wears; the other
 // look is a state of every piece (`helmet_leather` or `helmet_plate`), so a game changes outfits by
 // switching attachments, and hides a piece by clearing its slot.
@@ -38,22 +38,23 @@ function piece(name, parent, box, center, draw, worn, c, hex, tone) {
  * @param {object} g  the figure's measures (figure-side.js)
  * @param {object} c  the component spec
  * @param {(v: any) => string} hex
- * @returns {{ arm: (s: string, tone: Function) => any[], leg: (s: string, tone: Function) => any[], body: () => any[], head: () => any[] }}
+ * @returns {{ arm: (s: string, tone: Function) => any[], leg: (s: string, tone: Function) => { thigh: any[], shin: any[] }, body: () => any[], head: () => any[] }}
  */
 export function armourPieces(g, c, hex) {
   const worn = ARMOR_LOOKS.includes(c.armor) ? c.armor : c.armor ? 'plate' : null;
-  const none = { arm: () => [], leg: () => [], body: () => [], head: () => [] };
+  const none = { arm: () => [], leg: () => ({ thigh: [], shin: [] }), body: () => [], head: () => [] };
   if (!worn) return none;
   const same = col => col;
   return {
     // A rounded shoulder plate over the top of the arm, and a bracer on the forearm.
     arm: (s, tone) => {
-      const a = g.arms[s], W = g.armW * 1.8, H = g.armW * 1.45, bw = g.armW * 1.02, bh = g.forearm * 0.62;
+      const a = g.arms[s], W = g.armW * 1.8, H = g.armW * 1.45, bw = g.armW * 0.98, bh = g.forearm * 0.8;
       return [
-        piece(`bracer${s}`, `forearm${s}`, [bw, bh], [a.elbow[0], a.elbow[1] - g.forearm * 0.56], (look, k) => [
-          { rect: [0, 0, r2(bw), r2(bh)], r: 'sm', fill: k.main, sw: 'regular' },
+        // Tapered with the forearm, from below the elbow to the wrist.
+        piece(`bracer${s}`, `forearm${s}`, [bw, bh], [a.elbow[0], a.elbow[1] - g.forearm * 0.5], (look, k) => [
+          { path: `M${r2(bw * 0.02)} ${r2(bh * 0.04)} L${r2(bw * 0.98)} ${r2(bh * 0.04)} L${r2(bw * 0.92)} ${r2(bh * 0.96)} L${r2(bw * 0.08)} ${r2(bh * 0.96)} Z`, fill: k.main, sw: 'regular', bbox: [0, 0, bw, bh] },
           { line: [r2(bw * 0.12), r2(bh * 0.3), r2(bw * 0.88), r2(bh * 0.3)], stroke: k.line, sw: 'thin' },
-          { line: [r2(bw * 0.12), r2(bh * 0.7), r2(bw * 0.88), r2(bh * 0.7)], stroke: look === 'plate' ? k.trim : k.line, sw: 'thin' },
+          { line: [r2(bw * 0.14), r2(bh * 0.72), r2(bw * 0.86), r2(bh * 0.72)], stroke: look === 'plate' ? k.trim : k.line, sw: 'thin' },
         ], worn, c, hex, tone),
         piece(`pauldron${s}`, `upperArm${s}`, [W, H], [a.shoulder[0] + g.armW * 0.05, a.shoulder[1] - g.armW * 0.12], (look, k) => [
           { path: `M${r2(W * 0.06)} ${r2(H * 0.78)} Q${r2(W * 0.04)} ${r2(H * 0.06)} ${r2(W * 0.5)} ${r2(H * 0.06)} Q${r2(W * 0.96)} ${r2(H * 0.06)} ${r2(W * 0.94)} ${r2(H * 0.78)} Q${r2(W * 0.5)} ${r2(H * 0.96)} ${r2(W * 0.06)} ${r2(H * 0.78)} Z`, fill: k.main, sw: 'regular', bbox: [0, 0, W, H] },
@@ -61,20 +62,28 @@ export function armourPieces(g, c, hex) {
         ], worn, c, hex, tone),
       ];
     },
-    // A knee cop and a shin plate.
+    // A tasset over the top of the thigh, and a knee cop with a shin plate.
     leg: (s, tone) => {
-      const l = g.legs[s], W = g.legW * 0.96, H = g.shin * 0.82 + g.legW * 0.4;
-      return [piece(`greave${s}`, `shin${s}`, [W, H], [l.x, l.knee + g.legW * 0.4 - H / 2], (look, k) => [
-        { rect: [r2(W * 0.08), r2(g.legW * 0.42), r2(W * 0.84), r2(H - g.legW * 0.42)], r: 'sm', fill: k.main, sw: 'regular' },
-        { ellipse: [r2(W / 2), r2(g.legW * 0.42), r2(W * 0.46), r2(g.legW * 0.36)], fill: look === 'plate' ? k.main : k.line, sw: 'regular' },
-        { line: [r2(W * 0.5), r2(g.legW * 0.9), r2(W * 0.5), r2(H * 0.9)], stroke: k.line, sw: 'thin' },
-      ], worn, c, hex, tone)];
+      const l = g.legs[s], W = g.legW * 0.96, H = g.shin * 0.82 + g.legW * 0.4, tw = g.legW * 1.08, th = g.thigh * 0.62;
+      return {
+        thigh: [piece(`tasset${s}`, `thigh${s}`, [tw, th], [l.x, l.hip - th / 2 + g.legW * 0.05], (look, k) => [
+          { path: `M${r2(tw * 0.04)} ${r2(th * 0.02)} L${r2(tw * 0.96)} ${r2(th * 0.02)} L${r2(tw * 0.92)} ${r2(th * 0.9)} Q${r2(tw * 0.5)} ${r2(th * 1)} ${r2(tw * 0.08)} ${r2(th * 0.9)} Z`, fill: k.main, sw: 'regular', bbox: [0, 0, tw, th] },
+          { line: [r2(tw * 0.08), r2(th * 0.36), r2(tw * 0.92), r2(th * 0.36)], stroke: k.line, sw: 'thin' },
+          { line: [r2(tw * 0.1), r2(th * 0.66), r2(tw * 0.9), r2(th * 0.66)], stroke: k.line, sw: 'thin' },
+        ], worn, c, hex, tone)],
+        shin: [piece(`greave${s}`, `shin${s}`, [W, H], [l.x, l.knee + g.legW * 0.4 - H / 2], (look, k) => [
+          { rect: [r2(W * 0.08), r2(g.legW * 0.42), r2(W * 0.84), r2(H - g.legW * 0.42)], r: 'sm', fill: k.main, sw: 'regular' },
+          { ellipse: [r2(W / 2), r2(g.legW * 0.42), r2(W * 0.46), r2(g.legW * 0.36)], fill: look === 'plate' ? k.main : k.line, sw: 'regular' },
+          { line: [r2(W * 0.5), r2(g.legW * 0.9), r2(W * 0.5), r2(H * 0.9)], stroke: k.line, sw: 'thin' },
+        ], worn, c, hex, tone)],
+      };
     },
     // A cuirass over the shirt, belted at the waist.
     body: () => {
-      const W = g.torsoW, H = g.torsoH;
+      // The body's own outline, a little wider all round, so no shirt shows at its edges.
+      const B = g.torsoW, H = g.torsoH, m = 2.5 * g.H / 300, W = B + 2 * m, X = v => r2(m + v), x1 = B;
       return [piece('cuirass', 'body', [W, H], [0, g.torsoBottom + H / 2], (look, k) => [
-        { path: `M${r2(W * 0.16)} ${r2(H * 0.06)} L${r2(W * 0.66)} ${r2(H * 0.06)} Q${r2(W * 0.97)} ${r2(H * 0.11)} ${r2(W * 0.97)} ${r2(H * 0.42)} L${r2(W * 0.94)} ${r2(H * 0.8)} L${r2(W * 0.05)} ${r2(H * 0.8)} L${r2(W * 0.03)} ${r2(H * 0.28)} Q${r2(W * 0.03)} ${r2(H * 0.06)} ${r2(W * 0.16)} ${r2(H * 0.06)} Z`, fill: k.main, sw: 'regular', bbox: [0, 0, W, H] },
+        { path: `M${X(B * 0.12)} ${r2(H * 0.02)} L${X(x1 - B * 0.3)} ${r2(H * 0.02)} Q${X(x1 + m * 0.6)} ${r2(H * 0.07)} ${X(x1 + m * 0.6)} ${r2(H * 0.4)} L${X(x1 - B * 0.03)} ${r2(H * 0.82)} L${X(B * 0.03)} ${r2(H * 0.82)} L${X(-m * 0.6)} ${r2(H * 0.25)} Q${X(-m * 0.6)} ${r2(H * 0.02)} ${X(B * 0.12)} ${r2(H * 0.02)} Z`, fill: k.main, sw: 'regular', bbox: [0, 0, W, H] },
         look === 'plate'
           ? { path: `M${r2(W * 0.5)} ${r2(H * 0.12)} Q${r2(W * 0.86)} ${r2(H * 0.34)} ${r2(W * 0.8)} ${r2(H * 0.66)}`, fill: 'none', stroke: k.line, sw: 'thin' }
           : { path: `M${r2(W * 0.08)} ${r2(H * 0.34)} L${r2(W * 0.95)} ${r2(H * 0.34)} M${r2(W * 0.07)} ${r2(H * 0.54)} L${r2(W * 0.95)} ${r2(H * 0.54)}`, fill: 'none', stroke: k.line, sw: 'thin' },

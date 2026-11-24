@@ -149,6 +149,13 @@ function expandPresets(keys, where, spec, report) {
     if (typeof key.curve !== 'string') return;
     if (key.curve === 'stepped') return;
     if (key.curve === 'linear') { delete key.curve; return; }
+    if (key.curve === 'smooth') {
+      if (!spec || !spec.fields) fail(`${where}[${i}]`, 'a smooth curve applies to bone channels and slot alpha.');
+      report.push({ where: `${where}[${i}]`, preset: 'smooth' });
+      const curve = smoothCurve(keys, i, spec);
+      if (curve === null) delete key.curve; else key.curve = curve;
+      return;
+    }
     const handles = handlesFor(key.curve);
     if (!handles) {
       fail(`${where}[${i}]`, `curve "${key.curve}" is not a Spine curve or a preset. Presets: ${presetNames().join(', ')}.`);
@@ -161,4 +168,30 @@ function expandPresets(keys, where, spec, report) {
     const curve = next ? segmentCurve(spec, key, next, handles) : null;
     if (curve === null) delete key.curve; else key.curve = curve;
   });
+}
+
+// "smooth": the curve passes through each key without stopping there, its speed at a key set by
+// the keys on either side (a Catmull-Rom spline as a bezier). A cycle whose last key repeats the
+// first wraps around, so a loop flows through its seam; an open end starts or stops at rest.
+// Easing every key of a cycle instead makes each limb halt at every key: the stiff, robotic run.
+function smoothCurve(keys, i, spec) {
+  const a = keys[i], b = keys[i + 1];
+  if (!b) return null;
+  const t = k => k.time ?? 0, n = keys.length, t0 = t(a), t1 = t(b), dt = t1 - t0;
+  if (!(dt > 0)) return null;
+  const val = (k, f) => (typeof k[f] === 'number' ? k[f] : spec.fallback);
+  const cyclic = n > 2 && spec.fields.every(f => Math.abs(val(keys[0], f) - val(keys[n - 1], f)) < 1e-9);
+  const period = t(keys[n - 1]) - t(keys[0]);
+  const slope = (j, f) => {
+    let prev = keys[j - 1] && [t(keys[j - 1]), val(keys[j - 1], f)], next = keys[j + 1] && [t(keys[j + 1]), val(keys[j + 1], f)];
+    if (cyclic && j === 0) prev = [t(keys[n - 2]) - period, val(keys[n - 2], f)];
+    if (cyclic && j === n - 1) next = [t(keys[1]) + period, val(keys[1], f)];
+    return prev && next ? (next[1] - prev[1]) / (next[0] - prev[0]) : 0;
+  };
+  const out = [];
+  for (const f of spec.fields) {
+    const v0 = val(a, f), v1 = val(b, f);
+    out.push(t0 + dt / 3, v0 + slope(i, f) * dt / 3, t1 - dt / 3, v1 - slope(i + 1, f) * dt / 3);
+  }
+  return out.map(v => Math.round(v * 1e5) / 1e5);
 }

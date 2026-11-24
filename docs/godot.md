@@ -46,3 +46,10 @@ godot --headless --path integrations/godot --quit-after 120   # runs the demo fo
 ```
 
 Then open `integrations/godot` in the editor and press Play once.
+
+## Outfits and weapons
+
+A dressable rig (the side figure with `armor` and `weapons`, as in `examples/showcase/warrior`)
+arrives with every look of every piece. Swap them at run time with the rig's `set_look(look)`,
+`set_attachment(slot, attachment)` and `get_attachments(slot)`; the add-on's README shows the calls.
+

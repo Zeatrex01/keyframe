@@ -57,9 +57,9 @@ export function sideParts(c, style) {
 
   // The measures gear is fitted to (figure-gear.js).
   const armAt = s => { const sx = shoulder[0] + (s === 'Back' ? k(0.015) : -k(0.01)); return { shoulder: [sx, shoulder[1]], elbow: [sx, shoulder[1] - upperArm] }; };
-  const legAt = s => { const x = s === 'Back' ? k(0.02) : -k(0.01); return { x, knee: hip - thigh }; };
+  const legAt = s => { const x = s === 'Back' ? k(0.02) : -k(0.01); return { x, hip, knee: hip - thigh }; };
   const d0 = handD + sw, wristFront = [armAt('Front').elbow[0], armAt('Front').elbow[1] - forearm];
-  const g = { H, armW, forearm, legW, shin, torsoW, torsoH, torsoBottom, headW, headH, headCenter: [k(0.02), headY],
+  const g = { H, armW, forearm, legW, shin, thigh, torsoW, torsoH, torsoBottom, headW, headH, headCenter: [k(0.02), headY],
     arms: { Back: armAt('Back'), Front: armAt('Front') }, legs: { Back: legAt('Back'), Front: legAt('Front') },
     grip: [wristFront[0] + d0 * 0.02, wristFront[1] - d0 * 0.32] };
   const gear = armourPieces(g, c, hex);
@@ -87,8 +87,10 @@ export function sideParts(c, style) {
   const leg = (s, tone) => {
     const x = s === 'Back' ? k(0.02) : -k(0.01);
     parts.push(limb(`thigh${s}`, 'body', [x, hip], thigh, legW, legW * 0.85, tone(pants), sw));
+    const worn = gear.leg(s, tone);
+    parts.push(...worn.thigh);
     parts.push(limb(`shin${s}`, `thigh${s}`, [x, hip - thigh], shin, legW * 0.82, legW * 0.7, tone(pants), sw));
-    parts.push(...gear.leg(s, tone));
+    parts.push(...worn.shin);
     // A shoe pointing forward (+x), turning at the ankle over its heel.
     const fw = k(0.13), fh = footH + legW * 0.25, heel = fw * 0.3;
     parts.push({ name: `foot${s}`, parent: `shin${s}`, box: [r2(fw), r2(fh)], offset: [r2(x - heel + fw / 2), r2(fh / 2)], pivot: [r2(heel - fw / 2), r2(fh / 2 - legW * 0.3)], shapes: [

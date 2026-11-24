@@ -8,13 +8,14 @@
 // Everything is measured on the posed skeleton in world space, against the rig's own height, so
 // the numbers hold for any size. Pure and isomorphic.
 
-import { compileSkeleton, sample } from '../engine/index.js';
+import { compileSkeleton, sample, Pose } from '../engine/index.js';
 
 const CORE = /(^|[_\-. ])?(hips?|pelvis|body|torso|waist|spine|chest|trunk|belly)($|[_\-. \dLR])/i;
 const HAND = /hand|wrist|fist|palm|paw/i;
 const ARM = /arm|elbow|shoulder/i;
 const HEAD = /^head$|(^|[_\-. ])head($|[_\-. ])/i;
 const LEG = /leg|thigh|shin|knee|foot|feet|toe/i;
+const FOOT = /foot|feet|toe/i;
 const FPS = 60;
 
 export const ACTIONS = Object.freeze({
@@ -167,11 +168,42 @@ export function actionFindings(sk, name, { action } = {}) {
     for (let i = 1; i + 1 < ys.length; i++) if ((ys[i] - ys[i - 1]) * (ys[i + 1] - ys[i]) < 0) extremes++;
     if (range(ys) / H < 0.01 || extremes < 3) add('look', 'no-bob', 'the body does not rise and fall with the steps.',
       { bob: r2(range(ys) / H), extremes }, 'Drop the hips on each contact and rise on each passing pose: two bobs per cycle, 2-4% of the height.', 'weight');
+    // A leg swings like a pendulum: it stops only to turn back. Stopping mid-swing at every key
+    // (an ease in and out on each pose of a cycle) is the stiff, stop-start step.
+    const thighs = legs.filter(n => /thigh|upperleg|leg(?!.*(low|shin|foot))/i.test(n) && !/foot|shin|toe/i.test(n));
+    let halts = 0;
+    for (const leg of thighs) {
+      const rot = track(leg).map((b, i) => b.worldRotation - (leadTrack[i]?.worldRotation ?? 0));
+      const v = rot.slice(1).map((r, i) => r - rot[i]), top = Math.max(...v.map(Math.abs));
+      if (!(top > 0)) continue;
+      // A dip in speed to under a third of the top that goes on the same way: a halt, not a turn.
+      for (let i = 1; i + 1 < v.length; i++) {
+        const s = Math.abs(v[i]);
+        if (s < top * 0.3 && s <= Math.abs(v[i - 1]) && s < Math.abs(v[i + 1]) && Math.sign(v[i - 1]) === Math.sign(v[i + 1]) && v[i - 1] !== 0) halts++;
+      }
+    }
+    if (halts >= 2) add('look', 'stop-start', `the legs stop mid-swing ${halts} times: the step moves in jerks, not in one flow.`,
+      { halts, legs: thighs }, 'A cycle flows through its poses: write its keys with curve "smooth" (each key passed at speed, the loop seam included), and keep the eases for the contacts.', 'slow in and slow out');
+    // A run leaves the ground: after each push-off, a moment with no foot down.
+    const feet = names.filter(n => FOOT.test(n) && !/target|ik/i.test(n));
+    if (/\brun|jog|sprint/.test(`${action ?? ''} ${name}`.toLowerCase().replace(/[_\-.]+/g, ' ')) && feet.length >= 2) {
+      const tracks = feet.map(track), ground = Math.min(...tracks.flat().map(b => b.worldY));
+      const airborne = frames.filter((_, i) => tracks.every(t => t[i] && t[i].worldY > ground + H * 0.02)).length;
+      if (!airborne) add('look', 'no-flight', 'the run never leaves the ground: a foot is always down, so it reads as a fast walk.',
+        { airborneFrames: 0 }, 'After each push-off, lift the body and tuck the trailing leg so both feet are off the ground for 2-4 frames.', 'arcs and weight');
+    }
+  }
+  // A body that stands tilted the whole clip reads as a figure falling over.
+  if ((kind === 'idle' || kind === 'locomotion') && isFigure) {
+    const rest = new Pose(model).updateWorld().bones[model.boneIndex.get(lead)], upright = Math.atan2(rest.c, rest.a) * 180 / Math.PI;
+    const tilt = leadTrack.map(b => Math.abs(((b.worldRotation - upright + 540) % 360) - 180));
+    const least = Math.min(...tilt);
+    if (least > (kind === 'idle' ? 6 : 10)) add('look', 'constant-lean', `the body leans at least ${r2(least)} degrees the whole clip: it looks like it is falling over.`,
+      { leastTilt: r2(least) }, kind === 'idle' ? 'Stand upright: an idle breathes about the vertical. Lean only into a move.' : 'Lean the trunk 3-8 degrees into the run and keep the head level; the lean comes from the stride, not a tilted body.', 'staging');
   }
   return out;
 }
 
-const FOOT = /foot|feet|toe/i;
 
 /**
  * Feet that slide: a foot on the ground (at its lowest, give or take 2% of the height) that moves

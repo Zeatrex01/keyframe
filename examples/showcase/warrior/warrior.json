@@ -35,7 +35,7 @@
    "name": "bracerBack",
    "parent": "forearmBack",
    "x": 0,
-   "y": -20.17
+   "y": -18.01
   },
   {
    "name": "handBack",
@@ -54,6 +54,12 @@
    "parent": "body",
    "x": 6,
    "y": 0
+  },
+  {
+   "name": "tassetBack",
+   "parent": "thighBack",
+   "x": 0,
+   "y": -12.67
   },
   {
    "name": "shinBack",
@@ -104,6 +110,12 @@
    "y": 0
   },
   {
+   "name": "tassetFront",
+   "parent": "thighFront",
+   "x": 0,
+   "y": -12.67
+  },
+  {
    "name": "shinFront",
    "parent": "thighFront",
    "x": 0,
@@ -137,7 +149,7 @@
    "name": "bracerFront",
    "parent": "forearmFront",
    "x": 0,
-   "y": -20.17
+   "y": -18.01
   },
   {
    "name": "handFront",
@@ -190,6 +202,11 @@
    "attachment": "thighBack"
   },
   {
+   "name": "tassetBack",
+   "bone": "tassetBack",
+   "attachment": "tassetBack"
+  },
+  {
    "name": "shinBack",
    "bone": "shinBack",
    "attachment": "shinBack"
@@ -233,6 +250,11 @@
    "name": "thighFront",
    "bone": "thighFront",
    "attachment": "thighFront"
+  },
+  {
+   "name": "tassetFront",
+   "bone": "tassetFront",
+   "attachment": "tassetFront"
   },
   {
    "name": "shinFront",
@@ -304,14 +326,14 @@
      "bracerBack": {
       "x": 0,
       "y": 0,
-      "width": 21.42,
-      "height": 22.32
+      "width": 20.58,
+      "height": 28.8
      },
      "bracerBack_leather": {
       "x": 0,
       "y": 0,
-      "width": 21.42,
-      "height": 22.32
+      "width": 20.58,
+      "height": 28.8
      }
     },
     "handBack": {
@@ -342,6 +364,20 @@
       "y": -21.54,
       "width": 25.5,
       "height": 68.59
+     }
+    },
+    "tassetBack": {
+     "tassetBack": {
+      "x": 0,
+      "y": 0,
+      "width": 27.54,
+      "height": 27.9
+     },
+     "tassetBack_leather": {
+      "x": 0,
+      "y": 0,
+      "width": 27.54,
+      "height": 27.9
      }
     },
     "shinBack": {
@@ -386,13 +422,13 @@
      "cuirass": {
       "x": 0,
       "y": 0,
-      "width": 57,
+      "width": 62,
       "height": 87
      },
      "cuirass_leather": {
       "x": 0,
       "y": 0,
-      "width": 57,
+      "width": 62,
       "height": 87
      }
     },
@@ -432,6 +468,20 @@
       "y": -21.54,
       "width": 25.5,
       "height": 68.59
+     }
+    },
+    "tassetFront": {
+     "tassetFront": {
+      "x": 0,
+      "y": 0,
+      "width": 27.54,
+      "height": 27.9
+     },
+     "tassetFront_leather": {
+      "x": 0,
+      "y": 0,
+      "width": 27.54,
+      "height": 27.9
      }
     },
     "shinFront": {
@@ -484,14 +534,14 @@
      "bracerFront": {
       "x": 0,
       "y": 0,
-      "width": 21.42,
-      "height": 22.32
+      "width": 20.58,
+      "height": 28.8
      },
      "bracerFront_leather": {
       "x": 0,
       "y": 0,
-      "width": 21.42,
-      "height": 22.32
+      "width": 20.58,
+      "height": 28.8
      }
     },
     "weapon": {

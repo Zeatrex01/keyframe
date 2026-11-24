@@ -243,3 +243,25 @@ test('a one-shot clip plays once in Godot even when it lands back in its first p
   const scene = godotScene(json, { atlasText: 'p.png\nsize: 16, 16\na\nbounds: 0, 0, 10, 10\n' });
   assert.deepEqual(Object.fromEntries(scene.animations.map(a => [a.name, a.loop])), { jump: false, punch: false, run: true, idle: true });
 });
+
+test('the dressable warrior reaches Godot with every look and weapon, each stance switching its weapon, and the rig can swap them at run time', () => {
+  const dir = path.join(ROOT, 'examples', 'showcase', 'warrior');
+  const json = JSON.parse(fs.readFileSync(path.join(dir, 'warrior_v2.json'), 'utf8'));
+  const scene = godotScene(json, { atlasText: fs.readFileSync(path.join(dir, 'warrior_v2.atlas'), 'utf8') });
+  const slot = name => scene.slots.find(s => s.name === name);
+  for (const piece of ['helmet', 'cuirass', 'pauldronFront', 'tassetBack', 'greaveFront']) {
+    assert.deepEqual(slot(piece).attachments.map(a => a.name).sort(), [piece, `${piece}_leather`], piece);
+    assert.equal(slot(piece).attachment, piece);
+  }
+  assert.deepEqual(slot('weapon').attachments.map(a => a.name).sort(), ['weapon', 'weapon_axe', 'weapon_bow', 'weapon_spear']);
+  const shown = (clip, slotName) => scene.animations.find(a => a.name === clip).tracks.find(t => t.target === 'slot' && t.name === slotName && t.property === 'attachment')?.keys[0]?.value;
+  assert.equal(shown('idle_spear', 'weapon'), 'weapon_spear');
+  assert.equal(shown('shoot_bow', 'weapon'), 'weapon_bow');
+  assert.equal(shown('punch', 'weapon'), null);
+  // The add-on's rig finds slots by name and swaps looks and weapons.
+  const rig = fs.readFileSync(path.join(ROOT, 'integrations/godot/addons/keyframe/keyframe_rig.gd'), 'utf8');
+  for (const api of ['func set_attachment(slot_name: String, attachment: String) -> bool', 'func set_look(look: String) -> void', 'func get_attachments(slot_name: String) -> PackedStringArray']) assert.ok(rig.includes(api), api);
+  const builder = fs.readFileSync(path.join(ROOT, 'integrations/godot/addons/keyframe/keyframe_builder.gd'), 'utf8');
+  assert.match(builder, /set_meta\("keyframe_slot", String\(slot\.name\)\)/);
+  assert.match(builder, /set_meta\("keyframe_default", slot\.attachment\)/);
+});

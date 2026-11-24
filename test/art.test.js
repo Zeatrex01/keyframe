@@ -448,7 +448,7 @@ test('a side figure dresses for a fight: armour pieces and a weapon are parts of
   try {
     const r = await s.call('draw_rig', { name: 'knight', parts: [{ name: 'knight', component: { component: 'figure', build: 'side', h: 300, armor: 'plate', weapons: ['sword', 'spear', 'bow'] }, at: [0, 0] }] });
     assert.equal(r.error, undefined, JSON.stringify(r.error));
-    const gear = ['helmet', 'cuirass', 'pauldronFront', 'pauldronBack', 'bracerFront', 'bracerBack', 'greaveFront', 'greaveBack', 'weapon'];
+    const gear = ['helmet', 'cuirass', 'pauldronFront', 'pauldronBack', 'bracerFront', 'bracerBack', 'tassetFront', 'tassetBack', 'greaveFront', 'greaveBack', 'weapon'];
     assert.deepEqual([...r.parts].sort(), [...SIDE_PARTS, ...gear].sort());
     const sk = JSON.parse(fs.readFileSync(path.join(s.dir, 'knight.json'), 'utf8'));
     const parent = Object.fromEntries(sk.bones.map(b => [b.name, b.parent]));
