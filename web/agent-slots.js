@@ -152,6 +152,6 @@ export function renderAgentSlots() {
     add.addEventListener('click', () => save({ add: role }));
     return add;
   });
-  const help = missing.length ? [node('p', 't-caption slot-install', missing.map(a => t('agent.install', { name: a.name ?? agentName(a.id), install: a.install })).join(' '))] : [];
+  const help = missing.length ? [node('p', 't-caption slot-install', missing.map(a => t('agent.install', { name: a.name ?? agentName(a.id), install: a.install, signIn: a.signIn ?? '' })).join(' '))] : [];
   el.slotAdd.replaceChildren(...adds, ...help);
 }

@@ -14,7 +14,9 @@ import { EventEmitter } from 'node:events';
 import { clientLabel, presenceStamper, readPresence, STAMP_EVERY_MS, PRESENT_MS } from '../src/core/presence.js';
 import { readAgent } from '../src/core/chat.js';
 import { createServer } from '../src/mcp/server.js';
-import { outsideNote } from '../web/agent-rules.js';
+import { outsideNote, pillState } from '../web/agent-rules.js';
+import { touchAgent } from '../src/core/chat.js';
+import { ADAPTERS } from '../src/agent/adapters.js';
 import { planCommand } from '../tools/keyframe.js';
 import { addToProject, projectEntry } from '../src/core/project-mcp.js';
 import { pickerCommand, pickFolder } from '../src/core/folder-pick.js';
@@ -138,4 +140,25 @@ test('the page asks the studio for the dialog, and its state names the outside c
     assert.deepEqual(await call('POST', '/api/projects/pick'), { dir: '/picked/folder' });
     assert.deepEqual((await call('GET', '/api/state')).outside?.name, 'Claude Code');
   } finally { await studio.close(); }
+});
+
+test('after the built-in Director is turned off, its own stamps do not read as a connected AI', () => {
+  const dir = tmp('kf-embedded-');
+  const now = Date.now();
+  touchAgent(dir, { name: 'Claude Code', embedded: true }, now);
+  const left = readAgent(dir, now);
+  assert.deepEqual([left.connected, left.embedded], [true, true]);
+  assert.equal(pillState({ agent: { ...left, slots: [{ id: 'director', role: 'director', agent: null, status: 'off' }] } }).key, 'nav.waiting');
+  presenceStamper({ file: path.join(tmp('kf-embedded-cfg-'), 'client.json'), now: () => now })({ client: 'claude-code', dir });
+  const outside = readAgent(dir, now);
+  assert.equal(outside.embedded, false, 'an outside client\'s call clears the mark');
+  assert.equal(pillState({ agent: outside }).key, 'nav.connectedShort');
+});
+
+test('install hints are commands only; the words around them come from the page\'s language', () => {
+  for (const a of ADAPTERS) for (const line of Object.values(a.install)) assert.doesNotMatch(line, /sign in|then run/i, `${a.id}: ${line}`);
+  for (const lang of ['en', 'tr']) {
+    const dict = JSON.parse(fs.readFileSync(`locale/${lang}.json`, 'utf8'));
+    for (const key of ['agent.install', 'first.directorMissing']) assert.match(dict[key], /\{signIn\}/, `${lang} ${key}`);
+  }
 });

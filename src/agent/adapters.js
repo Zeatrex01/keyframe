@@ -108,9 +108,9 @@ export const claudeCode = {
   // A capable, lower-cost model by default: the studio's turns are many and the owner pays for them.
   models: ['sonnet', 'haiku', 'opus'], defaultModel: 'sonnet',
   install: {
-    win32: 'irm https://claude.ai/install.ps1 | iex   (then run `claude` once to sign in)',
-    darwin: 'curl -fsSL https://claude.ai/install.sh | bash   (then run `claude` once to sign in)',
-    other: 'curl -fsSL https://claude.ai/install.sh | bash   (then run `claude` once to sign in)',
+    win32: 'irm https://claude.ai/install.ps1 | iex',
+    darwin: 'curl -fsSL https://claude.ai/install.sh | bash',
+    other: 'curl -fsSL https://claude.ai/install.sh | bash',
   },
   command(plan) {
     const args = ['-p', '--output-format', 'stream-json', '--verbose', '--include-partial-messages',
@@ -189,7 +189,7 @@ const toml = value => {
 export const codex = {
   id: 'codex', name: 'Codex CLI', bin: 'codex', env: 'KS_AGENT_CODEX', systemPrompt: false,
   models: [], defaultModel: '',
-  install: { win32: 'npm install -g @openai/codex   (then run `codex` once to sign in)', darwin: 'brew install codex   (then run `codex` once to sign in)', other: 'npm install -g @openai/codex   (then run `codex` once to sign in)' },
+  install: { win32: 'npm install -g @openai/codex', darwin: 'brew install codex', other: 'npm install -g @openai/codex' },
   command(plan) {
     // The whole mcp_servers table is replaced, so the owner's other servers are not started; no
     // AGENTS.md instructions are read (project_doc_max_bytes=0) and no notify hook runs.
@@ -229,7 +229,7 @@ export function parseGemini(line) {
 export const gemini = {
   id: 'gemini', name: 'Gemini CLI', bin: 'gemini', env: 'KS_AGENT_GEMINI', systemPrompt: false,
   models: ['gemini-2.5-flash', 'gemini-2.5-pro'], defaultModel: '',
-  install: { win32: 'npm install -g @google/gemini-cli   (then run `gemini` once to sign in)', darwin: 'brew install gemini-cli   (then run `gemini` once to sign in)', other: 'npm install -g @google/gemini-cli   (then run `gemini` once to sign in)' },
+  install: { win32: 'npm install -g @google/gemini-cli', darwin: 'brew install gemini-cli', other: 'npm install -g @google/gemini-cli' },
   command(plan) {
     // Gemini reads MCP servers from settings only, so this run gets a settings file of its own;
     // a trusted server with an explicit tool list, and nothing else.

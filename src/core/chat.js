@@ -92,7 +92,9 @@ export function readAgent(projectDir, now = Date.now()) {
   try { state = JSON.parse(fs.readFileSync(stateFile(projectDir), 'utf8')); } catch { /* never connected */ }
   const lastSeen = state.lastSeen ?? null;
   return { cursor: state.cursor ?? 0, work: WORK_STATES.includes(state.work) ? state.work : 'idle',
-    name: state.name ?? null, focusSeen: state.focusSeen ?? null, lastSeen, connected: lastSeen !== null && now - Date.parse(lastSeen) < AGENT_FRESH_MS };
+    name: state.name ?? null, focusSeen: state.focusSeen ?? null, lastSeen,
+    // embedded: the last stamp came from the studio's own Director, not an outside client.
+    embedded: state.embedded === true, connected: lastSeen !== null && now - Date.parse(lastSeen) < AGENT_FRESH_MS };
 }
 
 /** Merge a patch into the agent's state and stamp it as seen now. */

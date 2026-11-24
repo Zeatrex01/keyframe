@@ -157,6 +157,8 @@ the animation principles and saves it beside your file, which is never changed.
 - CI runs on Linux, Windows and macOS with Node.js 18, 20, 22 and 24.
 
 ### Fixed
+- After the built-in Director was turned off, the top bar kept saying an AI was connected for a minute and a half; its own stamps no longer count as an outside client.
+- The install hints in Settings were partly English in every language; the sign-in step now comes from the page's language.
 - Settings' Stop did nothing on an idle agent (it only interrupts a turn at work); an idle agent now shows Turn off.
 - The Windows setup and Install.cmd call PowerShell by its full path, so they work when PATH is cut down.
 - Switching the language redraws the agent slots and the update box too, so no role name stays in the language the page started in.

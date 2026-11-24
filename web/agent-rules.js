@@ -30,7 +30,8 @@ export function pillState(state, online = true) {
     const tone = director.status === 'error' ? 'bad' : director.status === 'ready' ? 'on' : 'busy';
     return { tone, name: agentName(director.agent), key: `agent.status.${director.status}`, embedded: true };
   }
-  if (agent?.connected) {
+  // A stamp the built-in Director left is not an outside client: once its slot is off, nobody is here.
+  if (agent?.connected && !agent.embedded) {
     const tone = agent.work === 'writing' || agent.work === 'checking' ? 'busy' : 'on';
     return agent.name ? { tone, name: agent.name, key: 'nav.connectedShort', embedded: false } : { tone, name: null, key: 'nav.connectedAnon', embedded: false };
   }

@@ -86,10 +86,11 @@ export function createAgentHub({ configFile, env = process.env, root = ROOT, tim
     if (!states.has(id)) states.set(id, { status: 'ready', activity: [], run: null, pending: [], idle: Promise.resolve() });
     return states.get(id);
   };
+  // The command alone: the page words the rest in its own language (signIn: the command that signs in).
   const install = adapter => adapter.install[process.platform] ?? adapter.install.other;
 
   function agents() {
-    return ADAPTERS.map(a => ({ id: a.id, name: a.name, installed: !!found[a.id], install: install(a), models: a.models, defaultModel: a.defaultModel }));
+    return ADAPTERS.map(a => ({ id: a.id, name: a.name, installed: !!found[a.id], install: install(a), signIn: a.bin, models: a.models, defaultModel: a.defaultModel }));
   }
 
   /**
@@ -202,7 +203,7 @@ export function createAgentHub({ configFile, env = process.env, root = ROOT, tim
     let stamped = 0;
     const seen = (patch = {}) => {
       if (!director) return;
-      try { touchAgent(dir, { name: adapter.name, ...patch }); stamped = Date.now(); } catch (err) { log.warn('agent state not written', { err }); }
+      try { touchAgent(dir, { name: adapter.name, ...patch, embedded: true }); stamped = Date.now(); } catch (err) { log.warn('agent state not written', { err }); }
     };
     // The steps bar (writing -> checking -> ready) follows what the run actually does: a question
     // never shows "Writing", a write does, and the checks after it show "Checking".
@@ -311,7 +312,7 @@ export function createAgentHub({ configFile, env = process.env, root = ROOT, tim
         appendMessage(dir, { from: 'agent', text: clip(`${name} stopped: ${result.message}`, MAX_TEXT), work: 'idle', name, slot: slot.id, error: result.code });
       }
     } catch (err) { log.warn('agent answer not appended', { slot: slot.id, err }); }
-    if (director) { try { touchAgent(dir, { name, work: readAgent(dir).work === 'ready' && result.ok ? 'ready' : 'idle' }); } catch { /* the page shows the last state */ } }
+    if (director) { try { touchAgent(dir, { name, work: readAgent(dir).work === 'ready' && result.ok ? 'ready' : 'idle', embedded: true }); } catch { /* the page shows the last state */ } }
     st.run = null;
     st.live = null;
     st.status = result.ok || result.code === 'agent-stopped' ? 'ready' : 'error';

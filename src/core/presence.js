@@ -62,7 +62,7 @@ export function presenceStamper({ file = presenceFile(), now = Date.now, touch =
       fs.writeFileSync(tmp, JSON.stringify({ name, dir: dir ?? null, at: new Date(t).toISOString() }));
       fs.renameSync(tmp, file);
     } catch { /* the page just won't see it */ }
-    if (dir) { try { touch(dir, { name }, t); } catch { /* not a project folder we may write */ } }
+    if (dir) { try { touch(dir, { name, embedded: false }, t); } catch { /* not a project folder we may write */ } }
     return true;
   };
 }

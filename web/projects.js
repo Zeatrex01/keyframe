@@ -126,7 +126,7 @@ export function renderFirst() {
   el.firstDesktop.hidden = client !== 'claudeDesktop';
   el.firstDirector.hidden = !director;
   el.firstDirectorGo.hidden = !director;
-  if (director) el.firstDirector.textContent = director.installed ? t('first.directorFound', { name: director.name }) : t('first.directorMissing', { install: director.install ?? '' });
+  if (director) el.firstDirector.textContent = director.installed ? t('first.directorFound', { name: director.name }) : t('first.directorMissing', { install: director.install ?? '', signIn: director.signIn ?? 'claude' });
   const pill = pillState(S.state, S.online);
   const on = pill.tone === 'on' || pill.tone === 'busy';
   el.firstDot.className = `dot${on ? ' on' : ' busy'}`;
@@ -192,6 +192,9 @@ export async function browseFolder() {
 /** Open a folder: the form (with the path box) shows, and the folder dialog opens at once. */
 async function openFolder() {
   if (el.openForm.hidden) toggleForm(el.openForm, el.hubOpen, el.createForm, el.hubNew);
+  // Let the form paint first: the dialog takes the focus, and a browser in the background may not
+  // draw the page again until it comes back.
+  await new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 60)));
   const dir = await browseFolder();
   if (dir) { el.openPath.value = dir; openProject(dir); }
 }
