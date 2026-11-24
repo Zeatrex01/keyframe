@@ -149,4 +149,6 @@ test('gear goes on the bone that carries it, in the hand at the grip, and into i
   assert.deepEqual(skins.full.sort(), ['cape', 'hat', 'sword']);
   assert.deepEqual(skins.sword, ['sword']);
   assert.throws(() => placeGear(body, named, [{ name: 'x', on: 'tail', image: solid(4, 4) }]), /one of/);
+  const [bow] = placeGear(body, named, [{ name: 'bow', on: 'hand', grip: 0.5, image: solid(10, 200) }], { scale: 1 }).filter(p => p.name === 'bow');
+  assert.ok(Math.abs(bow.at[1] - bow.pivot[1]) < 1, 'a bow is held at its middle');
 });
