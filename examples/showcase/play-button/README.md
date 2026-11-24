@@ -1,6 +1,6 @@
 # Play button
 
-A game menu Play button with a notification badge, drawn in the kit's chunky outline style in the studio's amber.
+A game menu Play button with a notification badge, drawn in the kit's clean style (soft gradients, thin tinted edges) in the studio's amber.
 
 Every state a button lives through as a clip, timed for UI: quick, small anticipation, an overshoot sized for a button, every move readable at 160 px wide. The badge plays on track 1 over the idling button on track 0.
 

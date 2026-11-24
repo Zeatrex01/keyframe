@@ -4,7 +4,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildRig } from './rig.js';
-import { INK, paint, gloss, glow, shadow } from './style.js';
+import { EDGE, paint, gloss, glow, shadow } from './style.js';
 import { fr, fresh } from './studio.js';
 import { finish, rgba } from './showcase.js';
 
@@ -20,7 +20,7 @@ const FACE = (g, w, h, { off }) => {
   gloss(g, p, 14, 8, w - 28, h * 0.55, off ? 0.3 : 0.5);
 };
 const RIM = (g, w, h, { off }) => { pill(g, w, h); paint(g, off ? '#6f6a80' : '#b5650f', 6); };
-// "PLAY" in thick round strokes with an ink outline, and a play triangle: no font needed
+// "PLAY" in thick round strokes over a soft shadow, and a play triangle: no font needed
 const LETTERS = [
   [[[0, 40], [0, 0], [14, 0]], [[14, 0], 'arc', [14, 11, 11, -Math.PI / 2, Math.PI / 2]], [[14, 22], [0, 22]]], // P
   [[[30, 0], [30, 40], [48, 40]]], // L
@@ -36,10 +36,10 @@ function word(g, color, width) {
     g.stroke();
   }
 }
-const LABEL = (g, w, h) => { g.translate((w - 110) / 2, (h - 40) / 2); word(g, INK, 15); word(g, '#ffffff', 8); };
+const LABEL = (g, w, h) => { g.translate((w - 110) / 2, (h - 40) / 2); g.save(); g.translate(0, 2.5); word(g, 'rgba(150,80,0,0.35)', 9); g.restore(); word(g, '#ffffff', 8); };
 const ICON = (g, w, h) => {
   const tri = () => { g.beginPath(); g.moveTo(10, 8); g.lineTo(w - 8, h / 2); g.lineTo(10, h - 8); g.closePath(); };
-  tri(); g.fillStyle = '#ffffff'; g.fill(); g.strokeStyle = INK; g.lineWidth = 6; g.stroke();
+  tri(); g.fillStyle = '#ffffff'; g.fill(); g.strokeStyle = EDGE; g.lineWidth = 2; g.stroke();
 };
 const SHINE = (g, w, h) => { g.save(); g.translate(w / 2, h / 2); g.rotate(0.35); g.fillStyle = g.linear(-w / 2, 0, w / 2, 0, ['rgba(255,255,255,0)', 'rgba(255,255,255,0.85)', 'rgba(255,255,255,0)']); g.fillRect(-w / 2, -h, w, h * 2); g.restore(); };
 const BADGE = (g, w, h) => {
@@ -80,7 +80,7 @@ const at = (seconds, more) => ({ time: seconds, ...more });
 
 export const brief = {
   name: NAME, title: 'Play button', kind: 'UI', principles: 'ui',
-  subject: 'A game menu Play button with a notification badge, drawn in the kit\'s chunky outline style in the studio\'s amber.',
+  subject: 'A game menu Play button with a notification badge, drawn in the kit\'s clean style (soft gradients, thin tinted edges) in the studio\'s amber.',
   intent: 'Every state a button lives through as a clip, timed for UI: quick, small anticipation, an overshoot sized for a button, every move readable at 160 px wide. The badge plays on track 1 over the idling button on track 0.',
   display: { width: 160, pixelsPerUnit: +(160 / BOUNDS.width).toFixed(3) },
   teaches: ['UI timing', 'overshoot', 'readable at real size', 'tracks'],

@@ -1,7 +1,10 @@
-// The shared look of the showcase art: flat gradients, a chunky dark outline, a soft gloss.
+// The shared look of the showcase art: soft gradients, a thin edge a shade darker than the fill
+// (never a dark cartoon outline), a soft gloss.
 // Colours follow the brand (key amber, onion violet) where the art carries the studio's voice.
 
 export const INK = '#2b1b4d';
+/** The edge drawn around a shape: translucent, so it reads as the fill a shade darker. */
+export const EDGE = 'rgba(43,27,77,0.32)';
 export const AMBER = ['#ffd27a', '#f4ae3f', '#d98a1c'];
 export const VIOLET = ['#b3a8ff', '#8b7bff', '#5b4be0'];
 
@@ -11,10 +14,10 @@ export function star(g, cx, cy, outer, inner, n = 5, rot = -Math.PI / 2) {
   for (let i = 0; i < n * 2; i++) { const r = i % 2 ? inner : outer, a = rot + i * Math.PI / n; g[i ? 'lineTo' : 'moveTo'](cx + Math.cos(a) * r, cy + Math.sin(a) * r); }
   g.closePath();
 }
-/** Fill the current path, then outline it in ink. */
+/** Fill the current path, then give it a thin edge a shade darker than the fill. */
 export function paint(g, fill, line = 6) {
   g.fillStyle = fill; g.fill();
-  if (line) { g.strokeStyle = INK; g.lineWidth = line; g.stroke(); }
+  if (line) { g.strokeStyle = EDGE; g.lineWidth = Math.min(line, 2.5); g.stroke(); }
 }
 /** A soft white highlight on the top of the shape `path` (a function that rebuilds the path). */
 export function gloss(g, path, x, y, w, h, alpha = 0.38) {

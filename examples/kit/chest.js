@@ -5,7 +5,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildRig } from './rig.js';
-import { INK, star, paint, gloss, glow, shadow, sparkle } from './style.js';
+import { INK, EDGE, star, paint, gloss, glow, shadow, sparkle } from './style.js';
 import { fr, fresh } from './studio.js';
 import { finish, rgba } from './showcase.js';
 
@@ -31,15 +31,15 @@ const LID = (g, w, h, { open }) => {
     const p = () => { g.beginPath(); g.moveTo(26, h - 8); g.lineTo(8, 60); g.quadraticCurveTo(w / 2, -30, w - 8, 60); g.lineTo(w - 26, h - 8); g.closePath(); };
     p(); paint(g, g.linear(0, 0, 0, h, ['#3a1f8a', '#27135e']), 8);
     g.save(); p(); g.clip(); g.fillStyle = g.radial(w / 2, h, 10, h, ['rgba(255,230,120,0.9)', 'rgba(255,230,120,0)']); g.fillRect(0, 0, w, h); g.restore();
-    g.beginPath(); g.moveTo(8, 60); g.quadraticCurveTo(w / 2, -30, w - 8, 60); g.strokeStyle = '#ffd95a'; g.lineWidth = 12; g.stroke(); g.strokeStyle = INK; g.lineWidth = 3; g.stroke();
+    g.beginPath(); g.moveTo(8, 60); g.quadraticCurveTo(w / 2, -30, w - 8, 60); g.strokeStyle = '#ffd95a'; g.lineWidth = 12; g.stroke(); g.strokeStyle = EDGE; g.lineWidth = 2; g.stroke();
     return;
   }
   const p = () => { g.beginPath(); g.moveTo(8, h - 8); g.lineTo(8, 70); g.quadraticCurveTo(w / 2, -34, w - 8, 70); g.lineTo(w - 8, h - 8); g.closePath(); };
   p(); paint(g, g.linear(0, 0, 0, h, ['#a77bff', '#6a3fe0']), 8); gloss(g, p, 20, 8, w - 40, h * 0.6, 0.35);
   g.save(); p(); g.clip();
-  for (const x of [8, w - 44]) { g.fillStyle = '#f5b52e'; g.fillRect(x, 0, 36, h); g.beginPath(); g.rect(x, -10, 36, h + 20); g.strokeStyle = INK; g.lineWidth = 7; g.stroke(); }
-  g.fillStyle = '#f5b52e'; g.fillRect(0, h - 34, w, 30); g.beginPath(); g.rect(-10, h - 34, w + 20, 40); g.strokeStyle = INK; g.lineWidth = 7; g.stroke();
-  g.restore(); p(); g.strokeStyle = INK; g.lineWidth = 8; g.stroke();
+  for (const x of [8, w - 44]) { g.fillStyle = '#f5b52e'; g.fillRect(x, 0, 36, h); g.beginPath(); g.rect(x, -10, 36, h + 20); g.strokeStyle = EDGE; g.lineWidth = 2.5; g.stroke(); }
+  g.fillStyle = '#f5b52e'; g.fillRect(0, h - 34, w, 30); g.beginPath(); g.rect(-10, h - 34, w + 20, 40); g.strokeStyle = EDGE; g.lineWidth = 2.5; g.stroke();
+  g.restore(); p(); g.strokeStyle = EDGE; g.lineWidth = 2.5; g.stroke();
 };
 const BEAM = (g, w, h) => {
   g.fillStyle = g.linear(0, h, 0, 0, ['rgba(255,236,150,0.95)', 'rgba(255,220,120,0.4)', 'rgba(255,220,120,0)']);

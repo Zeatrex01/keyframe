@@ -78,7 +78,7 @@ export async function prove(dir, name, brief) {
   const { critiqueAnimation } = await import('../../src/understand/critique.js');
   for (const clip of brief.clips) {
     if (!sk.animations[clip.name]) { problems.push(`${clip.name}: missing`); continue; }
-    const c = critiqueAnimation(sk, clip.name, { loop: clip.loop, pixelsPerUnit: brief.display.pixelsPerUnit });
+    const c = critiqueAnimation(sk, clip.name, { loop: clip.loop, pixelsPerUnit: brief.display.pixelsPerUnit, subject: brief.principles });
     for (const x of c.findings.filter(x => x.level === 'warn')) problems.push(`${clip.name}: ${x.code} ${x.message}`);
   }
   console.log(`${name}: ${Object.keys(sk.animations).length} clips, check ${check.summary ?? ''}`);
