@@ -16,9 +16,10 @@ import { StudioError } from '../shared/errors.js';
 /** Where Claude Desktop keeps its config on this platform (KS_CLAUDE_DESKTOP_CONFIG overrides it). */
 export function desktopConfigPath(env = process.env, platform = process.platform, home = os.homedir()) {
   if (env.KS_CLAUDE_DESKTOP_CONFIG) return path.resolve(env.KS_CLAUDE_DESKTOP_CONFIG);
-  if (platform === 'win32') return path.join(env.APPDATA || path.join(home, 'AppData', 'Roaming'), 'Claude', 'claude_desktop_config.json');
-  if (platform === 'darwin') return path.join(home, 'Library', 'Application Support', 'Claude', 'claude_desktop_config.json');
-  return path.join(env.XDG_CONFIG_HOME || path.join(home, '.config'), 'Claude', 'claude_desktop_config.json');
+  // That platform's own separators, whatever system this runs on (gates ask for every platform).
+  if (platform === 'win32') return path.win32.join(env.APPDATA || path.win32.join(home, 'AppData', 'Roaming'), 'Claude', 'claude_desktop_config.json');
+  if (platform === 'darwin') return path.posix.join(home, 'Library', 'Application Support', 'Claude', 'claude_desktop_config.json');
+  return path.posix.join(env.XDG_CONFIG_HOME || path.posix.join(home, '.config'), 'Claude', 'claude_desktop_config.json');
 }
 
 function readConfig(file) {

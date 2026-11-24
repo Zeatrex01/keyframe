@@ -23,7 +23,7 @@ test('the Claude Code line adds the studio for every folder; Claude Desktop gets
   assert.equal(clients.find(c => c.id === 'claude-code').text, `claude mcp add --scope user keyframe-studio -- node "${server}"`);
   assert.deepEqual(JSON.parse(clients.find(c => c.id === 'claude-desktop').text).mcpServers['keyframe-studio'], { command: '/opt/node/bin/node', args: [server] });
   assert.deepEqual(desktopEntry('/x', { appRoot: 'C:\\Apps\\Keyframe Studio' }), { command: 'cmd', args: ['/c', 'C:\\Apps\\Keyframe Studio\\keyframe-mcp.cmd'] });
-  assert.equal(desktopConfigPath({ APPDATA: 'C:\\U\\AppData\\Roaming' }, 'win32', 'C:\\U'), path.join('C:\\U\\AppData\\Roaming', 'Claude', 'claude_desktop_config.json'));
+  assert.equal(desktopConfigPath({ APPDATA: 'C:\\U\\AppData\\Roaming' }, 'win32', 'C:\\U'), 'C:\\U\\AppData\\Roaming\\Claude\\claude_desktop_config.json');
   assert.equal(desktopConfigPath({}, 'darwin', '/Users/u'), '/Users/u/Library/Application Support/Claude/claude_desktop_config.json');
 });
 
