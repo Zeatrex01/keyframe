@@ -81,17 +81,22 @@ test('the page draws messages from these views', () => {
 });
 
 test('the live row: what the director is doing, for how long, and the answer so far; stopped turns read as stopped', async () => {
-  const { liveView, elapsedText, LIVE_PHASES } = await import('../web/chat-view.js');
+  const { liveView, elapsedText, LIVE_PHASES, phaseText } = await import('../web/chat-view.js');
   assert.equal(liveView(null), null);
   assert.equal(liveView({ slots: [{ id: 'director', status: 'ready' }] }), null, 'idle shows nothing');
   const view = liveView({ slots: [{ id: 'director', status: 'working', live: { phase: 'reading', tool: 'read_rig', seconds: 12.4, text: 'Looking' } }] });
-  assert.deepEqual(view, { phaseKey: 'chat.live.reading', tool: 'read_rig', seconds: 12, text: 'Looking' });
+  assert.deepEqual(view, { phaseKey: 'chat.live.reading', tool: 'read_rig', last: null, steps: 0, seconds: 12, text: 'Looking' });
+  // Between tools a long think says which step was done last, never a bare "Thinking".
+  const tt = (key, v = {}) => `${key}${Object.keys(v).length ? JSON.stringify(v) : ''}`;
+  const between = liveView({ slots: [{ id: 'director', status: 'working', live: { phase: 'thinking', tool: null, last: 'write_animation', steps: 3, seconds: 40 } }] });
+  assert.equal(phaseText(between, tt), 'chat.live.thinking · chat.live.after{"tool":"write_animation","steps":3}');
+  assert.equal(phaseText(view, tt), 'chat.live.reading · read_rig');
   assert.equal(liveView({ slots: [{ id: 'director', status: 'working', live: { phase: 'nonsense' } }] }).phaseKey, 'chat.live.working');
   assert.deepEqual([elapsedText(5), elapsedText(65)], ['5 s', '1 min 05 s']);
   const en = JSON.parse(fs.readFileSync(new URL('../locale/en.json', import.meta.url), 'utf8'));
   const tr = JSON.parse(fs.readFileSync(new URL('../locale/tr.json', import.meta.url), 'utf8'));
   for (const p of LIVE_PHASES) assert.ok(en[`chat.live.${p}`] && tr[`chat.live.${p}`], p);
-  assert.ok(en['chat.stop'] && en['chat.stopped']);
+  assert.ok(en['chat.stop'] && en['chat.stopped'] && en['chat.live.after'] && tr['chat.live.after']);
   assert.deepEqual(messageView({ from: 'agent', text: 'Stopped.', stopped: true }, { name: 'Claude Code' }).stopped, true);
   const html = fs.readFileSync(new URL('../web/index.html', import.meta.url), 'utf8');
   assert.match(html, /id="stopAgent"/);

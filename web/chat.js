@@ -3,7 +3,7 @@
 import { S, el } from './store.js';
 import { cursorAfter, insertAt } from './chat-rules.js';
 import { pillState } from './agent-rules.js';
-import { messageView, SUGGESTIONS, whenText, liveView, elapsedText } from './chat-view.js';
+import { messageView, SUGGESTIONS, whenText, liveView, elapsedText, phaseText } from './chat-view.js';
 import { askUndo } from './delivery.js';
 import { showPanel } from './panels.js';
 import { renderFirst } from './projects.js';
@@ -80,7 +80,7 @@ function renderLive(name) {
   el.live.hidden = !live;
   if (!live) { el.stopAgent.disabled = false; return; }
   el.liveName.textContent = name ?? t('chat.aiName');
-  el.livePhase.textContent = live.tool ? `${t(live.phaseKey)} · ${live.tool}` : t(live.phaseKey);
+  el.livePhase.textContent = phaseText(live, t);
   el.liveSecs.textContent = elapsedText(live.seconds);
   if (el.liveText.textContent !== live.text) {
     const atEnd = el.liveText.scrollHeight - el.liveText.scrollTop - el.liveText.clientHeight < 8;

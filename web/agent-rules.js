@@ -58,8 +58,9 @@ export const rolesToAdd = slots => SLOT_ROLES.filter(role => role !== 'director'
 
 /** What PUT /api/agent/slots takes: each slot's id, role, agent (null for none), and its tools and brief when it has them. */
 export function slotsForSave(slots) {
-  return orderSlots(slots).map(({ id, role, agent, tools, brief }) => ({
+  return orderSlots(slots).map(({ id, role, agent, tools, brief, model }) => ({
     id, role, agent: agent || null,
+    ...(typeof model === 'string' ? { model } : {}),
     ...(Array.isArray(tools) ? { tools } : {}),
     ...(typeof brief === 'string' && role !== 'director' ? { brief } : {}),
   }));

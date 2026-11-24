@@ -74,7 +74,7 @@ export const LIVE_PHASES = Object.freeze(['starting', 'thinking', 'reading', 'wr
 /**
  * What the director is doing right now, from /api/state's agent slots, or null when it is not working.
  * @param {any} agent  S.state.agent
- * @returns {{ phaseKey: string, tool: string | null, seconds: number, text: string } | null}
+ * @returns {{ phaseKey: string, tool: string | null, last: string | null, steps: number, seconds: number, text: string } | null}
  */
 export function liveView(agent) {
   const slot = (Array.isArray(agent?.slots) ? agent.slots : []).find(s => s?.id === 'director');
@@ -84,9 +84,22 @@ export function liveView(agent) {
   return {
     phaseKey: `chat.live.${phase}`,
     tool: typeof live.tool === 'string' && live.tool ? live.tool : null,
+    last: typeof live.last === 'string' && live.last ? live.last : null,
+    steps: Number.isInteger(live.steps) && live.steps > 0 ? live.steps : 0,
     seconds: Number.isFinite(live.seconds) ? Math.max(0, Math.round(live.seconds)) : 0,
     text: typeof live.text === 'string' ? live.text : '',
   };
+}
+
+/**
+ * The phase line: the phase, then the tool it is on, or between tools the step it finished last.
+ * @param {ReturnType<typeof liveView>} live @param {(key: string, values?: object) => string} t
+ */
+export function phaseText(live, t) {
+  if (!live) return '';
+  if (live.tool) return `${t(live.phaseKey)} · ${live.tool}`;
+  if (live.last && live.phaseKey === 'chat.live.thinking') return `${t(live.phaseKey)} · ${t('chat.live.after', { tool: live.last, steps: live.steps })}`;
+  return t(live.phaseKey);
 }
 
 /** "12 s", "1 min 05 s": how long the run has taken. */

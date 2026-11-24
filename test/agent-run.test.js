@@ -64,6 +64,8 @@ test('an owner message starts the director; its answer is appended as an agent m
     await s.hub.idle();
     const second = s.calls()[1];
     assert.equal(second.args[second.args.indexOf('--resume') + 1], 'fake-session-1');
+    // No model chosen: Claude Code runs the studio's lower-cost default, never the CLI's own.
+    assert.equal(second.args[second.args.indexOf('--model') + 1], 'sonnet');
     assert.equal(second.prompt, 'slower please');
     assert.equal(readMessages(s.dir).at(-1).text, 'Reply to: slower please');
   } finally { await s.cleanup(); }
@@ -143,6 +145,10 @@ test('the steps bar follows the run: a write shows writing, the checks after it 
     await s.until(() => director(s.hub).live?.text === 'Looking at the rig');
     assert.equal(readAgent(s.dir).work, 'checking');
     assert.ok(director(s.hub).activity.some(a => a.name === 'write_animation'));
+    // The steps done so far are counted, the last one by its tool's name (not "result").
+    const live = director(s.hub).live;
+    assert.equal(live.steps, 2, JSON.stringify(live));
+    assert.equal(live.last, 'check_skeleton');
     s.hub.stop('director');
     await s.hub.idle();
     assert.equal(readAgent(s.dir).work, 'idle');

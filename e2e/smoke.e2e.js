@@ -236,6 +236,19 @@ test('core flow: open the sample, talk to an agent, see the reply', { skip: !can
     await mouse('mouseMoved', area.x + 40, area.y + 40);
     await mouse('mouseReleased', area.x + 40, area.y + 40);
     await page.waitFor(`document.querySelectorAll('#drawParts [data-part]').length === 1`, 'the drawn part in the list');
+    // A second part does not hang from the one selected; deleting it updates the count.
+    await page.evaluate(`document.querySelector('#drawTools [data-tool="rect"]').click(), true`);
+    await mouse('mousePressed', area.x + 60, area.y - 60);
+    await mouse('mouseMoved', area.x + 90, area.y - 30);
+    await mouse('mouseReleased', area.x + 90, area.y - 30);
+    await page.waitFor(`document.querySelectorAll('#drawParts [data-part]').length === 2`, 'the second part in the list');
+    assert.deepEqual(await page.evaluate(`[...document.querySelectorAll('#drawParts [data-part] .mono')].map(s => s.textContent)`), ['', ''], 'new parts hang from the root');
+    const counted = await page.evaluate(`document.getElementById('drawCount').textContent`);
+    await page.evaluate(`document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete', bubbles: true })), true`);
+    await page.waitFor(`document.querySelectorAll('#drawParts [data-part]').length === 1`, 'the part deleted');
+    const after = await page.evaluate(`document.getElementById('drawCount').textContent`);
+    assert.ok(after !== counted && /1/.test(after), `the count follows a delete: ${counted} -> ${after}`);
+    await page.evaluate(`document.querySelector('#drawParts [data-part]').click(), true`);
     await page.evaluate(`document.querySelector('#drawTools [data-tool="pivot"]').click(), true`);
     await mouse('mousePressed', area.x, area.y + 30);
     await mouse('mouseReleased', area.x, area.y + 30);

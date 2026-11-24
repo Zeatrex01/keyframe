@@ -43,6 +43,7 @@ A slot is one agent with one role. Exactly one agent per slot.
 | `agent` | `claude-code`, `codex`, `gemini`, or `null` (the slot is off) |
 | `tools` | `studio` (every core tool), `read` (the core tools that change nothing), or a list of tool names |
 | `brief` | the owner's own words for this slot (at most 2000 characters), added after the role's brief |
+| `model` | the model the slot's CLI runs (`--model`); absent, the studio's default for that CLI (Claude Code: `sonnet`, a capable lower-cost model, since a session runs many turns on the owner's account); `""` leaves it to the CLI's own default. Settings offers each CLI's models. |
 
 - The **director** is the one the owner talks to. It is started first, writes with the `studio`
   scope by default, and its brief tells it the working order: start with `start_here`, write, then

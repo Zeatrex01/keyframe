@@ -192,3 +192,15 @@ test('starting a CLI: a script runs under node, a Windows shim runs its script, 
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
   assert.equal(quoteForCmd('x\ny'), '"x y"');
 });
+
+test('the model: each CLI gets --model when a slot names one, and none for the CLI\'s own default', () => {
+  const at = (args, flag) => (args.includes(flag) ? args[args.indexOf(flag) + 1] : undefined);
+  assert.equal(at(claudeCode.command(plan({ model: 'sonnet' })).args, '--model'), 'sonnet');
+  assert.equal(at(codex.command(plan({ model: 'gpt-5-mini' })).args, '--model'), 'gpt-5-mini');
+  assert.equal(at(gemini.command(plan({ model: 'gemini-2.5-flash' })).args, '--model'), 'gemini-2.5-flash');
+  for (const a of ADAPTERS) {
+    assert.ok(!a.command(plan({ model: '' })).args.includes('--model'), `${a.id}: '' is the CLI's own default`);
+    assert.ok(a.defaultModel === '' || a.models.includes(a.defaultModel), `${a.id}: the default is offered`);
+  }
+  assert.equal(claudeCode.defaultModel, 'sonnet', 'a lower-cost default: the studio runs many turns on the owner\'s account');
+});

@@ -20,10 +20,12 @@ import { KNOWN_TOOLS, TOOL_SCOPES, defaultScope } from './roles.js';
 export const MAX_SLOTS = 6;
 export const MAX_BRIEF = 2000;
 const ID = /^[a-z][a-z0-9-]{0,31}$/;
+const MODEL = /^[A-Za-z0-9][A-Za-z0-9._:[\]-]{0,63}$/;
 const CONFIG_KEY = 'agentSlots';
 
 /**
- * @typedef {{ id: string, role: string, agent: string|null, tools: 'studio'|'read'|string[], brief: string }} Slot
+ * @typedef {{ id: string, role: string, agent: string|null, tools: 'studio'|'read'|string[], brief: string, model?: string }} Slot
+ * model: the model the slot's CLI runs ('' its own default); absent, the agent's default in the studio
  */
 
 /** @returns {Slot[]} */
@@ -42,7 +44,7 @@ export function validateSlots(input) {
   const ids = new Set();
   const slots = input.map((raw, i) => {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw bad(`Slot ${i + 1} must be an object.`, { index: i });
-    const { id, role, agent = null, tools, brief = '' } = /** @type {Record<string, any>} */ (raw);
+    const { id, role, agent = null, tools, brief = '', model } = /** @type {Record<string, any>} */ (raw);
     if (typeof id !== 'string' || !ID.test(id)) throw bad(`Slot ${i + 1}: "id" is lower-case letters, digits and dashes, starting with a letter.`, { index: i });
     if (ids.has(id)) throw bad(`Slot id "${id}" is used twice.`, { id });
     ids.add(id);
@@ -59,7 +61,8 @@ export function validateSlots(input) {
       scope = [...new Set(scope)];
     } else throw bad(`Slot "${id}": "tools" is a scope name or a list of tool names.`, { id });
     if (typeof brief !== 'string' || brief.length > MAX_BRIEF) throw bad(`Slot "${id}": "brief" is text of at most ${MAX_BRIEF} characters.`, { id });
-    return { id, role, agent, tools: scope, brief: brief.trim() };
+    if (model !== undefined && !(model === '' || (typeof model === 'string' && MODEL.test(model)))) throw bad(`Slot "${id}": "model" is a model name such as "sonnet", or "" for the agent's own default.`, { id });
+    return { id, role, agent, tools: scope, brief: brief.trim(), ...(model !== undefined ? { model } : {}) };
   });
   if (!ids.has('director')) throw bad('A "director" slot is required: it is the one the owner talks to.');
   // The director comes first, always: it is started first and listed first.

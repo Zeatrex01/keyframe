@@ -46,9 +46,12 @@ test('GET /api/agent: the slots with their status, and every supported CLI with 
   try {
     const r = await s.call('GET', '/api/agent');
     assert.equal(r.status, 200);
-    assert.deepEqual(r.json.slots, [{ id: 'director', role: 'director', agent: null, tools: 'studio', brief: '', status: 'off', activity: [] }]);
+    assert.deepEqual(r.json.slots, [{ id: 'director', role: 'director', agent: null, tools: 'studio', brief: '', model: '', status: 'off', activity: [] }]);
     assert.deepEqual(r.json.agents.map(a => [a.id, a.name, a.installed]), [['claude-code', 'Claude Code', true], ['codex', 'Codex CLI', false], ['gemini', 'Gemini CLI', false]]);
     assert.ok(r.json.agents.every(a => typeof a.install === 'string' && a.install));
+    // Each agent offers its models, and Claude Code runs a lower-cost one until the owner picks another.
+    assert.deepEqual(r.json.agents.map(a => a.defaultModel), ['sonnet', '', '']);
+    assert.ok(r.json.agents[0].models.includes('opus'));
     const state = (await s.call('GET', '/api/state')).json;
     assert.equal(state.agent.connected, false, 'what the page already read is kept');
     assert.deepEqual(state.agent.slots, r.json.slots);

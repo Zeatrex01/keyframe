@@ -87,7 +87,7 @@ export function createAgentHub({ configFile, env = process.env, root = ROOT, tim
   const install = adapter => adapter.install[process.platform] ?? adapter.install.other;
 
   function agents() {
-    return ADAPTERS.map(a => ({ id: a.id, name: a.name, installed: !!found[a.id], install: install(a) }));
+    return ADAPTERS.map(a => ({ id: a.id, name: a.name, installed: !!found[a.id], install: install(a), models: a.models, defaultModel: a.defaultModel }));
   }
 
   /**
@@ -104,7 +104,7 @@ export function createAgentHub({ configFile, env = process.env, root = ROOT, tim
       if (!adapter) { status = 'off'; message = undefined; }
       else if (!found[adapter.id]) { status = 'error'; message = `${adapter.name} is not installed here. ${install(adapter)}`; }
     }
-    return { id: slot.id, role: slot.role, agent: slot.agent, tools: slot.tools, brief: slot.brief, status,
+    return { id: slot.id, role: slot.role, agent: slot.agent, tools: slot.tools, brief: slot.brief, model: slot.model ?? adapter?.defaultModel ?? '', status,
       ...(message ? { message } : {}), activity: st.activity.filter(a => dir === undefined || !a.dir || a.dir === dir),
       ...(st.run && st.live ? { live: liveSummary(st.live) } : {}) };
   }
@@ -176,7 +176,7 @@ export function createAgentHub({ configFile, env = process.env, root = ROOT, tim
     const resume = sessionFor(dir, slot.id, adapter.id); // a retry finds none: the stale one was dropped
     const tools = toolsFor(slot.tools);
     const plan = {
-      projectDir: dir, tools, resume,
+      projectDir: dir, tools, resume, model: slot.model ?? adapter.defaultModel,
       brief: adapter.systemPrompt ? briefFor(slot.role, slot.brief) : '',
       mcp: { command: process.execPath, args: [path.join(root, 'tools', 'mcp-server.js'), '--project', dir, '--only', tools.join(',')] },
       configFile: path.join(dir, CHAT_DIR, 'agent', `${slot.id}-${adapter.id}.json`),
@@ -221,7 +221,8 @@ export function createAgentHub({ configFile, env = process.env, root = ROOT, tim
           step(live.phase);
           if (!event.early) note(st, 'tool', event.name);
         } else if (event.type === 'tool' && event.phase === 'end') {
-          Object.assign(live, { phase: 'thinking', tool: null });
+          // Between steps the page says which one was done last and how many, never a bare "Thinking".
+          Object.assign(live, { phase: 'thinking', last: live.tool || (event.name !== 'result' ? event.name : null) || live.last || null, steps: (live.steps ?? 0) + 1, tool: null });
         } else if (event.type === 'text') {
           live.text = clip(event.delta ? live.text + event.text : event.text, LIVE_TEXT);
           live.phase = 'answering'; live.tool = null;

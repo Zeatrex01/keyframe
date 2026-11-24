@@ -38,6 +38,7 @@ import { SERVER_NAME } from '../mcp/server.js';
  * @property {string} brief the role brief (system prompt text)
  * @property {string|null} resume the CLI session to continue, or null for a new one
  * @property {string} configFile where the adapter may write the MCP config it needs (a file it owns)
+ * @property {string} [model] the model to run ('' or absent: the CLI's own default)
  */
 
 /**
@@ -48,6 +49,8 @@ import { SERVER_NAME } from '../mcp/server.js';
  * @property {string} env the variable that names the executable (final when set)
  * @property {{ win32: string, darwin: string, other: string }} install
  * @property {boolean} systemPrompt whether the brief goes on the command line (else it leads the first prompt)
+ * @property {string[]} models the models offered in Settings ('' is always offered too: the CLI's own default)
+ * @property {string} defaultModel the model a slot runs until the owner picks one ('' : the CLI's own default)
  * @property {(plan: RunPlan) => { args: string[], env?: Record<string, string>, files?: Record<string, string> }} command
  * @property {(line: string) => AgentEvent[]} parse
  */
@@ -102,6 +105,8 @@ const sibling = (configFile, part, ext = '.json') => configFile.replace(/\.json$
 /** @type {Adapter} */
 export const claudeCode = {
   id: 'claude-code', name: 'Claude Code', bin: 'claude', env: 'KS_AGENT_CLAUDE', systemPrompt: true,
+  // A capable, lower-cost model by default: the studio's turns are many and the owner pays for them.
+  models: ['sonnet', 'haiku', 'opus'], defaultModel: 'sonnet',
   install: {
     win32: 'irm https://claude.ai/install.ps1 | iex   (then run `claude` once to sign in)',
     darwin: 'curl -fsSL https://claude.ai/install.sh | bash   (then run `claude` once to sign in)',
@@ -127,6 +132,7 @@ export const claudeCode = {
       files[sibling(plan.configFile, 'brief', '.md')] = plan.brief;
       args.push('--append-system-prompt-file', sibling(plan.configFile, 'brief', '.md'));
     }
+    if (plan.model) args.push('--model', plan.model);
     if (plan.resume) args.push('--resume', plan.resume);
     // No instruction files: the owner's global and folder CLAUDE.md (which may hold anything from
     // their other work) are never read. No auto-memory: what the agent learns elsewhere stays there.
@@ -179,6 +185,7 @@ const toml = value => {
 /** @type {Adapter} */
 export const codex = {
   id: 'codex', name: 'Codex CLI', bin: 'codex', env: 'KS_AGENT_CODEX', systemPrompt: false,
+  models: [], defaultModel: '',
   install: { win32: 'npm install -g @openai/codex   (then run `codex` once to sign in)', darwin: 'brew install codex   (then run `codex` once to sign in)', other: 'npm install -g @openai/codex   (then run `codex` once to sign in)' },
   command(plan) {
     // The whole mcp_servers table is replaced, so the owner's other servers are not started; no
@@ -187,7 +194,7 @@ export const codex = {
     const options = ['--json', '--skip-git-repo-check', '--sandbox', 'read-only',
       '-c', `mcp_servers={${toml(SERVER_NAME)}=${server}}`,
       '-c', 'project_doc_max_bytes=0',
-      '-c', 'notify=[]'];
+      '-c', 'notify=[]', ...(plan.model ? ['--model', plan.model] : [])];
     // `-` reads the prompt from standard input.
     return { args: plan.resume ? ['exec', ...options, 'resume', plan.resume, '-'] : ['exec', ...options, '-'] };
   },
@@ -218,6 +225,7 @@ export function parseGemini(line) {
 /** @type {Adapter} */
 export const gemini = {
   id: 'gemini', name: 'Gemini CLI', bin: 'gemini', env: 'KS_AGENT_GEMINI', systemPrompt: false,
+  models: ['gemini-2.5-flash', 'gemini-2.5-pro'], defaultModel: '',
   install: { win32: 'npm install -g @google/gemini-cli   (then run `gemini` once to sign in)', darwin: 'brew install gemini-cli   (then run `gemini` once to sign in)', other: 'npm install -g @google/gemini-cli   (then run `gemini` once to sign in)' },
   command(plan) {
     // Gemini reads MCP servers from settings only, so this run gets a settings file of its own;
@@ -227,6 +235,7 @@ export const gemini = {
     const settings = { mcpServers: { [SERVER_NAME]: { ...mcpServers(plan)[SERVER_NAME], trust: true, includeTools: plan.tools } },
       context: { fileName: ['.keyframe-no-context.md'] } };
     const args = ['--output-format', 'stream-json', '--allowed-mcp-server-names', SERVER_NAME, '--extensions', 'none'];
+    if (plan.model) args.push('--model', plan.model);
     if (plan.resume) args.push('--resume', plan.resume);
     // The request itself arrives on standard input; -p makes the run headless.
     args.push('-p', 'Answer the request given on standard input.');

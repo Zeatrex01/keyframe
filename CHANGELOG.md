@@ -30,6 +30,10 @@ All notable changes to this project. The format follows
 - `write_animation` `plant` takes `on: "<bone>"`: the planted point travels with that bone (`at` in its units), for a back hand that stays on a spear shaft or the nock of a bow while the weapon moves; the hand keeps its angle to that bone.
 - The Warrior holds the spear in both hands (the back hand rides the shaft through the stance and the thrust), and its shot nocks an arrow: the bow brings an `arrow` part and a drawn look (`weapon_drawn`), the drawing hand holds the nock with the elbow back, and the arrow leaves on the release (every other clip hides it).
 - The Warrior throws a one-two: `punch` with the near fist and `punch_cross` with the far one, quicker (0.45 and 0.5 s) and chainable from the guard, plus `punch_upper` and `punch_cross_upper`, upper-body layers to play over the run or the jump so a punch no longer stops the player. `critique_animation` leaves the weight of a clip named as a layer (`_upper`, `_layer`, `_overlay`) that keys no core or leg bone to the clip beneath.
+- Settings › AI connection picks the model each slot runs; Claude Code runs `sonnet` by default (lower cost per turn), and "the app's own default" leaves it to the CLI.
+- The live row says which step was done last between tool calls ("Thinking · after write_animation (step 2 done)") instead of a bare "Thinking".
+- The studio moves to the next free port when another program holds 8731, and an agent CLI that is installed but not signed in says to run it once in a terminal and sign in.
+- Godot: `play_layer(clip)` on the rig's root plays an upper-body clip on a second player over the running one.
 - Godot: an imported rig changes outfits and weapons at run time (`set_look`, `set_attachment`, `get_attachments` on the rig's root); every look of every piece is imported, and a clip that keys a slot (each Warrior stance keys its weapon) shows what the clip says.
 - The Warrior's armour fits the body: the cuirass follows the torso's outline with no shirt showing at its edges, tassets cover the thighs, and the bracers taper with the forearms.
 - The Warrior ships ready for Godot (`examples/showcase/warrior/godot/`): drop `warrior.kfscene` into a project with the add-on, and set the rig's **Look** and **Weapon** in the Inspector or from code.
@@ -42,6 +46,8 @@ All notable changes to this project. The format follows
 - Parts reach the page as safe trees (`src/render/svg-safe.js`): only shapes, groups and gradients survive, so nothing in a drawing can run.
 
 ### Fixed
+- Draw: a new part hangs from the root instead of the part that happened to be selected.
+- Godot: a slot drawn empty (the arrow) no longer logs a missing-meta error when the look changes.
 - Planted limbs turn the short way between baked keys: a solved angle crossing ±180 no longer spins a limb a full turn.
 - Calling an advanced tool (such as `export_godot`) without `--all` now says so and how to turn it on, instead of "Unknown tool".
 - One-shot clips play once: a clip named for a jump, an attack, a hit or a reveal no longer loops in the Godot addon or in a sprite sheet's map just because it lands back in its first pose, and a cycle whose length is not on the fps grid (a 0.6 s run at 12 fps) is still found to loop and is cut into frames that cycle exactly.

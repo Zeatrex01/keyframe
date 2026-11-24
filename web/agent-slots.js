@@ -70,6 +70,26 @@ function agentPicker(slot) {
   return select;
 }
 
+/** The model the slot's agent runs: the studio's default (a lower-cost one) unless the owner picks another. */
+function modelPicker(slot) {
+  const agent = (data.agents ?? []).find(a => a.id === slot.agent);
+  if (!agent) return null;
+  const select = node('select', 'select sm');
+  select.setAttribute('aria-label', t('agent.model', { role: t(`agent.role.${slot.role}`) }));
+  const names = [...new Set([...(agent.models ?? []), ...(slot.model ? [slot.model] : [])])];
+  for (const m of names) {
+    const option = node('option', '', m === agent.defaultModel ? t('agent.modelSuggested', { model: m }) : m);
+    option.value = m;
+    select.append(option);
+  }
+  const own = node('option', '', t('agent.modelOwn'));
+  own.value = '';
+  select.append(own);
+  select.value = slot.model ?? agent.defaultModel ?? '';
+  select.addEventListener('change', () => save({ id: slot.id, patch: { model: select.value } }));
+  return select;
+}
+
 function slotRow(slot) {
   const row = node('li', `slot${slot.role === 'director' ? ' director' : ''}`);
   row.dataset.slot = slot.id;
@@ -84,6 +104,8 @@ function slotRow(slot) {
   name.append(node('b', '', t(`agent.role.${slot.role}`)), chip);
   title.append(name, node('p', 't-caption', t(`agent.roleLead.${slot.role}`)));
   head.append(badge, title, agentPicker(slot));
+  const model = modelPicker(slot);
+  if (model) head.append(model);
   if (isRunning(slot)) {
     const stop = button('btn sm', t('agent.stop'), 'i-close');
     stop.addEventListener('click', () => call('/api/agent/stop', { slot: slot.id }));

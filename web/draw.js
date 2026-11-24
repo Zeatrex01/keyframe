@@ -377,7 +377,7 @@ function endGesture(event) {
     // A click without a drag places a shape of a usable size at the click.
     const side = 80 / Math.max(D.view.scale, 0.01);
     const box = dragged ? { x: g.start[0], y: g.start[1], width: pt[0] - g.start[0], height: pt[1] - g.start[1] } : { x: g.start[0] - side / 2, y: g.start[1] - side / 2, width: side, height: side };
-    const parts = addShape(D.parts, { shape: g.shape, box, parent: D.sel ?? null });
+    const parts = addShape(D.parts, { shape: g.shape, box });   // at the root: the owner picks its Parent
     D.sel = parts.at(-1).name;
     D.tool = 'select';
     commit(parts);

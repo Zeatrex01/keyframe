@@ -37,6 +37,10 @@ test('the list is refused whole: director required, unique ids, known agents and
   refused([{ id: 'director', role: 'director', tools: ['wait_for_message'] }], /unknown tools wait_for_message/);
   refused([{ id: 'director', role: 'director', tools: [] }], /empty list/);
   refused([{ id: 'director', role: 'director', brief: 'x'.repeat(MAX_BRIEF + 1) }], /brief/);
+  refused([{ id: 'director', role: 'director', model: '--dangerously-skip' }], /"model"/);
+  refused([{ id: 'director', role: 'director', model: 'son net' }], /"model"/);
+  assert.equal(validateSlots([{ id: 'director', role: 'director', model: 'claude-sonnet-4-5' }])[0].model, 'claude-sonnet-4-5');
+  assert.equal(validateSlots([{ id: 'director', role: 'director', model: '' }])[0].model, '', "'' keeps the agent's own default");
   refused([{ id: 'director', role: 'director' }, ...Array.from({ length: MAX_SLOTS }, (_, i) => ({ id: `s${i}`, role: 'helper' }))], /At most/);
   refused([null], /object/);
 });
