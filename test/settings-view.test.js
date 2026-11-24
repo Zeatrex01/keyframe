@@ -4,7 +4,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { SLOT_ROLES, changeSlots, isRunning, orderSlots, rolesToAdd, slotsForSave } from '../web/agent-rules.js';
+import { SLOT_ROLES, changeSlots, isRunning, orderSlots, rolesToAdd, slotsForSave, slotAction } from '../web/agent-rules.js';
 
 const html = fs.readFileSync(new URL('../web/index.html', import.meta.url), 'utf8');
 const en = JSON.parse(fs.readFileSync(new URL('../locale/en.json', import.meta.url), 'utf8'));
@@ -47,6 +47,11 @@ test('slots: the Director first and always there, one slot per helper role', () 
   assert.equal(isRunning({ status: 'working' }), true);
   assert.equal(isRunning({ status: 'off' }), false);
   assert.equal(isRunning({ status: 'error' }), false);
+  // a ready agent has no turn to stop: its button switches it off instead of a Stop that does nothing
+  assert.equal(slotAction({ agent: 'claude-code', status: 'ready' }), 'off');
+  assert.equal(slotAction({ agent: 'claude-code', status: 'working' }), 'stop');
+  assert.equal(slotAction({ agent: 'claude-code', status: 'starting' }), 'stop');
+  assert.equal(slotAction({ agent: null, status: 'off' }), null);
 });
 
 test('slots: a change is saved as the whole list the server takes', () => {

@@ -21,6 +21,8 @@ import { projectOf } from '../mcp/project.js';
 import { projectStyle } from '../mcp/style-file.js';
 import { projectFolders, insideProjectReal, isRealInside } from '../core/paths.js';
 import { readMessages, appendMessage, readAgent } from '../core/chat.js';
+import { readPresence, presenceFile } from '../core/presence.js';
+import { pickFolder } from '../core/folder-pick.js';
 import { writeFocus, clearFocus } from '../core/focus.js';
 import { fetchReference } from '../core/ytdlp.js';
 import { detectAddons, addonStatus } from '../core/addons.js';
@@ -102,9 +104,10 @@ function text(body, key, { optional = false } = {}) {
  * @param {string|null} [options.appRoot] the packaged app's install folder (null: a source checkout, which does not update itself)
  * @param {() => void} [options.restart] how the app restarts into an installed update
  * @param {object} [options.update] the update check and download (gates stand fakes in)
+ * @param {() => Promise<string|null>} [options.pick] the system's folder dialog (gates stand a fake in)
  * @returns {{ server: import('node:http').Server, agents: ReturnType<typeof createAgentHub>, listen(port?: number): Promise<number>, close(): Promise<void>, lastPoll(): number }}
  */
-export function createStudioServer({ projectDir, version, configFile, maxUpload = MAX_UPLOAD, log = silentLogger, agentEnv = process.env, appRoot = appRootOf(ROOT), restart, update = {} }) {
+export function createStudioServer({ projectDir, version, configFile, maxUpload = MAX_UPLOAD, log = silentLogger, agentEnv = process.env, appRoot = appRootOf(ROOT), restart, update = {}, pick = () => pickFolder() }) {
   const registry = { file: configFile };
   // The open project can change while the server runs (the Projects view), so everything below
   // reads `dir` and `project` when it is called. The in-page MCP session reads session.dir per call.
@@ -215,7 +218,12 @@ export function createStudioServer({ projectDir, version, configFile, maxUpload 
       embeddedAgent: 'GET /api/agent' in routes, connection: connectionBlocks(), addons: addonStatus(found), spine: spineAddonStatus(),
       project: dir ? { name: path.basename(dir), dir, agent: readAgent(dir) } : null }) },
     // `agent` keeps what the page already reads (connected, name, work) and adds the slots.
-    'GET /api/state': { run: () => { polled = Date.now(); const st = views.state(); return { ...st, agent: { ...(st.agent ?? { connected: false }), ...agents.summary(dir ?? null) } }; } },
+    'GET /api/state': { run: () => {
+      polled = Date.now();
+      const st = views.state();
+      // outside: the last MCP client the owner runs (Claude Code, Claude Desktop...), and its folder.
+      return { ...st, agent: { ...(st.agent ?? { connected: false }), ...agents.summary(dir ?? null) }, outside: readPresence(presenceFile(registry.file ?? resolvePaths().configFile)) };
+    } },
     'GET /api/assets': { run: () => ({ packs: listPacks() }) },
     'GET /api/agent': { run: () => { agents.detect(); return agents.summary(dir ?? null); } },
     // Both answer with the slots as the open project sees them (as GET /api/agent does).
@@ -251,6 +259,8 @@ export function createStudioServer({ projectDir, version, configFile, maxUpload 
     'GET /api/health': { run: () => ({ ok: true, version, project: dir !== null }) },
 
     'POST /api/projects/open': { run: async ({ body }) => { bind(openProject(text(await body(), 'dir'), registry).dir); return projects(); } },
+    // The system's folder dialog, on the owner's own screen: the chosen folder, or null when cancelled.
+    'POST /api/projects/pick': { run: async () => ({ dir: await pick() }) },
     'POST /api/projects/create': { run: async ({ body }) => { const b = await body(); bind(createProject(text(b, 'parent'), text(b, 'name'), registry).dir); return projects(); } },
     'POST /api/projects/forget': { run: async ({ body }) => {
       const target = text(await body(), 'dir');

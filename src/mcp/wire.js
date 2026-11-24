@@ -49,9 +49,10 @@ const versionOf = msg => {
  * @param {string[]} [deps.shelved]  tools this build carries but does not serve now (named in a refusal)
  * @param {boolean} [deps.fullDescriptions]  serve full descriptions in tools/list
  * @param {(record: object) => void} [deps.onRefusal]  observes refusals and errors; must not throw
+ * @param {(call: { tool: string, client: string|null, dir: string|null }) => void} [deps.onCall]  sees every known tool call (presence); must not throw
  */
 export function createWire({ registry, session, write, instructions, serverInfo, resources = null, shelved = [],
-  fullDescriptions = false, onRefusal = () => {} }) {
+  fullDescriptions = false, onRefusal = () => {}, onCall = () => {} }) {
   const capabilities = { tools: {}, ...(resources ? { resources: {} } : {}) };
   const toolList = registry.tools.map(t => toWire(t, { full: fullDescriptions }));
   const inflight = new Map();
@@ -68,6 +69,7 @@ export function createWire({ registry, session, write, instructions, serverInfo,
     const tool = registry.byName.get(name);
     if (!tool && shelved.includes(name)) return out.failWith(id, -32602, `"${name}" is an advanced tool, off by default: start the server (or the command line) with --all to use it.`);
     if (!tool) return out.failWith(id, -32602, `Unknown tool "${name}". Tools: ${registry.tools.map(t => t.name).join(', ')}`);
+    try { onCall({ tool: name, client: session.client ?? null, dir: session.dir ?? null }); } catch { /* presence never breaks a call */ }
     // Every refusal says how to get past it (`fix`), and where the argument shape may be the
     // problem, carries a call that works (`example`).
     const errorResult = (code, message, details = {}) => {

@@ -47,6 +47,7 @@
     "package:win": "node tools/package-win.js"
   },
   "bin": {
+    "keyframe": "tools/keyframe.js",
     "keyframe-studio": "tools/mcp-server.js",
     "keyframe-studio-cli": "tools/cli.js"
   },

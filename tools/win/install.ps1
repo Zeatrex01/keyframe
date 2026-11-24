@@ -25,7 +25,7 @@ if ($Source -ne $Dest.TrimEnd('\')) {
   $Target = Join-Path $Dest $Current
   if (Test-Path -LiteralPath $Target) { Remove-Item -LiteralPath $Target -Recurse -Force }
   Copy-Item -LiteralPath (Join-Path $Source $Current) -Destination $Dest -Recurse -Force
-  foreach ($f in @('Keyframe Studio.exe', 'Keyframe Studio.cmd', 'keyframe.ico', 'keyframe-mcp.cmd', 'README.txt')) {
+  foreach ($f in @('Keyframe Studio.exe', 'Keyframe Studio.cmd', 'keyframe.ico', 'keyframe-mcp.cmd', 'keyframe.cmd', 'README.txt')) {
     $p = Join-Path $Source $f
     if (Test-Path -LiteralPath $p) { Copy-Item -LiteralPath $p -Destination $Dest -Force }
   }
@@ -42,6 +42,18 @@ if (Test-Path -LiteralPath $CurrentFile) {
 }
 [IO.File]::WriteAllText($CurrentFile, "$Current`r`n")
 Get-ChildItem -LiteralPath $Dest -Recurse -File | Unblock-File
+
+# The `keyframe` command: the install folder on the user's PATH. Read and written unexpanded, so
+# entries like %USERPROFILE%\bin stay as they were; the throwaway variable makes Windows tell
+# running programs, so new terminals see the change.
+$EnvKey = Get-Item -LiteralPath 'HKCU:\Environment'
+$UserPath = [string]$EnvKey.GetValue('Path', '', 'DoNotExpandEnvironmentNames')
+$Parts = @(($UserPath -split ';') | Where-Object { $_ })
+if (-not ($Parts | Where-Object { $_.TrimEnd('\') -ieq $Dest })) {
+  Set-ItemProperty -LiteralPath 'HKCU:\Environment' -Name Path -Type ExpandString -Value (($Parts + $Dest) -join ';')
+  [Environment]::SetEnvironmentVariable('KeyframeStudioPath', '1', 'User')
+  [Environment]::SetEnvironmentVariable('KeyframeStudioPath', $null, 'User')
+}
 
 $Exe = Join-Path $Dest 'Keyframe Studio.exe'
 if (-not (Test-Path -LiteralPath $Exe)) { $Exe = Join-Path $Dest 'Keyframe Studio.cmd' }

@@ -2,7 +2,7 @@
 
 import { S, el } from './store.js';
 import { cursorAfter, insertAt } from './chat-rules.js';
-import { pillState } from './agent-rules.js';
+import { pillState, outsideNote } from './agent-rules.js';
 import { messageView, SUGGESTIONS, whenText, liveView, elapsedText, phaseText } from './chat-view.js';
 import { askUndo } from './delivery.js';
 import { showPanel } from './panels.js';
@@ -23,10 +23,13 @@ export function renderAgent() {
   el.agentName.textContent = pill.name ?? '';
   el.agentLabel.textContent = t(pill.key);
   el.agentLabel.classList.toggle('hide-phone', Boolean(pill.name));
+  // The switcher is always there: the open project's name, or "Open a project" when none is.
   const name = S.state?.project?.name;
-  el.projectSwitch.hidden = !name;
-  el.barSep.hidden = !name;
-  if (name && el.projectName.textContent !== name) el.projectName.textContent = name;
+  el.projectSwitch.hidden = !S.state;
+  el.barSep.hidden = !S.state;
+  el.projectSwitch.classList.toggle('empty', !name);
+  const shown = name ?? t('nav.openProject');
+  if (el.projectName.textContent !== shown) el.projectName.textContent = shown;
   // The project's own picture in the switcher when it has a preview.png, else the mark.
   const thumb = S.state?.project?.preview ? `/api/projects/preview?dir=${encodeURIComponent(S.state.project.dir)}` : '';
   if (el.projectThumb.dataset.src !== thumb) {
@@ -58,6 +61,7 @@ export function renderAgent() {
   el.chatHint.hidden = !hint;
   el.chatHint.textContent = hint;
   el.chatHint.classList.toggle('bad', Boolean(S.sendError));
+  renderOutside();
   renderMessages();
   renderLive(pill.name);
   renderFirst();
@@ -202,4 +206,14 @@ export async function sendMessage() {
   }
   resizeText();
   renderAgent();
+}
+
+/** An outside client (Claude Code, Claude Desktop...) working on a folder other than the open project. */
+function renderOutside() {
+  const note = outsideNote(S.state);
+  el.outsideNote.hidden = !note;
+  if (!note) return;
+  el.outsideText.textContent = t(note.key, { name: note.name, folder: note.folder ?? '' });
+  el.outsideOpen.hidden = !note.dir;
+  el.outsideOpen.dataset.dir = note.dir ?? '';
 }

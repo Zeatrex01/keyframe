@@ -176,13 +176,36 @@ function toggleForm(form, opener, other, otherOpener) {
 for (const list of [el.exampleList, el.firstExamples]) {
   list.addEventListener('click', event => { const name = event.target.closest('[data-example]')?.dataset.example; if (name) openExample(name); });
 }
-el.hubOpen.addEventListener('click', () => toggleForm(el.openForm, el.hubOpen, el.createForm, el.hubNew));
+/**
+ * The system's own folder dialog (the studio shows it on this computer): the chosen folder, or
+ * null when cancelled or when there is none (then the path box is the way, and the status says so).
+ */
+export async function browseFolder() {
+  el.hubStatus.textContent = t('hub.browsing');
+  try {
+    const { dir } = await api('/api/projects/pick', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' });
+    el.hubStatus.textContent = '';
+    return dir ?? null;
+  } catch (err) { el.hubStatus.textContent = String(err.message ?? err); return null; }
+}
+
+/** Open a folder: the form (with the path box) shows, and the folder dialog opens at once. */
+async function openFolder() {
+  if (el.openForm.hidden) toggleForm(el.openForm, el.hubOpen, el.createForm, el.hubNew);
+  const dir = await browseFolder();
+  if (dir) { el.openPath.value = dir; openProject(dir); }
+}
+
+el.hubOpen.addEventListener('click', () => { if (el.openForm.hidden) openFolder(); else toggleForm(el.openForm, el.hubOpen, el.createForm, el.hubNew); });
+el.openBrowse.addEventListener('click', openFolder);
+el.createBrowse.addEventListener('click', async () => { const dir = await browseFolder(); if (dir) { el.createParent.value = dir; el.createName.focus(); } });
+el.outsideOpen.addEventListener('click', () => { if (el.outsideOpen.dataset.dir) openProject(el.outsideOpen.dataset.dir); });
 el.hubNew.addEventListener('click', () => toggleForm(el.createForm, el.hubNew, el.openForm, el.hubOpen));
 el.projectFilter.addEventListener('input', renderProjects);
 el.firstFolder.addEventListener('click', () => {
   S.firstDismissed = true;
   placeProjects();
-  if (el.openForm.hidden) toggleForm(el.openForm, el.hubOpen, el.createForm, el.hubNew);
+  openFolder();
 });
 // The Director is chosen in Settings → AI connection.
 el.firstDirectorGo.addEventListener('click', async () => {

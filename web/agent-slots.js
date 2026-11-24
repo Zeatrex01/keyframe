@@ -3,7 +3,7 @@
 // Researcher), each with its own agent and brief. One agent per slot. When the studio has no
 // embedded agent (GET /api/agent answers 404), only the external MCP instructions show.
 
-import { agentName, changeSlots, isRunning, orderSlots, rolesToAdd, slotsForSave, slotsOf } from './agent-rules.js';
+import { agentName, changeSlots, isRunning, orderSlots, slotAction, rolesToAdd, slotsForSave, slotsOf } from './agent-rules.js';
 import { whenText } from './chat-view.js';
 import { S, el } from './store.js';
 import { api, button, icon, node, t } from './ui.js';
@@ -106,10 +106,15 @@ function slotRow(slot) {
   head.append(badge, title, agentPicker(slot));
   const model = modelPicker(slot);
   if (model) head.append(model);
-  if (isRunning(slot)) {
+  const action = slotAction(slot);
+  if (action === 'stop') {
     const stop = button('btn sm', t('agent.stop'), 'i-close');
     stop.addEventListener('click', () => call('/api/agent/stop', { slot: slot.id }));
     head.append(stop);
+  } else if (action === 'off') {
+    const off = button('btn sm ghost', t('agent.turnOff'), 'i-close');
+    off.addEventListener('click', () => save({ id: slot.id, patch: { agent: null } }));
+    head.append(off);
   }
   if (slot.role !== 'director') {
     const remove = button('btn ghost sm icon', '', 'i-close');

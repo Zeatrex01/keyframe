@@ -104,7 +104,7 @@ export function layout({ out, version, node, csc = null, root = ROOT }) {
   fs.writeFileSync(path.join(dir, 'node', 'LICENSE'), node.license);
   const win = path.join(root, 'tools', 'win');
   for (const f of ['install.ps1', 'uninstall.ps1']) copy(path.join(win, f), path.join(dir, 'install', f));
-  for (const f of ['Install.cmd', 'keyframe-mcp.cmd', 'README.txt']) copy(path.join(win, f), path.join(app, f));
+  for (const f of ['Install.cmd', 'keyframe-mcp.cmd', 'keyframe.cmd', 'README.txt']) copy(path.join(win, f), path.join(app, f));
   const ico = iconFile();
   fs.writeFileSync(path.join(app, 'keyframe.ico'), ico);
   fs.writeFileSync(path.join(dir, 'keyframe.ico'), ico);

@@ -31,6 +31,9 @@ the animation principles and saves it beside your file, which is never changed.
 - Connecting Claude Desktop is one click: Settings > AI connection (and the first run) has Add to Claude Desktop, which adds the studio to Claude Desktop's config, keeps the other servers and saves a backup first. The Claude Code line now adds the studio for every folder (`--scope user`).
 - The Windows app (`npm run package:win`): a portable folder and zip with Node bundled, a launcher without a console that opens the studio in the default browser, a per-user setup with Start menu and desktop shortcuts and an uninstaller, and data kept in `%LOCALAPPDATA%\Keyframe Studio` so updates never touch it. The studio stops a few minutes after its last page is closed; the launcher goes back to the previous version if an update fails on its first start.
 - Updates for the Windows app: Settings > About and a header pill say when a newer release is out, show its notes, and install it on the owner's confirmation; the package must match the release's `SHA256SUMS.txt`. The check can be turned off and stays quiet while there is no release.
+- The `keyframe` command: `keyframe [folder]` opens the studio, `keyframe mcp [folder]` runs the MCP server, `keyframe setup [folder]` writes the folder's `.mcp.json` so `claude` started there works on it, `keyframe run <tool>` calls one tool. The Windows app puts it on the user's PATH.
+- Outside AI clients are seen: the top bar names one (Claude Code, Claude Desktop...) on its first tool call, not only when it chats, and a line under the bar says when it works on a folder other than the open project, with Open it.
+- Open a folder shows the system's own folder window (Windows, macOS, and Linux with zenity); the path box stays. The top bar says Open a project while none is open.
 - `export_godot` is served by default (thirty tools): Godot is the first engine target.
 - An example opened from Projects carries the brief its clips were proven by, so the studio judges the copy exactly as the build did: every clip "good", no warnings.
 - The opening has a longer clip for the README and the launch, `reveal`: the amber key hops in and leaves an onion skin of itself on each spot it leaves, the mark's two ghosts, then lands in the lockup with a squash and a flash. The opening is now built through the studio by `examples/kit/opening.js`.
@@ -154,6 +157,7 @@ the animation principles and saves it beside your file, which is never changed.
 - CI runs on Linux, Windows and macOS with Node.js 18, 20, 22 and 24.
 
 ### Fixed
+- Settings' Stop did nothing on an idle agent (it only interrupts a turn at work); an idle agent now shows Turn off.
 - The Windows setup and Install.cmd call PowerShell by its full path, so they work when PATH is cut down.
 - Switching the language redraws the agent slots and the update box too, so no role name stays in the language the page started in.
 - The copies `export_art` writes into `<name>-export/` are no longer taken for project skeletons or drawings, so the stage stays on the delivery after an export.

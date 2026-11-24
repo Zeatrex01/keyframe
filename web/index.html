@@ -91,6 +91,7 @@
     <svg class="ic" aria-hidden="true"><use href="#i-sliders"/></svg>
   </button>
 </header>
+<p class="outside-note" id="outsideNote" role="status" hidden><span class="dot on"></span><span id="outsideText"></span><button type="button" class="btn sm" id="outsideOpen" data-i18n="outside.open"></button></p>
 
 <main class="studio" id="app" data-tab="clips" data-phone="chat">
 
@@ -398,13 +399,17 @@
       <label class="field-label" for="openPath" data-i18n="hub.openLabel"></label>
       <div class="row-input">
         <input id="openPath" type="text" spellcheck="false" autocomplete="off" data-i18n-placeholder="hub.openPlaceholder">
+        <button type="button" class="btn" id="openBrowse"><svg class="ic" aria-hidden="true"><use href="#i-folder"/></svg><span data-i18n="hub.browse"></span></button>
         <button type="submit" class="btn primary" data-i18n="hub.open"></button>
       </div>
     </form>
     <form class="panel hub-form" id="createForm" hidden>
       <h2 class="t-section" data-i18n="hub.createTitle"></h2>
       <label class="field-label" for="createParent" data-i18n="hub.createParent"></label>
-      <input id="createParent" type="text" spellcheck="false" autocomplete="off" data-i18n-placeholder="hub.openPlaceholder">
+      <div class="row-input">
+        <input id="createParent" type="text" spellcheck="false" autocomplete="off" data-i18n-placeholder="hub.openPlaceholder">
+        <button type="button" class="btn" id="createBrowse"><svg class="ic" aria-hidden="true"><use href="#i-folder"/></svg><span data-i18n="hub.browse"></span></button>
+      </div>
       <label class="field-label" for="createName" data-i18n="hub.createName"></label>
       <div class="row-input">
         <input id="createName" type="text" spellcheck="false" autocomplete="off" maxlength="80">

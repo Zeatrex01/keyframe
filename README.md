@@ -97,6 +97,22 @@ npm start
 On Windows you can double-click `Start Studio.cmd` instead. The studio opens in your default browser.
 Pick an example (Mika is a good first one), connect your AI, and describe a motion.
 
+### The `keyframe` command
+
+| Command | What it does |
+|---|---|
+| `keyframe` | open the studio in your browser |
+| `keyframe <folder>` | open the studio on that folder (`keyframe .` for the one you are in) |
+| `keyframe mcp [folder]` | the MCP server for an AI client; with a folder it works on that folder, without one on the project open in the studio |
+| `keyframe setup [folder]` | make `claude` started in that folder use the studio on it (writes `.mcp.json`) |
+| `keyframe run <tool> [...]` | call one studio tool once on this folder (`keyframe run list` shows them) |
+
+The Windows app puts `keyframe` on your PATH (open a new terminal after installing). From source,
+run `npm link` once in the checkout.
+
+To open a project in the page, press **Open a folder** (Projects, or **Open a project** in the top
+bar): the system's own folder window opens. You can also paste the folder's path.
+
 ## Connect your AI
 
 There are two ways, and you can use both.
@@ -119,7 +135,17 @@ claude mcp add --scope user keyframe-studio -- node "/path/to/keyframe/tools/mcp
 ```
 
 `--scope user` makes the studio available in every folder you start Claude Code in. Start
-`claude`, and ask it to call `start_here`.
+`claude`, and ask it to call `start_here`. Set up this way, it works on the project open in the
+studio page and follows it when you switch.
+
+**One project, one Claude Code.** To have `claude` work on one folder whatever the page has open,
+run `keyframe setup` in that folder (or `keyframe setup <folder>`). It writes the folder's
+`.mcp.json` with the studio pinned to that folder, keeping anything already there (with a
+backup). Start `claude` in the folder and approve `keyframe-studio` when it asks.
+
+Whichever way it connects, the top bar names the AI as soon as it calls a tool ("Claude Code ·
+connected"). If it works on a folder other than the one open in the page, a line under the bar
+says so, with **Open it**.
 
 **Claude Desktop.** In Settings → AI connection choose Claude Desktop and press **Add to Claude
 Desktop**. The studio adds itself to Claude Desktop's config, keeps your other servers, and saves
@@ -207,6 +233,7 @@ Command-line flags win over environment variables.
 | `KS_CONFIG` | both | `studio.config.json` in the checkout | the file that remembers projects |
 | `KS_DATA_DIR` | packaged builds | per-user app data | where a packaged build keeps its config and logs |
 | `KS_PACKAGED` | studio | unset (the Windows app sets `1`) | run as the packaged app: data in the per-user app data folder |
+| `KS_PROJECT` | MCP server | unset (follows the project open in the studio) | the folder the server works on, like `--project`; `keyframe setup` writes it into a folder's `.mcp.json` |
 | `KS_CLAUDE_DESKTOP_CONFIG` | studio | Claude Desktop's own config file | where the Add to Claude Desktop button writes |
 | `KS_UPDATE_FEED` | Windows app | the repository's GitHub releases | where the app looks for a newer version (a test feed, a mirror) |
 | `KS_LIBRARY` | both | per user | where learned motions are kept |

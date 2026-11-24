@@ -24,6 +24,15 @@ foreach ($Dir in @([Environment]::GetFolderPath('Programs'), [Environment]::GetF
   $Link = Join-Path $Dir "$Name.lnk"
   if (Test-Path -LiteralPath $Link) { Remove-Item -LiteralPath $Link -Force }
 }
+# Off the user's PATH again (the installer put the folder there for the `keyframe` command).
+$EnvKey = Get-Item -LiteralPath 'HKCU:\Environment'
+$UserPath = [string]$EnvKey.GetValue('Path', '', 'DoNotExpandEnvironmentNames')
+$Kept = @(($UserPath -split ';') | Where-Object { $_ -and ($_.TrimEnd('\') -ine $Target) })
+if ($Kept.Count -ne @(($UserPath -split ';') | Where-Object { $_ }).Count) {
+  Set-ItemProperty -LiteralPath 'HKCU:\Environment' -Name Path -Type ExpandString -Value ($Kept -join ';')
+  [Environment]::SetEnvironmentVariable('KeyframeStudioPath', '1', 'User')
+  [Environment]::SetEnvironmentVariable('KeyframeStudioPath', $null, 'User')
+}
 Remove-Item -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\KeyframeStudio' -Recurse -Force -ErrorAction SilentlyContinue
 Remove-Item -LiteralPath $Target -Recurse -Force
 

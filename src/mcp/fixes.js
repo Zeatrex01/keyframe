@@ -32,6 +32,8 @@ const SPECIFIC = {
   'update-not-packaged': 'A source folder is updated with git pull; only the installed app updates itself.',
   'update-not-writable': 'Download the new version from the releases page, or install the app with Install.cmd so it lives in a folder it can write.',
   'update-none': 'There is nothing to install: Check now in Settings > About looks again.',
+  'folder-picker-missing': 'Type or paste the folder\'s full path in the box instead (for example C:\\Games\\Hero).',
+  'project-mcp-invalid': 'Fix the folder\'s .mcp.json by hand (it must be valid JSON), or move it aside, then run keyframe setup again.',
   'update-bad-install': 'Install the app again with the setup or Install.cmd; your projects and settings are kept.',
   'agent-busy': 'The slot is still working: wait for its answer, or stop it first.',
   'unknown-asset': 'Use a reference from `available`, written asset:<pack>/<item>.',

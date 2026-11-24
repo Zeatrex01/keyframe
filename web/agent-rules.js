@@ -37,14 +37,38 @@ export function pillState(state, online = true) {
   return { tone: 'wait', name: null, key: 'nav.waiting', embedded: false };
 }
 
+/**
+ * What the chat panel says about an outside MCP client (state.outside: the last one that called,
+ * with its folder) when the pill cannot: it works on another folder, or no project is open.
+ * @returns {{ key: string, name: string, dir: string|null, folder: string|null }|null}
+ */
+export function outsideNote(state) {
+  const outside = state?.outside;
+  if (!outside?.name) return null;
+  const open = state?.project?.dir ?? null;
+  const dir = typeof outside.dir === 'string' && outside.dir ? outside.dir : null;
+  if (dir && dir === open) return null; // the pill already says it is here
+  const folder = dir ? dir.split(/[\\/]/).filter(Boolean).pop() ?? dir : null;
+  if (dir) return { key: 'outside.elsewhere', name: outside.name, dir, folder };
+  return open ? null : { key: 'outside.noProject', name: outside.name, dir: null, folder: null };
+}
+
 // ---------- the embedded agent's slots (Settings → AI connection) ----------
 
 /** The roles a slot can have: the Director first, then the helpers the owner can add. */
 export const SLOT_ROLES = Object.freeze(['director', 'art-director', 'senior-animator', 'researcher']);
 const RUNNING = new Set(['starting', 'ready', 'working']);
+const WORKING = new Set(['starting', 'working']);
 
-/** Is the slot's agent running (so Stop makes sense)? */
+/** Is the slot's agent switched on (ready, or at work)? */
 export const isRunning = slot => RUNNING.has(slot?.status);
+
+/**
+ * What the slot's one button does: stop the turn at work, or switch an idle agent off. A ready
+ * agent has nothing to stop, so a Stop there did nothing; switching off sets its agent to None.
+ * @returns {'stop'|'off'|null}
+ */
+export const slotAction = slot => (WORKING.has(slot?.status) ? 'stop' : slot?.agent && slot?.status === 'ready' ? 'off' : null);
 
 /** The slots in the order Settings lists them: the Director first (there is always one), then the rest as they came. */
 export function orderSlots(slots) {

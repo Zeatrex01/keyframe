@@ -64,13 +64,14 @@ export const TOOLS = [help, startHere, waitForMessageTool, replyTool, seeReferen
  * @param {boolean} [options.fullDescriptions]
  * @param {boolean} [options.all]  also serve the `advanced` shelf (off by default since 2026-11-12)
  * @param {(record: object) => void} [options.onRefusal]  told about every refused call (the log)
+ * @param {(call: { tool: string, client: string|null, dir: string|null }) => void} [options.onCall]  told about every known tool call (presence)
  */
-export function createServer({ session, write, version, tools = TOOLS, fullDescriptions = false, all = false, onRefusal }) {
+export function createServer({ session, write, version, tools = TOOLS, fullDescriptions = false, all = false, onRefusal, onCall }) {
   // The official runtime only when the owner turned the Spine add-on on (asked again on each use).
   configureSpineRuntime({ locate: () => locateSpineRuntime(process.env) });
   const registry = buildRegistry(all ? tools : tools.filter(t => t.tier === 'core'));
   const shelved = all ? [] : tools.filter(t => t.tier !== 'core').map(t => t.name);
   const wire = createWire({ registry, session, write, instructions: INSTRUCTIONS,
-    serverInfo: { name: SERVER_NAME, version }, fullDescriptions, onRefusal, shelved });
+    serverInfo: { name: SERVER_NAME, version }, fullDescriptions, onRefusal, onCall, shelved });
   return { registry, wire };
 }

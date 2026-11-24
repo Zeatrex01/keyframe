@@ -19,6 +19,7 @@ import { fileURLToPath } from 'node:url';
 import { createServer, TOOLS } from '../src/mcp/server.js';
 import { currentProject } from '../src/core/projects.js';
 import { createLogger } from '../src/core/log.js';
+import { presenceStamper } from '../src/core/presence.js';
 
 const log = createLogger();
 
@@ -30,7 +31,8 @@ const option = name => {
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const version = (() => { try { return readFileSync(path.join(root, 'VERSION'), 'utf8').trim(); } catch { return 'unknown'; } })();
-const projectArg = option('--project');
+// KS_PROJECT: the same pin, from a client's env (the .mcp.json that `keyframe setup` writes).
+const projectArg = option('--project') ?? (process.env.KS_PROJECT || undefined);
 const dir = projectArg ? path.resolve(projectArg) : null;
 const isDirectory = p => { try { return statSync(p).isDirectory(); } catch { return false; } };
 
@@ -50,6 +52,8 @@ const { wire } = createServer({
   fullDescriptions: argv.includes('--full-descriptions'),
   ...(onlyNames ? {} : { all: argv.includes('--all') }),
   onRefusal: record => log.info('refused', record),
+  // An outside client (not one of the studio's own slots) tells the page it is here, and where.
+  ...(slot ? {} : { onCall: presenceStamper() }),
 });
 
 const feed = wire.lineReader();
