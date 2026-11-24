@@ -50,6 +50,12 @@ A part is drawn one of three ways, cheapest first:
    (flip the root's x scale to face left): `body` carries everything and turns at the hips, with
    `head`, `eye`, and Back (far, a tone darker) and Front (near) arms and legs in three parts. Its
    clips export as sprite sheets framed alike, with the ground origin in the map.
+   Dressed for a game with `armor: "plate" | "leather"` and `weapons: ["sword", "spear", "bow", "axe"]`:
+   a helmet, a cuirass with a belt, and a pauldron, a bracer and a greave on each side, every piece
+   with the other material as a state (`helmet_leather`), and one `weapon` part in the near fist,
+   the first weapon drawn and the others as states (`weapon_spear`). A game swaps outfits and
+   weapons by switching attachments on one skeleton; a clip for a stance switches the weapon slot
+   at its first key (an unarmed clip clears it), so each weapon gets its own idle and attack.
    `build: kid | adult` is a full body standing, with legs, for when the owner asks
    for one (`h`, `skin`, `shirt`, `pants`, `hair`, `shoes`, `sleeves: long`, and `prefix` for a
    second figure in one drawing).

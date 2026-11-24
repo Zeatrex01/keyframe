@@ -6,7 +6,7 @@
 // For each planted foot the two bones above it (the shin and the thigh, or a forearm and an upper
 // arm for a hand on a wall) are turned, frame by frame, so the foot's joint stays on the point it
 // stood on at `from` (or `at`, in world units), whatever the body does: a lean, a lunge, a crouch,
-// a punch. The foot keeps the angle it had in the clip as written. It is solved as two-bone
+// a punch. The foot keeps the angle it stood at (flat stays flat, whatever the leg does). It is solved as two-bone
 // inverse kinematics on the studio's engine and baked to ordinary rotate keys, so the delivery is
 // plain animation data: every runtime, a sprite sheet and Godot play it the same. Outside its
 // window a foot follows the clip as written.
@@ -47,6 +47,7 @@ function readRequests(plant, skeleton, end) {
 }
 
 const det = b => (b ? b.a * b.d - b.b * b.c : 1);
+const worldAngle = b => Math.atan2(b.c, b.a) / DEG;
 
 /**
  * Bake planted feet into the clip `name` of `skeleton`.
@@ -76,6 +77,11 @@ export function plantFeet(skeleton, name, plant, { fps = 30 } = {}) {
     pose.apply(anim, r.from).updateWorld();
     const f = pose.bones[index(r.foot)];
     r.at = [f.worldX, f.worldY];
+  }
+  // And the angle it stands at: a foot flat on the ground stays flat while the leg above it turns.
+  for (const r of requests) {
+    pose.apply(anim, r.from).updateWorld();
+    r.angle = worldAngle(pose.bones[index(r.foot)]);
   }
 
   const reach = new Map();
@@ -110,7 +116,7 @@ export function plantFeet(skeleton, name, plant, { fps = 30 } = {}) {
       // A reflected parent turns its child the other way.
       offsets.set(r.thigh, offsets.get(r.thigh) + d1 * Math.sign(det(parentOf(thigh)) || 1));
       offsets.set(r.shin, offsets.get(r.shin) + (dShin - d1) * Math.sign(det(thigh) || 1));
-      offsets.set(r.foot, offsets.get(r.foot) - dShin * Math.sign(det(shin) || 1));
+      offsets.set(r.foot, offsets.get(r.foot) + wrap(r.angle - worldAngle(foot) - dShin) * Math.sign(det(shin) || 1));
     }
     return offsets;
   };

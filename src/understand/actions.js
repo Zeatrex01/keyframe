@@ -86,9 +86,9 @@ export function actionFindings(sk, name, { action } = {}) {
     }).sort((p, q) => q.best - p.best)[0];
     if (limb && limb.best > 0) {
       const t = limb.t, peak = limb.at;
-      // The strike's direction: from the rest pose to the farthest point the limb reaches.
-      const far = t.reduce((m, b, i) => (Math.hypot(b.worldX - t[0].worldX, b.worldY - t[0].worldY) > Math.hypot(t[m].worldX - t[0].worldX, t[m].worldY - t[0].worldY) ? i : m), 0);
-      const dir = [t[far].worldX - t[0].worldX, t[far].worldY - t[0].worldY];
+      // The strike's direction: the way the limb travels at its fastest. (The farthest point from rest
+      // is not it: a sword raised overhead to wind up can be farther from rest than the hit.)
+      const dir = [t[peak].worldX - t[peak - 1].worldX, t[peak].worldY - t[peak - 1].worldY];
       const len = Math.hypot(...dir) || 1;
       const along = i => ((t[i].worldX - t[0].worldX) * dir[0] + (t[i].worldY - t[0].worldY) * dir[1]) / len;
       const reach = Math.max(...t.map((_, i) => along(i)));

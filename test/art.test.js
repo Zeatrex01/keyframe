@@ -442,3 +442,26 @@ test('a text shape takes its fill as its colour, and a popup title tab edits the
   assert.deepEqual(editableOf(sized, sized.find(p => p.name === 'win_ok')).colours.map(c => c.key), ['buttonColor']);
   assert.ok(editableOf(sized, sized.find(p => p.name === 'win')).colours.some(c => c.key === 'color'));
 });
+
+test('a side figure dresses for a fight: armour pieces and a weapon are parts of their own, other looks are states', async () => {
+  const s = studio();
+  try {
+    const r = await s.call('draw_rig', { name: 'knight', parts: [{ name: 'knight', component: { component: 'figure', build: 'side', h: 300, armor: 'plate', weapons: ['sword', 'spear', 'bow'] }, at: [0, 0] }] });
+    assert.equal(r.error, undefined, JSON.stringify(r.error));
+    const gear = ['helmet', 'cuirass', 'pauldronFront', 'pauldronBack', 'bracerFront', 'bracerBack', 'greaveFront', 'greaveBack', 'weapon'];
+    assert.deepEqual([...r.parts].sort(), [...SIDE_PARTS, ...gear].sort());
+    const sk = JSON.parse(fs.readFileSync(path.join(s.dir, 'knight.json'), 'utf8'));
+    const parent = Object.fromEntries(sk.bones.map(b => [b.name, b.parent]));
+    for (const [piece, on] of [['helmet', 'head'], ['cuirass', 'body'], ['pauldronFront', 'upperArmFront'], ['bracerBack', 'forearmBack'], ['greaveFront', 'shinFront'], ['weapon', 'handFront']]) assert.equal(parent[piece], on, piece);
+    const order = sk.slots.map(x => x.name);
+    assert.ok(order.indexOf('weapon') < order.indexOf('handFront'), 'the fist closes over the grip');
+    assert.ok(order.indexOf('greaveBack') < order.indexOf('body') && order.indexOf('greaveFront') > order.indexOf('body'), 'far armour behind, near in front');
+    const skin = sk.skins.find(x => x.name === 'default').attachments;
+    assert.deepEqual(Object.keys(skin.weapon).sort(), ['weapon', 'weapon_bow', 'weapon_spear']);
+    assert.ok(skin.helmet.helmet_leather && skin.cuirass.cuirass_leather, 'the other look of every piece is a state');
+    const leather = await s.call('draw_rig', { name: 'scout', parts: [{ name: 'scout', component: { component: 'figure', build: 'side', armor: 'leather' }, at: [0, 0] }] });
+    assert.ok(!leather.parts.includes('weapon') && leather.parts.includes('helmet'));
+    const scout = JSON.parse(fs.readFileSync(path.join(s.dir, 'scout.json'), 'utf8')).skins.find(x => x.name === 'default').attachments;
+    assert.ok(scout.helmet.helmet_plate, 'leather worn, plate a state');
+  } finally { s.done(); }
+});

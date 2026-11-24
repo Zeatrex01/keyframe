@@ -4,12 +4,16 @@
 //
 //   { component: 'figure', build: 'side', h: 300, skin: 'skin', shirt: 'primary', pants: 'secondary', hair: 'ink+25' }
 //
+// Dressed for a fight with `armor: 'plate' | 'leather'` and `weapons: ['sword', 'spear', 'bow', 'axe']`
+// (src/art/figure-gear.js): armour pieces and a weapon are parts of their own, so a game swaps them.
+//
 // Parts (y up, the origin on the ground under the hips): body (the torso, turning at the hips: it
 // carries everything, so moving it moves the whole character), head (turning at the neck), eye,
 // and upperArm/forearm/hand and thigh/shin/foot, each with Back (far) and Front (near).
 // Pure: shapes only, rendered by src/art/shapes.js.
 
 import { colorOf, darken } from './style.js';
+import { armourPieces, weaponPart } from './figure-gear.js';
 
 export const SIDE_PARTS = Object.freeze(['upperArmBack', 'forearmBack', 'handBack', 'thighBack', 'shinBack', 'footBack', 'body', 'head', 'eye',
   'thighFront', 'shinFront', 'footFront', 'upperArmFront', 'forearmFront', 'handFront']);
@@ -30,7 +34,7 @@ function limb(name, parent, joint, len, w1, w2, fill, sw) {
 
 /**
  * The parts of a side-view figure.
- * @param {object} c  { h, skin, shirt, pants, hair, shoes }
+ * @param {object} c  { h, skin, shirt, pants, hair, shoes, armor, weapons, metal, leather, trim, wood, blade }
  * @param {object} style  a validated style guide
  */
 export function sideParts(c, style) {
@@ -51,24 +55,40 @@ export function sideParts(c, style) {
   const armW = k(0.07), upperArm = k(0.13), forearm = k(0.12), handD = k(0.065);
   const shoulder = [k(0.0), torsoTop - armW * 0.7];
 
+  // The measures gear is fitted to (figure-gear.js).
+  const armAt = s => { const sx = shoulder[0] + (s === 'Back' ? k(0.015) : -k(0.01)); return { shoulder: [sx, shoulder[1]], elbow: [sx, shoulder[1] - upperArm] }; };
+  const legAt = s => { const x = s === 'Back' ? k(0.02) : -k(0.01); return { x, knee: hip - thigh }; };
+  const d0 = handD + sw, wristFront = [armAt('Front').elbow[0], armAt('Front').elbow[1] - forearm];
+  const g = { H, armW, forearm, legW, shin, torsoW, torsoH, torsoBottom, headW, headH, headCenter: [k(0.02), headY],
+    arms: { Back: armAt('Back'), Front: armAt('Front') }, legs: { Back: legAt('Back'), Front: legAt('Front') },
+    grip: [wristFront[0] + d0 * 0.02, wristFront[1] - d0 * 0.32] };
+  const gear = armourPieces(g, c, hex);
+  const weapon = weaponPart(g, c, hex);
+
   /** @type {any[]} */
   const parts = [];
   const arm = (s, tone) => {
-    const sx = shoulder[0] + (s === 'Back' ? k(0.015) : -k(0.01));
+    const sx = armAt(s).shoulder[0];
     parts.push(limb(`upperArm${s}`, 'body', [sx, shoulder[1]], upperArm, armW, armW * 0.85, tone(shirt), sw));
     const elbow = [sx, shoulder[1] - upperArm];
     parts.push(limb(`forearm${s}`, `upperArm${s}`, elbow, forearm, armW * 0.82, armW * 0.72, tone(skin), sw));
+    const [bracer, pauldron] = gear.arm(s, tone);
+    if (bracer) parts.push(bracer);
+    // The weapon goes under the near fist, so the fingers close over its grip.
+    if (s === 'Front' && weapon) parts.push(weapon);
     const d = handD + sw, wrist = [elbow[0], elbow[1] - forearm];
     // A fist, the thumb on top towards the front.
     parts.push({ name: `hand${s}`, parent: `forearm${s}`, box: [r2(d * 1.2), r2(d * 1.2)], offset: [r2(wrist[0]), r2(wrist[1] - d * 0.3)], pivot: [0, r2(d * 0.3)], shapes: [
       { circle: [r2(d * 0.6), r2(d * 0.62), r2(d / 2 - sw / 2)], fill: tone(skin), sw: 'regular' },
       { ellipse: [r2(d * 0.86), r2(d * 0.46), r2(d * 0.15), r2(d * 0.2)], fill: tone(skin), sw: 'thin' },
     ] });
+    if (pauldron) parts.push(pauldron);
   };
   const leg = (s, tone) => {
     const x = s === 'Back' ? k(0.02) : -k(0.01);
     parts.push(limb(`thigh${s}`, 'body', [x, hip], thigh, legW, legW * 0.85, tone(pants), sw));
     parts.push(limb(`shin${s}`, `thigh${s}`, [x, hip - thigh], shin, legW * 0.82, legW * 0.7, tone(pants), sw));
+    parts.push(...gear.leg(s, tone));
     // A shoe pointing forward (+x), turning at the ankle over its heel.
     const fw = k(0.13), fh = footH + legW * 0.25, heel = fw * 0.3;
     parts.push({ name: `foot${s}`, parent: `shin${s}`, box: [r2(fw), r2(fh)], offset: [r2(x - heel + fw / 2), r2(fh / 2)], pivot: [r2(heel - fw / 2), r2(fh / 2 - legW * 0.3)], shapes: [
@@ -86,6 +106,7 @@ export function sideParts(c, style) {
       fill: shirt, sw: 'regular', bbox: [0, 0, W, Ht] },
     { rect: [r2(x0 + W * 0.03), r2(Ht * 0.76), r2(W * 0.94 - sw), r2(Ht * 0.24 - sw / 2)], r: 'sm', fill: pants, sw: 'regular', shade: false },
   ] });
+  parts.push(...gear.body());
   // The head in profile, facing right: the skull, the face to the front with a nose and a chin, an
   // ear in the middle, hair over the top and the back, a brow and a mouth.
   const hw = headW, hh = headH;
@@ -106,6 +127,7 @@ export function sideParts(c, style) {
     { ellipse: [r2(ed * 0.6), r2(ed * 0.8), r2(ed * 0.45), r2(ed * 0.72)], fill: 'ink+10', stroke: false, shade: false },
     { circle: [r2(ed * 0.78), r2(ed * 0.5), r2(ed * 0.16)], fill: '#ffffff', stroke: false, shade: false },
   ] });
+  parts.push(...gear.head());
   leg('Front', same); arm('Front', same);
   return parts;
 }
