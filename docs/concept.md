@@ -56,6 +56,14 @@ Untouched sections pass through from the base byte for byte; only the requested,
 patch is applied. If the owner later changes the base in Spine, **the base wins and the studio
 says so out loud** — an old patch is never silently imposed.
 
+Versions (decided 2026-11-24): one base has one result file, `<name>_v2.json` beside it, and
+every later change updates that same file. A game, a web page or the Spine editor that loads the
+result keeps loading the same name; nothing has to be repointed after each pass. Every earlier
+state of the result is kept as a backup (`.backup/`, the newest 20), listed under
+Versions in the page and by `list_history`, and one click (or `restore_file`) goes back to any
+of them, saving the current one first. A numbered file per pass (`_v3`, `_v4`) is not made: the
+history is the versions.
+
 ## Division of labour
 
 - **The studio and the agent:** motion on a finished rig (bone and slot timelines, curves,

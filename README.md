@@ -38,8 +38,9 @@ those things for whichever AI you use:
   against them.
 - **Done means seen and checked.** The studio renders frames for the AI to look at, checks that the
   file loads and plays, and critiques the motion before anything is called finished.
-- **Your file is never touched.** Every result is a new file beside yours, with a backup of every
-  version and one-click undo.
+- **Your file is never touched.** The result is one file beside yours (`hero_v2.json` beside
+  `hero.json`) that every later change updates, so your game keeps loading the same name; every
+  earlier version is kept and one click goes back to it.
 - **Draw when there is no art yet.** Draw mode builds placeholder parts, pivots and bones in the
   page, or the AI draws them as SVG; either way you get a rig the studio can animate at once.
 - **Effects.** Bursts, trails, flashes, glows and shakes, written as ordinary bones and keys so

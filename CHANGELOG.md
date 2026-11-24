@@ -6,6 +6,7 @@ All notable changes to this project. The format follows
 ## Unreleased
 
 ### Added
+- Versions are stated plainly (`docs/concept.md`): a base has one result file (`<name>_v2.json`) that every change updates, so a game keeps loading one name; the last 20 states are kept as versions to go back to. The delivery card says so.
 - The Director has a team: an Art Director (draws, keeps the style guide, checks the art), a Senior Animator (writes and polishes motion) and a Researcher, each set up in Settings with its own agent and tools. The Director hands one of them a task with `ask_team` and gets its answer back, then checks the work before it replies; the helper's answer shows in the chat too. The Illustrator slot is now the Art Director.
 - A large-rig gate: a 240-bone rig goes through read, write, check and critique in tens of milliseconds each (`test/large-rig.test.js`).
 - The delivery card has an HTML player button: one self-contained page that plays the delivered skeleton in any browser (`GET /api/player`).

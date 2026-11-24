@@ -199,7 +199,7 @@
   "delivery.chipOk": "Kontrol edildi",
   "delivery.chipBad": "Açılmıyor",
   "delivery.chipFailed": "Kontrol edilemedi",
-  "delivery.written": "{base} dosyasının yanına yazıldı. Senin dosyan hiç değişmez; her sürümün yedeği tutulur.",
+  "delivery.written": "{base} dosyasının yanına yazıldı. Her değişiklik bu tek dosyayı günceller, oyun hep aynı adı yükler; senin dosyan hiç değişmez, önceki sürümler Sürümler altında.",
   "keys.events": "olaylar",
   "keys.channel.rotate": "döndürme",
   "keys.channel.move": "taşıma",

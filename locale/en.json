@@ -199,7 +199,7 @@
   "delivery.chipOk": "Checked",
   "delivery.chipBad": "Does not open",
   "delivery.chipFailed": "Not checked",
-  "delivery.written": "Written beside {base}. Your file is never changed; a backup of every version is kept.",
+  "delivery.written": "Written beside {base}. Every change updates this one file, so a game keeps loading the same name; your file is never changed, and earlier versions are under Versions.",
   "keys.events": "events",
   "keys.channel.rotate": "rotate",
   "keys.channel.move": "move",
