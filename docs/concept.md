@@ -81,7 +81,7 @@ a folder by its path, creates an empty project and takes one off the list (the f
 deleted). **Settings** shows how to connect an agent (Claude Code, Codex, any MCP client), checks
 that one is connected, switches the language and downloads the studio as one zip. The **opening**
 plays the studio's mark at every start. Same day, second decision: the page is an installable app (manifest,
-service worker, icons), the launcher opens it in its own window (Edge or Chrome `--app`), a second
+service worker, icons), the launcher opens it in the default browser (decided 2026-11-24, replacing an Edge or Chrome `--app` window), a second
 start reuses the running studio, the opening is on screen from the first paint and writes why if
 the page cannot start or the studio is not running, and Projects offers a sample project (a copy
 of Mika from `examples/showcase`). Decided 2026-11-24 (a source/result toggle rather than a side-by-side stage): the

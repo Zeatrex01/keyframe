@@ -1,8 +1,9 @@
 Keyframe Studio for Windows
 ===========================
 
-Start: double-click "Keyframe Studio.exe". The studio opens in its own window; closing the
-window stops it. Node is bundled, so nothing else has to be installed for the studio itself.
+Start: double-click "Keyframe Studio.exe". The studio opens in your default browser and stops
+by itself a few minutes after its last tab is closed. Node is bundled, so nothing else has to be
+installed for the studio itself.
 
 Install (optional): double-click "Install.cmd". It copies the app to
 %LOCALAPPDATA%\Programs\Keyframe Studio, adds Start menu and desktop shortcuts and an entry in

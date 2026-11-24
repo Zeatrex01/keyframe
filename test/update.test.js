@@ -118,6 +118,7 @@ test('installing puts the new version beside the running one; old versions go on
   assert.equal(state.current, 'app-0.0.2-beta');
   assert.equal(state.previous, 'app-0.0.1-beta', 'the running version stays to go back to');
   assert.equal(fs.readFileSync(path.join(root, 'current'), 'utf8'), 'app-0.0.2-beta\r\n', 'CRLF, so cmd.exe reads it');
+  assert.equal(fs.readFileSync(path.join(root, 'pending'), 'utf8'), 'app-0.0.2-beta\r\n', 'the launcher may roll back only on this first start');
   assert.ok(fs.existsSync(path.join(root, 'app-0.0.1-beta', 'node', 'node.exe')));
   assert.equal(installPackage(root, packageOf('0.0.2-beta'), '0.0.2-beta').already, true);
   assert.deepEqual(cleanOldVersions(root).sort(), ['app-0.0.0-beta', 'app-0.0.9.partial']);

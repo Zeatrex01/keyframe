@@ -1,73 +1,43 @@
-// The studio as a desktop app (`tools/studio.js --app`, what the packaged launcher starts): its
-// own window with its own browser profile, no console, a log file, and the local server stops
-// when the window is closed.
+// The studio as a desktop app (`tools/studio.js --app`, what the packaged launcher starts): the
+// page opens in the owner's default browser, there is no console, what the studio says goes to a
+// log file, and the studio stops by itself once no page has been open for a while.
 //
-// The window is Edge or Chrome in app mode with a profile of the studio's own, so it is a browser
-// process of its own: when it exits, the studio stops. Pages also poll the studio every second, so
-// a studio that nobody has polled for a while (a window that was never opened, a default-browser
-// tab that was closed) stops as well. A minimized window is throttled to about one poll a minute,
-// so the quiet limit is well above that.
+// A browser tab cannot say it was closed, but every open page polls the studio every second
+// (a background tab about once a minute), so a studio nobody has polled for QUIET_LIMIT_MS stops.
+// Opening the app again starts it again, and a page left open says the studio is not running.
 //
 // Node-only (layer `core`).
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { spawn, execFile } from 'node:child_process';
-import { findAppBrowser, openAppWindow } from './launch.js';
+import { execFile } from 'node:child_process';
 
 export const QUIET_LIMIT_MS = 150 * 1000;
 export const FIRST_POLL_MS = 120 * 1000;
-export const AFTER_WINDOW_MS = 8 * 1000;
 
 /**
- * Open the studio in an app window with its own profile. Answers the window's process (null when
- * the page went to the default browser instead).
- * @param {string} url
- * @param {{ profileDir: string, browser?: string|null, spawnImpl?: typeof spawn }} options
- */
-export function openOwnWindow(url, { profileDir, browser = findAppBrowser(), spawnImpl = spawn }) {
-  if (!browser) { openAppWindow(url, { browser: null }); return null; }
-  try {
-    const child = spawnImpl(browser, [`--app=${url}`, `--user-data-dir=${profileDir}`, '--no-first-run', '--no-default-browser-check', '--disable-background-mode', '--new-window'],
-      { stdio: 'ignore', detached: false, windowsHide: false });
-    child.on('error', () => {});
-    return child;
-  } catch {
-    openAppWindow(url, { browser: null });
-    return null;
-  }
-}
-
-/**
- * When to stop: the window's process is gone and no page polls, or no page has polled for long.
- * @param {{ startedAt: number, lastPoll: () => number, windowGone: () => number|null }} seen
- *   lastPoll: the time of the last page poll (0: none yet); windowGone: when the window's process exited
+ * When to stop: no page has polled for long, or none came at all after the start.
+ * @param {{ startedAt: number, lastPoll: () => number }} seen  lastPoll: the time of the last page poll (0: none yet)
  * @param {number} now
  */
-export function shouldStop({ startedAt, lastPoll, windowGone }, now) {
+export function shouldStop({ startedAt, lastPoll }, now) {
   const polled = lastPoll();
-  const gone = windowGone();
-  if (gone !== null && now - gone >= AFTER_WINDOW_MS && now - polled >= AFTER_WINDOW_MS) return 'window-closed';
   if (!polled) return now - startedAt >= FIRST_POLL_MS ? 'never-opened' : null;
   return now - polled >= QUIET_LIMIT_MS ? 'no-page' : null;
 }
 
 /**
- * Watch the window and the polls; call `stop(reason)` once when the studio should end.
- * @returns {{ window(child: import('node:child_process').ChildProcess|null): void, cancel(): void }}
+ * Call `stop(reason)` once when no page has polled for long.
+ * @returns {{ cancel(): void }}
  */
-export function watchWindow({ lastPoll, stop, now = Date.now, everyMs = 2000 }) {
+export function watchPages({ lastPoll, stop, now = Date.now, everyMs = 5000 }) {
   const startedAt = now();
-  let gone = null;
   const timer = setInterval(() => {
-    const reason = shouldStop({ startedAt, lastPoll, windowGone: () => gone }, now());
+    const reason = shouldStop({ startedAt, lastPoll }, now());
     if (reason) { clearInterval(timer); stop(reason); }
   }, everyMs);
   timer.unref?.();
-  return {
-    window(child) { if (child) child.once('exit', () => { gone = now(); }); },
-    cancel() { clearInterval(timer); },
-  };
+  return { cancel() { clearInterval(timer); } };
 }
 
 /** A log stream into `<logsDir>/studio.log`, started over when it passes `max` bytes. */

@@ -15,7 +15,7 @@ $Target = $Target.TrimEnd('\')
 $IsInstall = (Test-Path -LiteralPath (Join-Path $Target 'current')) -and ((Test-Path -LiteralPath (Join-Path $Target 'Keyframe Studio.exe')) -or (Test-Path -LiteralPath (Join-Path $Target 'Keyframe Studio.cmd')))
 if (-not $IsInstall) { throw "$Target is not a Keyframe Studio install folder." }
 
-Get-CimInstance Win32_Process -Filter "Name='node.exe'" |
+Get-CimInstance Win32_Process -Filter "Name='node.exe' OR Name='Keyframe Studio.exe'" |
   Where-Object { $_.ExecutablePath -and $_.ExecutablePath.StartsWith($Target + '\', [StringComparison]::OrdinalIgnoreCase) } |
   ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
 Start-Sleep -Seconds 1

@@ -78,7 +78,8 @@ checked and critiqued it, and exported it as one HTML file
 **Windows app.** Download `Keyframe-Studio-<version>-win-x64-setup.exe` from the
 [releases](https://github.com/Zeatrex01/keyframe/releases) and run it, or unzip
 `Keyframe-Studio-<version>-win-x64.zip` and start `Keyframe Studio.exe` from the folder (portable).
-Node is bundled, the studio opens in its own window, and closing the window stops it. The app is
+Node is bundled and the studio opens in your default browser; it stops by itself a few minutes
+after its last tab is closed. The app is
 not signed yet, so on the first start SmartScreen may say "Windows protected your PC": choose
 **More info**, then **Run anyway**. Settings → About tells you when a new version is out and
 installs it when you say so; your projects and settings are kept. Details:
@@ -93,7 +94,7 @@ cd keyframe
 npm start
 ```
 
-On Windows you can double-click `Start Studio.cmd` instead. The studio opens in its own window.
+On Windows you can double-click `Start Studio.cmd` instead. The studio opens in your default browser.
 Pick an example (Mika is a good first one), connect your AI, and describe a motion.
 
 ## Connect your AI

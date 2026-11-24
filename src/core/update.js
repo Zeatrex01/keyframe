@@ -11,8 +11,8 @@
 //
 // The install folder holds one folder per version and a `current` file naming the one to start:
 //   Keyframe Studio.exe   current   previous   app-0.0.1-beta/   app-0.0.2-beta/
-// The launcher starts `current`; if it fails right away and `previous` still exists, the launcher
-// goes back to it. User data lives elsewhere (src/core/app-paths.js), so an update never touches it.
+// The launcher starts `current`; on the first start after an update (`pending`), if it fails right
+// away and `previous` still exists, the launcher goes back to it. User data lives elsewhere (src/core/app-paths.js), so an update never touches it.
 //
 // Node-only (layer `core`).
 
@@ -200,6 +200,8 @@ export function installPackage(appRoot, bytes, version) {
   fs.rmSync(target, { recursive: true, force: true });
   fs.renameSync(staging, target);
   if (before.current) writeAtomic(path.join(appRoot, 'previous'), `${before.current}\r\n`);
+  // The launcher may go back to `previous` only on this version's first start.
+  writeAtomic(path.join(appRoot, 'pending'), `${folder}\r\n`);
   writeAtomic(path.join(appRoot, 'current'), `${folder}\r\n`);
   return { version, folder, already: false };
 }

@@ -3,9 +3,9 @@
 //
 //   node tools/studio.js [--project <folder with the Spine export>] [--port 8731] [--open] [--app]
 //
-// --app is the desktop app (what the packaged launcher starts): the studio's own window with a
-// profile of its own, the log in the user's data folder instead of a console, and the studio
-// stops when its window is closed (src/core/desktop.js). It can also install updates (src/core/update.js).
+// --app is the desktop app (what the packaged launcher starts): the page opens in the default
+// browser, the log goes to the user's data folder instead of a console, and the studio stops once
+// no page has been open for a while (src/core/desktop.js). It can also install updates (src/core/update.js).
 //
 // Environment: KS_PORT (the port when --port is not given), KS_LOG_LEVEL (error, warn, info,
 // debug), KS_LOG_FORMAT (text or json). The page answers on 127.0.0.1 only.
@@ -14,15 +14,15 @@
 // Open the printed address in a browser. Connect an agent to the same folder with
 // tools/mcp-server.js; what you type in the page reaches it through wait_for_message.
 
-import { readFileSync, statSync } from 'node:fs';
+import { readFileSync, statSync, existsSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { createStudioServer } from '../src/server/http.js';
-import { openAppWindow, listenNear } from '../src/core/launch.js';
+import { openInBrowser, listenNear } from '../src/core/launch.js';
 import { createLogger } from '../src/core/log.js';
 import { resolvePaths } from '../src/core/app-paths.js';
-import { openOwnWindow, watchWindow, logFile, markInstalledVersion } from '../src/core/desktop.js';
+import { watchPages, logFile, markInstalledVersion } from '../src/core/desktop.js';
 import { appRootOf, installState, cleanOldVersions, refreshLauncher } from '../src/core/update.js';
 
 const argv = process.argv.slice(2);
@@ -50,25 +50,24 @@ const wanted = portOption === undefined || portOption === '' ? 8731 : Number(por
 if (portOption !== undefined && !(Number.isInteger(Number(portOption)) && Number(portOption) >= 0 && Number(portOption) < 65536)) {
   console.error(`Not a port: ${portOption}`); process.exit(2);
 }
-/** @type {ReturnType<typeof watchWindow> | null} */
+/** @type {ReturnType<typeof watchPages> | null} */
 let watch = null;
-const show = address => {
-  if (appMode) { watch?.window(openOwnWindow(address, { profileDir: path.join(paths.dataRoot, 'window') })); return; }
-  if (!argv.includes('--open')) return;
-  const opened = openAppWindow(address);
-  if (opened.as === 'tab') say('  (no Edge or Chrome found: opened in the default browser)');
-};
+const show = address => { if (appMode || argv.includes('--open')) openInBrowser(address); };
 const exit = code => (logged ? logged.stream.end(() => process.exit(code)) : process.exit(code));
 
-// An installed update starts in place of this studio, on the same port, and the open window
-// reloads into it (web/sync.js reloads when the version changes).
+// An installed update starts in place of this studio, through the launcher (which goes back to the
+// previous version if the new one fails), on the same port; the open page reloads into it
+// (web/sync.js reloads when the version changes).
 const restart = () => {
   const state = appRoot ? installState(appRoot) : null;
   if (!appRoot || !state?.current) return;
+  const launcher = path.join(appRoot, 'Keyframe Studio.exe');
   const dir = path.join(appRoot, state.current);
+  const args = ['--port', String(port), '--reuse-window'];
   log.info('restarting into', { version: state.current });
-  stopStudio('update', () => spawn(path.join(dir, 'node', 'node.exe'), [path.join(dir, 'studio', 'tools', 'studio.js'), '--app', '--port', String(port), '--reuse-window'],
-    { detached: true, stdio: 'ignore', windowsHide: true }).unref());
+  stopStudio('update', () => (existsSync(launcher)
+    ? spawn(launcher, args, { detached: true, stdio: 'ignore' })
+    : spawn(path.join(dir, 'node', 'node.exe'), [path.join(dir, 'studio', 'tools', 'studio.js'), '--app', ...args], { detached: true, stdio: 'ignore', windowsHide: true })).unref());
 };
 
 const studio = createStudioServer({ projectDir, version, log, restart });
@@ -82,8 +81,7 @@ try {
       // A folder dropped on the launcher is opened in the running studio.
       say(`Keyframe Studio is already running at http://127.0.0.1:${found.port}/`);
       if (projectDir) await fetch(`http://127.0.0.1:${found.port}/api/projects/open`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ dir: projectDir }) }).catch(() => {});
-      if (appMode) openOwnWindow(`http://127.0.0.1:${found.port}/`, { profileDir: path.join(paths.dataRoot, 'window') });
-      else show(`http://127.0.0.1:${found.port}/`);
+      show(`http://127.0.0.1:${found.port}/`);
       exit(0);
       await new Promise(() => {});
     }
@@ -96,10 +94,13 @@ try {
   await new Promise(() => {});
 }
 const address = `http://127.0.0.1:${port}/`;
-say(`Keyframe Studio ${version}\n  project: ${projectDir ?? '(choose in Projects)'}\n  open:    ${address}\n  ${appMode ? 'Closing the studio window stops the studio.' : 'Keep this window open while you use the studio; closing it stops the studio.'}`);
+say(`Keyframe Studio ${version}\n  project: ${projectDir ?? '(choose in Projects)'}\n  open:    ${address}\n  ${appMode ? 'The studio stops a few minutes after its last page is closed.' : 'Keep this window open while you use the studio; closing it stops the studio.'}`);
 if (appMode) {
-  watch = watchWindow({ lastPoll: () => studio.lastPoll(), stop: reason => stopStudio(reason) });
-  // After an update the old window reloads into this studio; a new one opens only if none comes back.
+  watch = watchPages({ lastPoll: () => studio.lastPoll(), stop: reason => stopStudio(reason) });
+  // An earlier build opened its own browser profile here; nothing uses it any more.
+  const oldProfile = path.join(paths.dataRoot, 'window');
+  if (existsSync(oldProfile)) setTimeout(() => { try { rmSync(oldProfile, { recursive: true, force: true }); } catch { /* still in use: next start */ } }, 5000).unref();
+  // After an update the open page reloads into this studio; a new tab opens only if none comes back.
   if (argv.includes('--reuse-window')) setTimeout(() => { if (!studio.lastPoll()) show(address); }, 15000).unref();
   else show(address);
   // Once this version has run for a while it is the good one: old version folders go, and the

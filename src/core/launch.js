@@ -1,5 +1,5 @@
-// Opening the studio as an app: its own window (Edge or Chrome with --app), not a browser tab.
-// Falls back to the default browser when neither is installed.
+// Opening the studio: a tab in the owner's default browser (whichever it is). findAppBrowser only
+// serves the browser gates (e2e/), which need a Chromium to drive.
 //
 // Node-only (layer `core`).
 
@@ -26,12 +26,18 @@ export function findAppBrowser({ platform, env, exists = p => { try { return fs.
   return appBrowsers(platform, env).find(exists) ?? null;
 }
 
-/** Open `url` in its own app window; returns how it was opened. */
-export function openAppWindow(url, { platform = process.platform, browser = findAppBrowser({ platform }) } = {}) {
-  const run = (command, args) => { try { spawn(command, args, { stdio: 'ignore', detached: true }).unref(); return true; } catch { return false; } };
-  if (browser && run(browser, [`--app=${url}`, '--new-window'])) return { as: 'app', browser };
-  const [command, args] = platform === 'win32' ? ['cmd', ['/c', 'start', '', url]] : platform === 'darwin' ? ['open', [url]] : ['xdg-open', [url]];
-  return { as: run(command, args) ? 'tab' : 'none' };
+/**
+ * How the system opens `url` in the default browser: the command and its arguments.
+ * @returns {[string, string[]]}
+ */
+export function defaultOpener(url, platform = process.platform) {
+  return platform === 'win32' ? ['cmd', ['/c', 'start', '', url]] : platform === 'darwin' ? ['open', [url]] : ['xdg-open', [url]];
+}
+
+/** Open `url` in the default browser; true when the system took it. */
+export function openInBrowser(url, { platform = process.platform, spawnImpl = spawn } = {}) {
+  const [command, args] = defaultOpener(url, platform);
+  try { const child = spawnImpl(command, args, { stdio: 'ignore', detached: true, windowsHide: true }); child.on?.('error', () => {}); child.unref?.(); return true; } catch { return false; }
 }
 
 /** True when a Keyframe Studio already answers on this port (so a second start just opens a window). */

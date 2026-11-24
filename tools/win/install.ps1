@@ -16,7 +16,7 @@ if ($Current -notmatch '^app-[0-9A-Za-z.\-]+$') { throw "The package names no ve
 $Version = $Current -replace '^app-', ''
 
 # A studio running from the install folder holds its files: stop it first.
-Get-CimInstance Win32_Process -Filter "Name='node.exe'" |
+Get-CimInstance Win32_Process -Filter "Name='node.exe' OR Name='Keyframe Studio.exe'" |
   Where-Object { $_.ExecutablePath -and $_.ExecutablePath.StartsWith($Dest + '\', [StringComparison]::OrdinalIgnoreCase) } |
   ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
 

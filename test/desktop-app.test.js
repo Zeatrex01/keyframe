@@ -1,5 +1,5 @@
-// Gate for the Windows app: the app mode stops the studio when its window is gone (and only
-// then), a packaged studio keeps its data outside the app folder, its agent clients start
+// Gate for the Windows app: the app mode opens the default browser and stops the studio once no
+// page has been open for a while, a packaged studio keeps its data outside the app folder, its agent clients start
 // through the shim that survives updates, and tools/package-win.js lays out a package the
 // updater can install.
 import { test } from 'node:test';
@@ -9,7 +9,8 @@ import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { EventEmitter } from 'node:events';
-import { shouldStop, watchWindow, openOwnWindow, QUIET_LIMIT_MS, FIRST_POLL_MS, AFTER_WINDOW_MS } from '../src/core/desktop.js';
+import { shouldStop, watchPages, QUIET_LIMIT_MS, FIRST_POLL_MS } from '../src/core/desktop.js';
+import { defaultOpener, openInBrowser } from '../src/core/launch.js';
 import { resolvePaths, PACKAGED_MARK } from '../src/core/app-paths.js';
 import { connectionFor } from '../src/core/connect.js';
 import { zipFolder, unzip } from '../src/core/zip.js';
@@ -18,41 +19,37 @@ import { build, iconFile, APP_SKIP } from '../tools/package-win.js';
 
 const tmp = prefix => fs.mkdtempSync(path.join(os.tmpdir(), prefix));
 
-test('the studio stops when its window is gone and no page polls, or when no page has polled for long', () => {
+test('the studio stops once no page has polled for long, or none came after the start', () => {
   const t0 = 1_000_000;
-  const seen = (lastPoll, gone) => ({ startedAt: t0, lastPoll: () => lastPoll, windowGone: () => gone });
-  assert.equal(shouldStop(seen(0, null), t0 + FIRST_POLL_MS - 1), null, 'the window may take a while to open');
-  assert.equal(shouldStop(seen(0, null), t0 + FIRST_POLL_MS), 'never-opened');
-  assert.equal(shouldStop(seen(t0 + 10, null), t0 + 70_000), null, 'a minimized window polls about once a minute');
-  assert.equal(shouldStop(seen(t0 + 10, null), t0 + 10 + QUIET_LIMIT_MS), 'no-page');
-  assert.equal(shouldStop(seen(t0 + 5000, t0 + 6000), t0 + 6000 + AFTER_WINDOW_MS - 1), null);
-  assert.equal(shouldStop(seen(t0 + 5000, t0 + 6000), t0 + 6000 + AFTER_WINDOW_MS), 'window-closed');
-  // a second window handed to the same browser keeps polling after the first process exits
-  assert.equal(shouldStop(seen(t0 + 13_500, t0 + 6000), t0 + 14_000), null);
+  const seen = lastPoll => ({ startedAt: t0, lastPoll: () => lastPoll });
+  assert.equal(shouldStop(seen(0), t0 + FIRST_POLL_MS - 1), null, 'the browser may take a while to open');
+  assert.equal(shouldStop(seen(0), t0 + FIRST_POLL_MS), 'never-opened');
+  assert.equal(shouldStop(seen(t0 + 10), t0 + 70_000), null, 'a background tab polls about once a minute');
+  assert.equal(shouldStop(seen(t0 + 10), t0 + 10 + QUIET_LIMIT_MS), 'no-page');
 });
 
-test('the watch follows the window process and stops once', async () => {
-  let clock = 0;
+test('the watch stops once', async () => {
+  let clock = 0, polled = 1;
   const stops = [];
-  const child = new EventEmitter();
-  const watch = watchWindow({ lastPoll: () => 1, stop: reason => stops.push(reason), now: () => clock, everyMs: 5 });
-  watch.window(/** @type {any} */ (child));
-  clock = 2;
+  watchPages({ lastPoll: () => polled, stop: reason => stops.push(reason), now: () => clock, everyMs: 5 });
   await new Promise(r => setTimeout(r, 20));
   assert.deepEqual(stops, []);
-  child.emit('exit', 0);
-  clock = 2 + AFTER_WINDOW_MS + 1;
+  clock = QUIET_LIMIT_MS + 2;
   await new Promise(r => setTimeout(r, 30));
-  assert.deepEqual(stops, ['window-closed']);
+  polled = 0;
+  await new Promise(r => setTimeout(r, 20));
+  assert.deepEqual(stops, ['no-page']);
 });
 
-test('the window is the browser in app mode with the studio\'s own profile', () => {
+test('the page opens in the default browser, with no browser of our choosing and no profile', () => {
+  assert.deepEqual(defaultOpener('http://127.0.0.1:8731/', 'win32'), ['cmd', ['/c', 'start', '', 'http://127.0.0.1:8731/']]);
+  assert.deepEqual(defaultOpener('http://127.0.0.1:8731/', 'darwin'), ['open', ['http://127.0.0.1:8731/']]);
+  assert.deepEqual(defaultOpener('http://127.0.0.1:8731/', 'linux'), ['xdg-open', ['http://127.0.0.1:8731/']]);
   let call;
-  const child = openOwnWindow('http://127.0.0.1:8731/', { profileDir: '/data/window', browser: '/edge', spawnImpl: /** @type {any} */ ((cmd, args) => { call = { cmd, args }; return new EventEmitter(); }) });
-  assert.ok(child);
-  assert.equal(call.cmd, '/edge');
-  assert.ok(call.args.includes('--app=http://127.0.0.1:8731/'));
-  assert.ok(call.args.includes('--user-data-dir=/data/window'), 'a profile of its own makes the window a process of its own');
+  assert.equal(openInBrowser('http://127.0.0.1:8731/', { platform: 'win32', spawnImpl: /** @type {any} */ ((cmd, args) => { call = [cmd, ...args]; return new EventEmitter(); }) }), true);
+  assert.ok(!call.some(a => /--app|--user-data-dir|msedge|chrome/i.test(a)));
+  const studio = fs.readFileSync('tools/studio.js', 'utf8');
+  assert.doesNotMatch(studio, /user-data-dir|openOwnWindow|msedge/);
 });
 
 test('a packaged studio keeps its data in the user\'s app data, never in the app folder', () => {

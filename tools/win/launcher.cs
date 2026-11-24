@@ -1,8 +1,10 @@
 // Keyframe Studio.exe: starts the studio of the version named in `current` with the bundled Node,
-// without a console window. Built by tools/package-win.js with the C# compiler every Windows has.
+// without a console window; the studio opens its page in the default browser. Built by
+// tools/package-win.js with the C# compiler every Windows has.
 //
-// If that version fails right away and the version it replaced (`previous`) is still there, the
-// launcher goes back to it, so a broken update never leaves the owner without a studio.
+// On the first start after an update (`pending` names the new version), if that version fails
+// right away and the version it replaced (`previous`) is still there, the launcher goes back to it,
+// so a broken update never leaves the owner without a studio. Later failures never roll back.
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -24,6 +26,8 @@ static class Launcher
         string root = AppDomain.CurrentDomain.BaseDirectory;
         string current = ReadName(Path.Combine(root, "current"));
         string previous = ReadName(Path.Combine(root, "previous"));
+        string pendingFile = Path.Combine(root, "pending");
+        bool firstStart = ReadName(pendingFile) == current;
         if (!Startable(root, current))
         {
             string other = new[] { previous }
@@ -39,10 +43,10 @@ static class Launcher
             try { studio = Start(root, current, args); }
             catch (Exception e) { Fail("Keyframe Studio could not start: " + e.Message); return 3; }
             // A studio that is still running after a while started fine; the launcher's job is done.
-            if (!studio.WaitForExit(20000)) return 0;
-            if (studio.ExitCode == 0) return 0;
-            if (attempt == 0 && previous != null && previous != current && Startable(root, previous))
+            if (!studio.WaitForExit(20000) || studio.ExitCode == 0) { Forget(pendingFile); return 0; }
+            if (firstStart && attempt == 0 && previous != null && previous != current && Startable(root, previous))
             {
+                Forget(pendingFile);
                 WriteName(Path.Combine(root, "current"), previous);
                 MessageBox.Show(current.Replace("app-", "") + " did not start, so Keyframe Studio went back to " + previous.Replace("app-", "") + ".", Name, MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 current = previous;
@@ -58,8 +62,14 @@ static class Launcher
     {
         string dir = Path.Combine(root, folder);
         string arguments = Quote(Path.Combine(dir, "studio", "tools", "studio.js")) + " --app";
-        // A folder dropped on the app (or passed by a shortcut) opens as the project.
-        if (args.Length > 0 && Directory.Exists(args[0])) arguments += " --project " + Quote(Path.GetFullPath(args[0]));
+        // A folder dropped on the app (or passed by a shortcut) opens as the project; options
+        // (the studio's own restart after an update passes --port and --reuse-window) go through.
+        foreach (string arg in args)
+        {
+            if (arg.StartsWith("--")) arguments += " " + Quote(arg);
+            else if (Directory.Exists(arg)) arguments += " --project " + Quote(Path.GetFullPath(arg));
+            else if (arg.Length > 0 && char.IsDigit(arg[0])) arguments += " " + Quote(arg);
+        }
         var info = new ProcessStartInfo(Path.Combine(dir, "node", "node.exe"), arguments)
         {
             UseShellExecute = false,
@@ -85,6 +95,11 @@ static class Launcher
     static void WriteName(string file, string name)
     {
         try { string tmp = file + ".tmp"; File.WriteAllText(tmp, name + "\r\n"); if (File.Exists(file)) File.Delete(file); File.Move(tmp, file); } catch { }
+    }
+
+    static void Forget(string file)
+    {
+        try { if (File.Exists(file)) File.Delete(file); } catch { }
     }
 
     static string Quote(string arg)

@@ -54,4 +54,9 @@ el.updateAuto.addEventListener('change', async () => {
   try { S.update = await api('/api/update/settings', { ...json({ check: el.updateAuto.checked }), method: 'PUT' }); renderUpdate(); }
   catch (err) { renderUpdate(String(err.message ?? err)); }
 });
-el.updatePill.addEventListener('click', () => { showView('settings'); document.getElementById('setAbout')?.scrollIntoView({ block: 'start' }); });
+// The pill goes straight to About, where the update is (the settings nav shows one section at a time).
+el.updatePill.addEventListener('click', () => {
+  showView('settings');
+  /** @type {HTMLElement|null} */ (document.querySelector('[data-section="setAbout"]'))?.click();
+  document.getElementById('setAbout')?.scrollIntoView({ block: 'start' });
+});
