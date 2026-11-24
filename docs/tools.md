@@ -740,7 +740,7 @@ Example:
 
 Starts a project from a description: draw each part (head, body, arm_l, lid, coin) as one small SVG, place it (`at`), say where it turns (`pivot`) and what carries it (`parent`). The studio draws the SVGs into an atlas page and writes <folder>/<name>.json (a Spine 4.2 skeleton whose setup pose is the finished picture), <name>.atlas, <name>.png and <name>.parts.json (the parts, which the drawing board in the page edits and rebuilds from). Parts are listed back to front.
 SVG that is drawn: rect, circle, ellipse, line, polyline, polygon, path (all commands), g with transform, fill and stroke (colours, linear and radial gradients), opacity, stroke-linecap. Not drawn (and named in `skipped`): text, filters, masks, clip paths, images, <use>. Keep one part per moving piece and draw it in a flat, readable style with a dark outline. Ready-made props and effect sprites (coin, star, spark, heart, gem, cloud, leaf, drop) come from the bundled asset library as `svg: "asset:keyframe-basics/coin"`.
-Drawing again under the same name replaces the art and keeps the clips already written (keys on a part that no longer exists are dropped and listed); every file is backed up first. A name whose files the studio did not draw is refused. Then animate it with write_animation and look at it with see_animation.
+With `merge: true` the parts are added to the drawing of the same name (a part with an existing name replaces it in place, a new one goes in front) and the rest is kept: draw a figure one part or a few parts per call, back to front, and the page shows each part being drawn as it arrives (every call is shown live on the drawing board). Drawing again under the same name without `merge` replaces the whole drawing and keeps the clips already written (keys on a part that no longer exists are dropped and listed); every file is backed up first. A name whose files the studio did not draw is refused. Then animate it with write_animation and look at it with see_animation.
 
 | Argument | Type | Meaning |
 |---|---|---|
@@ -748,6 +748,7 @@ Drawing again under the same name replaces the art and keeps the clips already w
 | `parts` (required) | object[] | The parts, back to front. |
 | `folder` | string | Project-relative folder for the files; created when missing. Default the project root. |
 | `resolution` | number (≥ 0.25, ≤ 8) | Atlas pixels per rig unit. Default 2 (crisp at twice the rig size). |
+| `merge` | boolean | Add these parts to the drawing of the same name (same name replaces in place, a new name goes in front) and keep the others. Default false: the parts are the whole drawing. |
 
 Example:
 

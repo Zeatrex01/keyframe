@@ -45,3 +45,11 @@ test('every offered language has a catalog with exactly the English keys', () =>
     assert.deepEqual(keys, en, lang);
   }
 });
+
+test('every key the page names in its markup is in the English catalog', () => {
+  const en = JSON.parse(read('../locale/en.json'));
+  const html = read('../web/index.html');
+  const keys = [...html.matchAll(/data-i18n(?:-[a-z]+)?="([^"]+)"/g)].map(m => m[1]);
+  assert.ok(keys.length > 100);
+  assert.deepEqual(keys.filter(k => !(k in en)), [], 'a missing key shows raw to the owner and to a screen reader');
+});

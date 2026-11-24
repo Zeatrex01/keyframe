@@ -29,6 +29,12 @@ export function shapeSvg({ shape, width, height, fill = PALETTE[0], stroke = 'no
 }
 
 /** The shape settings of an SVG the board drew, or null for other art. */
+/** An SVG shown as an image needs its namespace; drawings written without one still show. */
+export function withNamespace(svg) {
+  const text = String(svg ?? '');
+  return /<svg\b[^>]*\sxmlns\s*=/.test(text) ? text : text.replace(/<svg\b/, '<svg xmlns="http://www.w3.org/2000/svg"');
+}
+
 export function readShape(svg) {
   if (typeof svg !== 'string') return null;
   const shape = /data-shape="(ellipse|rect)"/.exec(svg)?.[1];

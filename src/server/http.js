@@ -9,6 +9,8 @@
 // This file is the server and its route table. What a response looks like is respond.js; what the
 // page polls is state.js.
 
+import { readFeed } from '../core/draw-feed.js';
+import { safeTree } from '../render/svg-safe.js';
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -149,7 +151,9 @@ export function createStudioServer({ projectDir, version, configFile, maxUpload 
     let doc;
     try { doc = JSON.parse(fs.readFileSync(abs, 'utf8')); } catch { throw new StudioError('file-not-found', `${file} cannot be read.`, { file }); }
     if (doc.format !== PARTS_FORMAT) throw new StudioError('bad-argument', `${file} is not a drawing.`, { file });
-    return { file, folder: path.posix.dirname(file).replace(/^\.$/, ''), ...doc };
+    // Each part's safe SVG tree, so the board can trace it again (Replay) without parsing SVG itself.
+    const trees = Object.fromEntries((doc.parts ?? []).map(p => { try { return [p.name, safeTree(p.svg, p.name)]; } catch { return [p.name, null]; } }));
+    return { file, folder: path.posix.dirname(file).replace(/^\.$/, ''), ...doc, trees };
   }
 
   // An example: a copy of it in the studio's own data folder, so a first start has something to
@@ -243,6 +247,8 @@ export function createStudioServer({ projectDir, version, configFile, maxUpload 
     } },
     // The drawing board: list the drawings, read one, save one (draw_rig rebuilds the rig from it).
     'GET /api/drawings': { project: true, run: () => ({ drawings: listDrawings() }) },
+    // The live drawing feed: what draw_rig drew after event `since`, part by part.
+    'GET /api/draw-feed': { project: true, run: ({ url }) => readFeed(dir, Math.max(0, Number(url.searchParams.get('since')) || 0)) },
     'GET /api/drawing': { project: true, run: ({ url }) => readDrawing(url.searchParams.get('file')) },
     'POST /api/drawing': { project: true, run: async ({ body }) => {
       const b = await body();

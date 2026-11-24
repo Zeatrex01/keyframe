@@ -10,6 +10,7 @@ import { hasNewMessages } from './chat-rules.js';
 import { api } from './ui.js';
 import { refreshLanes } from './timeline.js';
 import { showView, switchedProject } from './views.js';
+import { liveFeed, resetLive, renderSpeed } from './draw-live.js';
 
 // ---------- state from the server ----------
 
@@ -91,12 +92,14 @@ export async function poll() {
     const epoch = S.focusEpoch;
     const state = await api('/api/state');
     const dir = state.project?.dir ?? null;
-    if (dir !== S.projectDir) switchedProject(dir);
+    if (dir !== S.projectDir) { switchedProject(dir); resetLive(); }
     // The conversation is fetched only when the state says there is something past the cursor.
     const chat = dir && hasNewMessages(state, S.lastId) ? await api(`/api/messages?after=${S.lastId}`) : { messages: [] };
     S.online = true;
     for (const message of chat.messages ?? []) addMessage(message);
     applyState(state, epoch);
+    // What the AI drew since the last poll is drawn on the board, part by part (draw-live.js).
+    if (dir) liveFeed(state.drawFeed);
     if (!dir && (S.view === 'work' || S.view === 'draw')) showView('projects');
   } catch {
     S.online = false;
@@ -114,4 +117,5 @@ export function renderAll() {
   renderLibrary();
   renderDelivery();
   forgetShownTime();
+  renderSpeed();
 }

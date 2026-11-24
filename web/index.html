@@ -302,8 +302,11 @@
   <section class="canvas" data-i18n-label="draw.canvas">
     <div class="stage dstage" id="drawStage">
       <svg class="dart" id="drawSvg" role="img" data-i18n-label="draw.canvas"></svg>
+      <svg class="dart live" id="drawLive" aria-hidden="true"></svg>
       <p class="draw-empty" id="drawEmpty" data-i18n="draw.empty"></p>
       <div class="overlay tl"><button type="button" class="btn sm" id="drawBones" aria-pressed="true"><svg class="ic" aria-hidden="true"><use href="#i-bone"/></svg><span data-i18n="draw.showBones"></span></button></div>
+      <div class="overlay tr"><button type="button" class="btn sm" id="drawReplay"><svg class="ic" aria-hidden="true"><use href="#i-play"/></svg><span data-i18n="draw.replay"></span></button><select class="select sm" id="drawSpeed" data-i18n-label="draw.speed"></select></div>
+      <div class="overlay bl"><span class="chip live-label" id="drawLiveLabel" role="status" hidden></span></div>
       <div class="overlay br"><button type="button" class="chip" id="drawZoom" data-i18n-label="draw.fit"></button></div>
     </div>
     <div class="dbar">

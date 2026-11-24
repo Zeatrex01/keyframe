@@ -2,6 +2,7 @@
 // together into one answer. The page asks every second, so a skeleton is parsed again only when
 // its file changed (size or modified time), and the conversation is read again only when it grew.
 
+import { lastFeedSeq } from '../core/draw-feed.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { projectFolders } from '../core/paths.js';
@@ -111,7 +112,9 @@ export function createStateReader({ dir, project, version, canReadVideo, canFetc
     const shown = ready ? all.find(s => s.file === ready.file) : (newest ?? null);
     return { ...common, project: { name: path.basename(d), dir: d, preview: fs.existsSync(path.join(d, 'preview.png')) }, agent: readAgent(d), skeletons: all,
       show: shown ? { file: shown.file, animation: ready?.animation && shown.animations.includes(ready.animation) ? ready.animation : (shown.animations[0] ?? null) } : null,
-      references: references(), focus: readFocus(d), lastMessage: list.length ? list[list.length - 1].id : 0 };
+      references: references(), focus: readFocus(d), lastMessage: list.length ? list[list.length - 1].id : 0,
+      // The live drawing feed's newest event: the page fetches the events past its cursor and draws them.
+      drawFeed: lastFeedSeq(d) };
   }
 
   return { state, references, missingArt, skeletonCache, reset() { skeletonCache.clear(); chat = { dir: null, key: null, messages: [] }; } };

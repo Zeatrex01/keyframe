@@ -216,6 +216,9 @@ button.card { padding: 0; text-align: left; font: inherit; cursor: pointer; alig
 .draw .dart .pivot circle { fill: var(--surface); stroke: var(--accent); stroke-width: 1.6; }
 .draw .dart .pivot path { stroke: var(--accent); stroke-width: 1.6; }
 .draw .dart .ghost { fill: color-mix(in srgb, var(--accent) 18%, transparent); stroke: var(--accent); stroke-width: 1.2; stroke-dasharray: 4 3; }
+.draw .dart.live { pointer-events: none; }
+.draw .dstage .overlay .select { width: auto; height: 30px; padding: 0 8px; }
+.draw .live-label { color: var(--agent); border-color: color-mix(in srgb, var(--agent) 45%, transparent); }
 .draw .draw-empty { position: absolute; inset: 0; margin: auto; height: max-content; max-width: 34ch; text-align: center; color: var(--text-3); font-size: var(--text-sm); pointer-events: none; }
 .draw .dbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .draw .dbar .input { width: 180px; height: 34px; }

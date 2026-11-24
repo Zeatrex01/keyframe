@@ -5,7 +5,7 @@
 
 import { S, el } from './store.js';
 import { api, button, node, t } from './ui.js';
-import { addShape, bonesOf, boxOf, drawingBounds, fitView, movePart, parentChoices, partAt, readShape, removePart, renamePart, reorder,
+import { addShape, withNamespace, bonesOf, boxOf, drawingBounds, fitView, movePart, parentChoices, partAt, readShape, removePart, renamePart, reorder,
   resizePart, restyle, savePayload, setParent, setPivot, toRig, toScreen, uniqueName, formatNumber, parseNumber, PALETTE, NAME, MAX_PARTS } from './draw-model.js';
 
 const SVG = 'http://www.w3.org/2000/svg';
@@ -19,6 +19,7 @@ const D = {
   name: 'drawing', folder: 'art',
   parts: [], sel: null, tool: 'select', bones: true,
   view: null, undo: [], dirty: false, busy: false, gesture: null, project: undefined, leaving: false,
+  trees: {}, pending: new Set(), feedSkip: 0, fitted: false,   // the live drawing (draw-live.js): safe SVG trees, parts not drawn yet
 };
 
 const svgNode = (tag, attrs = {}) => {
@@ -52,6 +53,7 @@ function undo() {
 function fit() {
   const { w, h } = size();
   D.view = fitView(drawingBounds(D.parts), w, h);
+  D.fitted = w > 1 && h > 1;   // fitted to a board that had no size yet (hidden): fit again once it shows
   render();
 }
 
@@ -78,7 +80,7 @@ async function openDrawing(file) {
     return;
   }
   const doc = await api(`/api/drawing?file=${encodeURIComponent(file)}`);
-  Object.assign(D, { file, name: doc.name, folder: doc.folder ?? '', parts: doc.parts ?? [], sel: null, undo: [], dirty: false });
+  Object.assign(D, { file, name: doc.name, folder: doc.folder ?? '', parts: doc.parts ?? [], trees: doc.trees ?? {}, sel: null, undo: [], dirty: false });
   fit();
 }
 
@@ -93,6 +95,7 @@ async function save() {
     D.name = name;
     D.file = `${D.folder ? `${D.folder}/` : ''}${name}.parts.json`;
     D.dirty = false;
+    D.feedSkip = Math.max(D.feedSkip, result.feed ?? 0);
     D.list = (await api('/api/drawings')).drawings;
     say('draw.saved', { file: result.file }, 'ok');
   } catch (err) {
@@ -153,7 +156,7 @@ function renderParts() {
 
 function renderCanvas() {
   const { w, h } = size();
-  if (!D.view) D.view = fitView(drawingBounds(D.parts), w, h);
+  if (!D.view) { D.view = fitView(drawingBounds(D.parts), w, h); D.fitted = w > 1 && h > 1; }
   const view = D.view;
   const at = point => toScreen(view, w, h, point);
   el.drawSvg.setAttribute('viewBox', `0 0 ${w} ${h}`);
@@ -162,11 +165,11 @@ function renderCanvas() {
   const [ox, oy] = at([0, 0]);
   layer.push(svgNode('path', { d: `M${ox - 10} ${oy}H${ox + 10}M${ox} ${oy - 10}V${oy + 10}`, class: 'origin' }));
   for (const p of D.parts) {
-    if (p.hidden) continue;
+    if (p.hidden || D.pending.has(p.name)) continue;
     const b = boxOf(p);
     const [x, y] = at([b.x, b.y + b.height]);
     const image = svgNode('image', { x, y, width: b.width * view.scale, height: b.height * view.scale, preserveAspectRatio: 'none', 'data-part': p.name });
-    image.setAttribute('href', `data:image/svg+xml;charset=utf-8,${encodeURIComponent(p.svg)}`);
+    image.setAttribute('href', `data:image/svg+xml;charset=utf-8,${encodeURIComponent(withNamespace(p.svg))}`);
     layer.push(image);
   }
   if (D.bones) {
@@ -423,7 +426,7 @@ document.addEventListener('keydown', event => {
   if (move) { event.preventDefault(); commit(movePart(D.parts, p.name, move[0], move[1])); }
 });
 
-new ResizeObserver(() => { if (!el.draw.hidden && D.view) renderCanvas(); }).observe(el.drawStage);
+new ResizeObserver(() => { if (el.draw.hidden || !D.view) return; if (!D.fitted) fit(); else renderCanvas(); }).observe(el.drawStage);
 
 /** The wand: ask the AI to draw, in the conversation. */
 export function askToDraw(showWork) {
@@ -435,3 +438,5 @@ export function askToDraw(showWork) {
 }
 
 export const drawState = D; // for the e2e gate
+/** What the live drawing (draw-live.js) drives on the board. */
+export const board = { D, render, openDrawing, size, say };

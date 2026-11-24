@@ -5,6 +5,15 @@ All notable changes to this project. The format follows
 
 ## Unreleased
 
+### Added
+- Live drawing: `draw_rig` can draw a rig part by part (`merge: true`), and the Draw board shows each part being drawn as it arrives: outlines traced, then fills, with the part's name and the view following it. Replay, a speed menu and an instant mode (also used when the system asks for reduced motion).
+- Parts reach the page as safe trees (`src/render/svg-safe.js`): only shapes, groups and gradients survive, so nothing in a drawing can run.
+
+### Fixed
+- The Draw board shows parts whose SVG has no `xmlns`.
+- A drawing the AI makes shows on an open Draw board at once, and the board fits it again once it becomes visible.
+- The Draw settings panel has a readable label; every key the page's markup names is now checked against the English catalog.
+
 ## 0.0.1-beta - 2026-11-24
 
 The first public release: an open-source, AI-assisted 2D skeletal animation studio. You describe
