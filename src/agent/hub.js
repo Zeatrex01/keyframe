@@ -19,6 +19,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { StudioError } from '../shared/errors.js';
 import { appendMessage, readMessages, readAgent, touchAgent, MAX_TEXT, CHAT_DIR } from '../core/chat.js';
+import { unproven } from '../core/proof.js';
 import { silentLogger } from '../core/log.js';
 import { ADAPTERS, adapterFor } from './adapters.js';
 import { locateCli } from './locate.js';
@@ -182,6 +183,7 @@ export function createAgentHub({ configFile, env = process.env, root = ROOT, tim
     };
     const director = slot.role === 'director';
     const before = readMessages(dir).reduce((max, m) => Math.max(max, Number(m.id) || 0), 0);
+    const started = Date.now();
     if (!retried) {
       st.activity = [];
       st.idle = new Promise(resolve => { st.settle = resolve; });
@@ -239,14 +241,14 @@ export function createAgentHub({ configFile, env = process.env, root = ROOT, tim
         return launch({ slot, adapter, cli, dir, text, uptoId, st, retried: true });
       }
       if (result.session) { try { saveSession(dir, slot.id, adapter.id, result.session); } catch { /* resumed fresh next time */ } }
-      finish({ slot, adapter, dir, st, result, before });
+      finish({ slot, adapter, dir, st, result, before, started });
     }).catch(err => {
       log.error('agent run failed unexpectedly', { slot: slot.id, err });
-      finish({ slot, adapter, dir, st, result: { ok: false, text: '', session: null, tools: [], texts: [], code: 'agent-failed', message: String(err?.message ?? err) }, before });
+      finish({ slot, adapter, dir, st, result: { ok: false, text: '', session: null, tools: [], texts: [], code: 'agent-failed', message: String(err?.message ?? err) }, before, started });
     });
   }
 
-  function finish({ slot, adapter, dir, st, result, before }) {
+  function finish({ slot, adapter, dir, st, result, before, started = Date.now() }) {
     const director = slot.role === 'director';
     const name = adapter.name;
     try {
@@ -259,7 +261,12 @@ export function createAgentHub({ configFile, env = process.env, root = ROOT, tim
         const delivered = replies.some(m => m.work === 'ready');
         const text = clip(result.text.trim(), MAX_TEXT);
         const work = director && readAgent(dir).work === 'ready' ? 'ready' : 'idle';
-        if (text && !delivered && !said.includes(text)) appendMessage(dir, { from: 'agent', text, work, name, slot: slot.id });
+        // What this turn wrote and did not prove is said plainly: it is not delivered yet.
+        const open = unproven(dir, started);
+        const proofNote = open.length ? `Not proven yet: ${open.slice(0, 4).map(w => `${w.file}${w.animation ? ` (${w.animation})` : ''} needs ${w.missing.join(' and ')}`).join('; ')}.` : '';
+        if (text && !delivered && !said.includes(text)) appendMessage(dir, { from: 'agent', text: proofNote ? clip(`${text}\n\n${proofNote}`, MAX_TEXT) : text, work: proofNote ? 'idle' : work, name, slot: slot.id, ...(proofNote ? { unproven: open } : {}) });
+        else if (proofNote) appendMessage(dir, { from: 'agent', text: proofNote, work: 'idle', name, slot: slot.id, unproven: open });
+        if (proofNote) log.warn('agent turn ended with unproven writes', { slot: slot.id, unproven: open.length });
         note(st, 'done', `${result.tools.length} tool calls`);
       } else if (result.code === 'agent-stopped') {
         // The owner pressed Stop: the turn is closed in the conversation, not left unanswered.

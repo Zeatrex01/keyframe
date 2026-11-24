@@ -21,6 +21,8 @@ import { validateArgs } from './args.js';
 import { toWire } from './describe.js';
 import { isStudioError } from '../shared/errors.js';
 import { fixFor } from './fixes.js';
+import { noteCall } from '../core/proof.js';
+import { projectOf } from './project.js';
 
 export const HANDSHAKE_VERSIONS = Object.freeze(['2025-11-25', '2025-06-18', '2025-03-26', '2024-11-05']);
 export const MODERN_VERSIONS = Object.freeze(['2026-07-28']);
@@ -89,6 +91,8 @@ export function createWire({ registry, session, write, instructions, serverInfo,
     try {
       const result = await tool.run(args, { session, registry, signal: flight.signal });
       if (flight.signal.aborted) return undefined;
+      // The proof ledger: what was written, and whether it was proven since (src/core/proof.js).
+      try { noteCall(projectOf(session).dir, name, args, result); } catch { /* no project, or a read-only one: nothing to note */ }
       if (result && result.image) {
         return out.reply(id, { content: [
           { type: 'image', data: result.image.data, mimeType: result.image.mimeType ?? 'image/png' },

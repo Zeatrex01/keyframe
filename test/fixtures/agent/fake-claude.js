@@ -5,7 +5,8 @@
 //
 // The request steers it: "#slow" waits (for stop, busy and timeout), "#fail" answers a login
 // error, "#write" (with "#slow") writes and checks first, "#crash" exits with only a stderr line, "#reply" first appends a reply through the
-// conversation file the way the studio's `reply` tool does. A --resume of "stale-session" fails
+// conversation file the way the studio's `reply` tool does, "#unproven" leaves a write in the
+// proof ledger that nothing proved. A --resume of "stale-session" fails
 // the way Claude Code fails for a session it does not know.
 
 import fs from 'node:fs';
@@ -75,6 +76,12 @@ function finish(session) {
     const said = asked.includes('#short') ? 'Done: two waves.' : asked.includes('#status') ? 'Working on it.' : answer;
     const work = asked.includes('#status') ? 'writing' : 'ready';
     fs.appendFileSync(file, `${JSON.stringify({ id, from: 'agent', text: said, work, time: new Date().toISOString() })}\n`);
+  }
+  if (asked.includes('#unproven')) {
+    // What the MCP server notes on a write: the clip was written, and nothing proved it after.
+    const ledger = path.join(process.cwd(), '.keyframe', 'proof.json');
+    fs.mkdirSync(path.dirname(ledger), { recursive: true });
+    fs.writeFileSync(ledger, JSON.stringify({ writes: { 'hero_v2.json#jump': { kind: 'motion', file: 'hero_v2.json', animation: 'jump', tool: 'write_animation', written: Date.now() } }, checks: {} }));
   }
   out({ type: 'assistant', message: { role: 'assistant', content: [{ type: 'text', text: answer }] }, parent_tool_use_id: null, session_id: session });
   out({ type: 'result', subtype: 'success', is_error: false, result: answer, session_id: session, num_turns: 2 });

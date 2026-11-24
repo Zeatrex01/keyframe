@@ -3,6 +3,8 @@
 import { projectOf } from '../project.js';
 import { waitForOwner, appendMessage, touchAgent, readAgent, WORK_STATES } from '../../core/chat.js';
 import { readFocus } from '../../core/focus.js';
+import { proofOf } from '../../core/proof.js';
+import { StudioError } from '../../shared/errors.js';
 
 export const waitForMessageTool = {
   name: 'wait_for_message',
@@ -36,7 +38,7 @@ export const replyTool = {
   tier: 'core',
   writes: true,
   summary: 'Says one short thing to the owner in the studio page and sets the work state shown there (writing, checking, ready).',
-  description: 'Appends your message to the conversation in the studio page. `work` drives the three-step indicator the owner watches: "writing" when you start, "checking" while you check and look at frames, "ready" when the delivery is written and proven; with "ready" pass the delivery `file` and the `animation` so the page loads and plays exactly that. "idle" clears the indicator (use it for a plain answer or a question). One or two sentences: what you did or what you need; numbers only when they help the owner decide.',
+  description: 'Appends your message to the conversation in the studio page. `work` drives the three-step indicator the owner watches: "writing" when you start, "checking" while you check and look at frames, "ready" when the delivery is written and proven (refused with `not-proven` until check_skeleton and critique_animation ran on a clip after its last write, or critique_art on a drawing); with "ready" pass the delivery `file` and the `animation` so the page loads and plays exactly that. "idle" clears the indicator (use it for a plain answer or a question). One or two sentences: what you did or what you need; numbers only when they help the owner decide.',
   inputSchema: {
     type: 'object', required: ['text'], additionalProperties: false,
     properties: {
@@ -49,6 +51,14 @@ export const replyTool = {
   run({ text, work, file, animation }, { session }) {
     const project = projectOf(session);
     if (file) project.resolve(file);
+    // "Ready" is a claim about the file: refused for a delivery written and not proven since.
+    if (work === 'ready' && file) {
+      const { missing } = proofOf(project.dir, file, animation ?? null);
+      if (missing.length) {
+        throw new StudioError('not-proven', `${file}${animation ? ` (${animation})` : ''} was written and not proven since: run ${missing.join(' and ')} on it, look at what they say, then reply ready.`,
+          { file, ...(animation ? { animation } : {}), missing });
+      }
+    }
     const state = work ?? readAgent(project.dir).work;
     const message = appendMessage(project.dir, { from: 'agent', text, work: state, ...(file ? { file } : {}), ...(animation ? { animation } : {}) });
     // The cursor is not moved here: an owner message that arrived while the agent worked is still

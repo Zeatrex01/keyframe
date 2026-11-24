@@ -131,3 +131,16 @@ test('the MCP server serves exactly the tools --only names', async () => {
   const plain = await checkServer(SERVER);
   assert.ok(plain.tools.includes('write_animation') && plain.tools.includes('wait_for_message'), 'without --only nothing changes');
 });
+
+test('a Director turn that wrote and did not prove ends with a plain "Not proven yet" note', async () => {
+  const s = await setup();
+  try {
+    assert.equal((await s.call('PUT', '/api/agent/slots', { body: { slots: [DIRECTOR] } })).status, 200);
+    await s.call('POST', '/api/messages', { body: { text: 'make a jump #unproven' } });
+    await s.studio.agents.idle();
+    const last = readMessages(s.dir).at(-1);
+    assert.equal(last.from, 'agent');
+    assert.match(last.text, /Not proven yet: hero_v2\.json \(jump\) needs check_skeleton and critique_animation/);
+    assert.equal(last.work, 'idle', 'an unproven delivery is never shown as ready');
+  } finally { await s.cleanup(); }
+});

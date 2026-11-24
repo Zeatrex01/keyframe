@@ -120,7 +120,7 @@ Example:
 
 **Use when:** Tell the owner in the studio page what you are doing or what is ready; set work to writing, checking or ready.
 
-Appends your message to the conversation in the studio page. `work` drives the three-step indicator the owner watches: "writing" when you start, "checking" while you check and look at frames, "ready" when the delivery is written and proven; with "ready" pass the delivery `file` and the `animation` so the page loads and plays exactly that. "idle" clears the indicator (use it for a plain answer or a question). One or two sentences: what you did or what you need; numbers only when they help the owner decide.
+Appends your message to the conversation in the studio page. `work` drives the three-step indicator the owner watches: "writing" when you start, "checking" while you check and look at frames, "ready" when the delivery is written and proven (refused with `not-proven` until check_skeleton and critique_animation ran on a clip after its last write, or critique_art on a drawing); with "ready" pass the delivery `file` and the `animation` so the page loads and plays exactly that. "idle" clears the indicator (use it for a plain answer or a question). One or two sentences: what you did or what you need; numbers only when they help the owner decide.
 
 | Argument | Type | Meaning |
 |---|---|---|

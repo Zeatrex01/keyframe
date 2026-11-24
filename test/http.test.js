@@ -120,7 +120,12 @@ test('the conversation: the owner posts, the agent reads it through its tool, th
     const bone = base.bones.find(b => b.parent).name;
     const wrote = await s.agent('write_animation', { animation: 'bounce', clip: { bones: { [bone]: { translate: [{ time: 0, x: 0, y: 0, curve: 'outBack' }, { time: 0.4, x: 0, y: 10 }] } } } });
     assert.ok(!wrote.isError, JSON.stringify(wrote.content));
-    await s.agent('reply', { text: 'Added.', work: 'ready', file: wrote.structuredContent.file, animation: 'bounce' });
+    const early = await s.agent('reply', { text: 'Added.', work: 'ready', file: wrote.structuredContent.file, animation: 'bounce' });
+    assert.ok(early.isError && JSON.stringify(early.content).includes('not-proven'), 'ready is refused before the write is proven');
+    await s.agent('check_skeleton', { file: wrote.structuredContent.file });
+    await s.agent('critique_animation', { file: wrote.structuredContent.file, animation: 'bounce' });
+    const sent = await s.agent('reply', { text: 'Added.', work: 'ready', file: wrote.structuredContent.file, animation: 'bounce' });
+    assert.ok(!sent.isError, JSON.stringify(sent.content));
 
     state = (await s.get('/api/state')).json;
     assert.deepEqual([state.agent.connected, state.agent.name, state.agent.work], [true, 'Claude', 'ready']);
