@@ -6,6 +6,7 @@ All notable changes to this project. The format follows
 ## Unreleased
 
 ### Added
+- A large-rig gate: a 240-bone rig goes through read, write, check and critique in tens of milliseconds each (`test/large-rig.test.js`).
 - The delivery card has an HTML player button: one self-contained page that plays the delivered skeleton in any browser (`GET /api/player`).
 - Godot export keeps clipping masks: a clipping attachment becomes a `Polygon2D` mask that shows only the slots it clips (Pip's eyes stay inside their whites).
 - The Godot rig's `play_layer` copies the AnimationPlayer's process mode and speed, so a game that advances the player by hand advances the layer the same way.
