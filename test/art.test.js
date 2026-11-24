@@ -1,6 +1,7 @@
 // Gate for the drawing side (src/art): the style guide, parametric shapes, the stroke font, the icon
 // family, components with states, draw_rig drawing from them (and restyling, and artboards),
 // critique_art and export_art, and the token budget that makes drawing cheap.
+import vm from 'node:vm';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -230,5 +231,21 @@ test('draw_rig refuses a part with two ways of drawing it, and shapes without a 
     const nobox = await s.call('draw_rig', { name: 'x', parts: [{ name: 'a', shapes: [{ circle: [1, 1, 1] }], at: [0, 0] }] });
     assert.match(nobox.error.message, /box/);
     assert.deepEqual(expandParts([{ name: 'a', svg: '<svg/>', at: [0, 0] }], style).parametric, 0);
+  } finally { s.done(); }
+});
+
+test('export_art web writes an embeddable player script, the skeleton with its atlas and pages, and a demo page', async () => {
+  const s = studio();
+  try {
+    await s.call('draw_rig', { name: 'b', parts: [PACK[0]] });
+    const e = await s.call('export_art', { file: 'b.parts.json', kinds: ['web'] });
+    assert.equal(e.error, undefined, JSON.stringify(e.error));
+    const web = path.join(s.dir, 'b-export', 'web');
+    for (const f of ['keyframe-player.js', 'b.json', 'b.atlas', 'b.png', 'index.html']) assert.ok(fs.existsSync(path.join(web, f)), f);
+    const script = fs.readFileSync(path.join(web, 'keyframe-player.js'), 'utf8');
+    assert.doesNotThrow(() => new vm.Script(script), 'one classic script');
+    for (const api of ['play(name', 'stop()', 'setLook(slot', "customElements.define('keyframe-player'", 'window.KeyframePlayer']) assert.ok(script.includes(api), api);
+    assert.match(fs.readFileSync(path.join(web, 'index.html'), 'utf8'), /<keyframe-player id="player" src="b.json"/);
+    assert.ok(!fs.existsSync(path.join(s.dir, 'b-export', 'png@1x')), 'only what was asked');
   } finally { s.done(); }
 });

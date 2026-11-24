@@ -246,7 +246,7 @@ export const clips = {
   },
   wave: {
     bones: {
-      armR: rot([[0, 0, 'inQuad'], [3, -6, 'outBack'], [11, 80, 'inOutSine'], [20, 77, 'inOutSine'], [28, 79, 'inQuad'], [36, 0]]),
+      armR: rot([[0, 0, 'inQuad'], [3, -6, 'outBack'], [11, 140, 'inOutSine'], [20, 134, 'inOutSine'], [28, 138, 'inQuad'], [36, 0]]),
       forearmR: rot([[0, 0, 'inOutSine'], [4, 4, 'outCubic'], [12, 104, 'inOutSine'], [16, 86, 'inOutSine'], [20, 110, 'inOutSine'], [24, 88, 'inOutSine'], [28, 106, 'inQuart'], [36, 0]]),
       handR: rot([[0, 0], [12, 0, 'outQuad'], [15, -16, 'inOutSine'], [19, 15, 'inOutSine'], [23, -13, 'inOutSine'], [27, 12, 'inOutSine'], [31, 0], [36, 0]]),
       head: rot([[0, 0, 'inOutSine'], [6, 1, 'inOutCubic'], [14, -5, 'outSine'], [28, -4, 'inOutSine'], [36, 0]]),

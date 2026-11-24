@@ -8,13 +8,16 @@ import { StudioError } from '../../shared/errors.js';
 import { PARTS_FORMAT } from '../../render/svg-rig.js';
 import { critiqueArt } from '../../art/critique-art.js';
 import { layoutText, strokesPath } from '../../art/font.js';
-import { colorOf } from '../../art/style.js';
+import { colorOf, readableOn } from '../../art/style.js';
 import { drawingSvg } from '../../render/compose-svg.js';
 import { exportDrawing, exportClip, EXPORT_KINDS } from '../../render/export-art.js';
 import { rasterizeSvg } from '../../engine/svg.js';
 import { encodePng, decodePng } from '../../render/png.js';
 import { parseAtlas } from '../../engine/index.js';
 import { projectStyle } from '../style-file.js';
+import { webPlayerFiles } from '../../deliver/web-player.js';
+
+const KINDS = [...EXPORT_KINDS, 'web'];
 
 /** Read a parts document the studio drew. */
 function readDrawing(project, file) {
@@ -37,7 +40,7 @@ export function contactSheet(doc, style, cell = 150) {
     const k = Math.min(1, (cell - 20) / Math.max(l.p.size[0], l.p.size[1]));
     parts.push({ name: `c${i}`, svg: l.svg, at: [cx, -(top + cell / 2)], size: [l.p.size[0] * k, l.p.size[1] * k] });
     const text = layoutText(l.name.slice(0, 22), { size: 9, upper: false, x: cx, y: top + cell + 12 });
-    labels.push(`<path d="${strokesPath(text.strokes)}" fill="none" stroke="${colorOf(style, 'text')}" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>`);
+    labels.push(`<path d="${strokesPath(text.strokes)}" fill="none" stroke="${colorOf(style, readableOn(style, 'surface'))}" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>`);
   });
   const sheet = drawingSvg({ name: 'sheet', parts });
   const svg = sheet.svg.replace('</svg>', `${labels.join('')}</svg>`);
@@ -74,13 +77,13 @@ export const exportArtTool = {
   name: 'export_art',
   tier: 'core',
   writes: true,
-  summary: 'Exports a drawing for engines and the web: trimmed transparent PNGs per part and state at chosen scales with pivots, a sprite sheet with a JSON map, clean SVG, and a clip as a PNG sequence and sheet.',
-  description: `Writes new files into <folder>/<name>-export/ (never touches the drawing or the owner's files; a second export replaces the folder's files): \`parts\` png@<s>x/<part>.png, each part and each state at scale s (pixels per rig unit), transparent and trimmed, with parts.json listing for each its trim offset, source size and pivot in pixels so an engine places and turns it like the rig; \`sheet\` <name>@<s>x.png and .json, all of them packed into one sprite sheet with a frame map in the common JSON-hash layout (frame, spriteSourceSize, sourceSize, pivot) that game engines and web libraries read; \`svg\` svg/<part>.svg and <name>.svg, clean SVG with a <g id> per part for web pages and design tools; \`clip\` (with \`animation\`) clip-<anim>/frame_0000.png... and clip-<anim>@sheet.png/.json at \`fps\`, for engines without a skeletal runtime. Kinds: ${EXPORT_KINDS.join(', ')}; default parts, sheet and svg. Scales default [1, 2]; \`pixels\` instead sets the longest side of the whole drawing.`,
+  summary: 'Exports a drawing for engines and the web: trimmed PNGs per part and state with pivots at any scale, a sprite sheet with a JSON map, clean SVG, a clip as PNG frames, and an embeddable web player.',
+  description: `Writes new files into <folder>/<name>-export/ (never touches the drawing or the owner's files; a second export replaces the folder's files): \`parts\` png@<s>x/<part>.png, each part and each state at scale s (pixels per rig unit), transparent and trimmed, with parts.json listing for each its trim offset, source size and pivot in pixels so an engine places and turns it like the rig; \`sheet\` <name>@<s>x.png and .json, all of them packed into one sprite sheet with a frame map in the common JSON-hash layout (frame, spriteSourceSize, sourceSize, pivot) that game engines and web libraries read; \`svg\` svg/<part>.svg and <name>.svg, clean SVG with a <g id> per part for web pages and design tools; \`clip\` (with \`animation\`) clip-<anim>/frame_0000.png... and clip-<anim>@sheet.png/.json at \`fps\`, for engines without a skeletal runtime; \`web\` web/keyframe-player.js (the studio's engine as one script: a KeyframePlayer class with play, stop, pause, seek, setSpeed, setLook for drawn states, and start/complete/loop/event listeners, plus a <keyframe-player> element), the skeleton, its atlas and pages, and an index.html showing the snippet, for web games and pages. Kinds: ${KINDS.join(', ')}; default parts, sheet and svg. Scales default [1, 2]; \`pixels\` instead sets the longest side of the whole drawing.`,
   inputSchema: {
     type: 'object', required: ['file'], additionalProperties: false,
     properties: {
       file: { type: 'string', short: '<name>.parts.json', description: 'The drawing: the <name>.parts.json draw_rig wrote.' },
-      kinds: { type: 'array', items: { type: 'string', enum: EXPORT_KINDS }, short: 'parts, sheet, svg, clip', description: 'What to export; default parts, sheet and svg.' },
+      kinds: { type: 'array', items: { type: 'string', enum: KINDS }, short: 'parts, sheet, svg, clip, web', description: 'What to export; default parts, sheet and svg.' },
       scales: { type: 'array', items: { type: 'number', minimum: 0.1, maximum: 8 }, short: 'px per unit, e.g. [1, 2, 3]', description: 'Pixels per rig unit, one export each (1x, 2x, 3x). Default [1, 2].' },
       pixels: { type: 'number', minimum: 8, maximum: 8192, short: 'longest side in px (instead of scales)', description: 'Instead of scales: the longest side of the whole drawing in pixels.' },
       animation: { type: 'string', short: 'clip to export (kind clip)', description: 'The animation to export as frames (kind clip). Read from the latest delivery (<name>_v2.json) when there is one.' },
@@ -92,24 +95,32 @@ export const exportArtTool = {
     const project = projectOf(session);
     const { doc, abs } = readDrawing(project, file);
     const wanted = kinds?.length ? kinds : ['parts', 'sheet', 'svg', ...(animation ? ['clip'] : [])];
+    const drawing = wanted.filter(k => EXPORT_KINDS.includes(k) && k !== 'clip');
     const outDir = path.join(path.dirname(abs), `${doc.name}-export`);
     const files = {};
-    const out = exportDrawing(doc, { scales: scales?.length ? scales : [1, 2], kinds: wanted, pixels });
+    const out = drawing.length ? exportDrawing(doc, { scales: scales?.length ? scales : [1, 2], kinds: drawing, pixels }) : { files: {}, manifest: { scales: [] } };
     Object.assign(files, out.files);
-    let clip = null;
-    if (wanted.includes('clip')) {
-      if (!animation) throw new StudioError('bad-argument', 'kind clip needs `animation`.', {});
-      if ((doc.kind ?? 'rig') !== 'rig') throw new StudioError('bad-argument', 'An artboard has no animations; draw it as a rig to animate it.', {});
+    let clip = null, web = null;
+    if (wanted.includes('clip') || wanted.includes('web')) {
+      if ((doc.kind ?? 'rig') !== 'rig') throw new StudioError('bad-argument', 'An artboard has no skeleton; draw it as a rig to animate it or play it on a page.', {});
       const dir = path.dirname(abs);
       const skeletonFile = [`${doc.name}_v2.json`, `${doc.name}.json`].map(f => path.join(dir, f)).find(f => fs.existsSync(f));
       if (!skeletonFile) throw new StudioError('no-skeleton', `No skeleton for ${doc.name} beside the drawing.`, {});
       const json = JSON.parse(fs.readFileSync(skeletonFile, 'utf8'));
       const atlasFile = [skeletonFile.replace(/\.json$/, '.atlas'), path.join(dir, `${doc.name}.atlas`)].find(f => fs.existsSync(f));
       const atlasText = fs.readFileSync(atlasFile, 'utf8');
-      const pages = Object.fromEntries(parseAtlas(atlasText).pages.map(p => [p.name, decodePng(fs.readFileSync(path.join(path.dirname(atlasFile), p.name)))]));
-      const done = await exportClip({ json, atlasText, pages, animation, fps: fps ?? 24, size: size ?? 256 });
-      Object.assign(files, done.files);
-      clip = { animation, frames: done.frames, fps: done.fps, from: project.rel(skeletonFile) };
+      const bytes = Object.fromEntries(parseAtlas(atlasText).pages.map(p => [p.name, fs.readFileSync(path.join(path.dirname(atlasFile), p.name))]));
+      if (wanted.includes('clip')) {
+        if (!animation) throw new StudioError('bad-argument', 'kind clip needs `animation`.', {});
+        const pages = Object.fromEntries(Object.entries(bytes).map(([k, v]) => [k, decodePng(v)]));
+        const done = await exportClip({ json, atlasText, pages, animation, fps: fps ?? 24, size: size ?? 256 });
+        Object.assign(files, done.files);
+        clip = { animation, frames: done.frames, fps: done.fps, from: project.rel(skeletonFile) };
+      }
+      if (wanted.includes('web')) {
+        for (const [rel, data] of Object.entries(webPlayerFiles({ name: doc.name, skeleton: json, atlasText, pages: bytes }))) files[`web/${rel}`] = data;
+        web = { folder: 'web/', clips: Object.keys(json.animations ?? {}), from: project.rel(skeletonFile) };
+      }
     }
     for (const [rel, data] of Object.entries(files)) {
       const target = path.join(outDir, rel);
@@ -122,6 +133,7 @@ export const exportArtTool = {
       scales: out.manifest.scales,
       written: names.filter(n => !n.includes('/')).concat([...new Set(names.filter(n => n.includes('/')).map(n => `${n.split('/')[0]}/`))]),
       ...(clip ? { clip } : {}),
+      ...(web ? { web } : {}),
       next: 'Engines: the sprite sheet and its JSON, or the per-part PNGs with parts.json (pivots in pixels). Web: the SVG files; for animation on a page, the standalone player.',
     };
   },

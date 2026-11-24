@@ -64,7 +64,8 @@ test('a move too small to see at the display size is reported', () => {
 
 test('principle findings ride on critique_animation as warnings that never change the verdict', () => {
   const sk = rig('idle', { bones: { head: { rotate: rot([0, 0.5, 1.1, 2], [0, 4, 3, 1], (t0, t1, v0, v1) => [t0 + (t1 - t0) * 0.3, v0, t0 + (t1 - t0) * 0.7, v1]) } } });
-  const result = critiqueAnimation(sk, 'idle');
+  // Judged as a prop: a figure's idle that does not breathe is weak (test/actions.test.js), which is not this gate.
+  const result = critiqueAnimation(sk, 'idle', { subject: 'prop' });
   const seam = result.findings.find(f => f.code === 'loop-seam');
   assert.equal(seam.level, 'warn');
   assert.equal(seam.params.principle, 'loops');

@@ -51,7 +51,7 @@ export function showcaseGates(name) {
 
   test(`${name}: critique_animation has no warning for any clip`, () => {
     for (const clip of brief.clips) {
-      const warnings = critiqueAnimation(skeleton, clip.name, { loop: clip.loop, pixelsPerUnit: brief.display.pixelsPerUnit }).findings.filter(x => x.level === 'warn');
+      const warnings = critiqueAnimation(skeleton, clip.name, { loop: clip.loop, pixelsPerUnit: brief.display.pixelsPerUnit, subject: brief.principles }).findings.filter(x => x.level === 'warn');
       assert.deepEqual(warnings.map(x => `${x.code}: ${x.message}`), [], clip.name);
     }
   });

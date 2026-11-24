@@ -32,7 +32,7 @@ Every refusal carries `fix` (how to get past it) and, for argument problems, an 
 | [`style_guide`](#style_guide) | core | The project's art direction: palette by role, stroke weights, corner radii, light, grid, type and sizes. Read it, start it from a preset, or change it. |
 | [`draw_rig`](#draw_rig) | core | Draws placeholder art as SVG parts and builds the rig from it: a skeleton, an atlas and a page image the studio plays at once. |
 | [`critique_art`](#critique_art) | core | The art director's check of a drawing against the style guide: palette drift, outline weights, alignment, silhouettes at small size, states too alike, contrast. Writes a contact sheet to look at. |
-| [`export_art`](#export_art) | core | Exports a drawing for engines and the web: trimmed transparent PNGs per part and state at chosen scales with pivots, a sprite sheet with a JSON map, clean SVG, and a clip as a PNG sequence and sheet. |
+| [`export_art`](#export_art) | core | Exports a drawing for engines and the web: trimmed PNGs per part and state with pivots at any scale, a sprite sheet with a JSON map, clean SVG, a clip as PNG frames, and an embeddable web player. |
 | [`bake_animation`](#bake_animation) | core | Bakes constraint results (physics, IK, transform, path) or curves into plain linear bone keys, verified by replay on the runtime. |
 | [`paint_weights`](#paint_weights) | core | Binds a mesh (or a flat image turned into a grid mesh) to a chain of bones with smooth weights, so the part bends instead of moving rigidly. |
 | [`list_history`](#list_history) | core | The backups the studio keeps of a file it wrote, newest first. |
@@ -863,13 +863,13 @@ Example:
 
 ## export_art
 
-*core, writes files.* Exports a drawing for engines and the web: trimmed transparent PNGs per part and state at chosen scales with pivots, a sprite sheet with a JSON map, clean SVG, and a clip as a PNG sequence and sheet.
+*core, writes files.* Exports a drawing for engines and the web: trimmed PNGs per part and state with pivots at any scale, a sprite sheet with a JSON map, clean SVG, a clip as PNG frames, and an embeddable web player.
 
 **Use when:** The drawing (or one of its clips) is needed outside the studio: PNGs at 1x/2x/3x for an engine, a sprite sheet with its map, clean SVG for the web, a clip as frames.
 
 **Not when:** The animation goes to an engine with a skeletal runtime: deliver the skeleton itself (write_animation) instead of frames.
 
-Writes new files into <folder>/<name>-export/ (never touches the drawing or the owner's files; a second export replaces the folder's files): `parts` png@<s>x/<part>.png, each part and each state at scale s (pixels per rig unit), transparent and trimmed, with parts.json listing for each its trim offset, source size and pivot in pixels so an engine places and turns it like the rig; `sheet` <name>@<s>x.png and .json, all of them packed into one sprite sheet with a frame map in the common JSON-hash layout (frame, spriteSourceSize, sourceSize, pivot) that game engines and web libraries read; `svg` svg/<part>.svg and <name>.svg, clean SVG with a <g id> per part for web pages and design tools; `clip` (with `animation`) clip-<anim>/frame_0000.png... and clip-<anim>@sheet.png/.json at `fps`, for engines without a skeletal runtime. Kinds: parts, sheet, svg, clip; default parts, sheet and svg. Scales default [1, 2]; `pixels` instead sets the longest side of the whole drawing.
+Writes new files into <folder>/<name>-export/ (never touches the drawing or the owner's files; a second export replaces the folder's files): `parts` png@<s>x/<part>.png, each part and each state at scale s (pixels per rig unit), transparent and trimmed, with parts.json listing for each its trim offset, source size and pivot in pixels so an engine places and turns it like the rig; `sheet` <name>@<s>x.png and .json, all of them packed into one sprite sheet with a frame map in the common JSON-hash layout (frame, spriteSourceSize, sourceSize, pivot) that game engines and web libraries read; `svg` svg/<part>.svg and <name>.svg, clean SVG with a <g id> per part for web pages and design tools; `clip` (with `animation`) clip-<anim>/frame_0000.png... and clip-<anim>@sheet.png/.json at `fps`, for engines without a skeletal runtime; `web` web/keyframe-player.js (the studio's engine as one script: a KeyframePlayer class with play, stop, pause, seek, setSpeed, setLook for drawn states, and start/complete/loop/event listeners, plus a <keyframe-player> element), the skeleton, its atlas and pages, and an index.html showing the snippet, for web games and pages. Kinds: parts, sheet, svg, clip, web; default parts, sheet and svg. Scales default [1, 2]; `pixels` instead sets the longest side of the whole drawing.
 
 | Argument | Type | Meaning |
 |---|---|---|

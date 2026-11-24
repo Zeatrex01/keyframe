@@ -24,6 +24,7 @@ import { finding } from '../spine/findings.js';
 import { StudioError } from '../shared/errors.js';
 import { principleFindings } from './principle-checks.js';
 import { conventionFindings } from './conventions.js';
+import { actionFindings } from './actions.js';
 
 const round3 = v => Math.round(v * 1000) / 1000;
 const isNumber = v => typeof v === 'number' && Number.isFinite(v);
@@ -191,10 +192,13 @@ export function clipDuration(animation) {
 
 // ── the critique ──────────────────────────────────────────────────────────────
 
+/** Subjects that are not a body: the action minimums do not apply. */
+const NOT_A_BODY = new Set(['ui', 'vfx', 'prop', 'scene']);
+
 /**
  * @param {object} sk   parsed skeleton JSON
  * @param {string} name animation name
- * @param {{ loop?: boolean, pixelsPerUnit?: number, skip?: string[] }} [options] principle checks: is this a loop
+ * @param {{ loop?: boolean, pixelsPerUnit?: number, skip?: string[], subject?: string, action?: string }} [options] principle checks: is this a loop
  *   (default: guessed from the name), how many screen pixels one skeleton unit is, and finding
  *   codes that do not apply to the subject (from its brief: src/understand/subject.js)
  * @returns {{ animation: string, verdict: 'good'|'mechanical'|'faulty'|'unmeasured', measures: object,
@@ -378,6 +382,15 @@ export function critiqueAnimation(sk, name, options = {}) {
   // twinning, readability. All `look`: they inform, they never change the verdict.
   for (const p of principleFindings(sk, name, options)) {
     findings.push(finding('warn', p.code, p.where, p.message, { severity: p.severity, measure: p.measure, fix: p.fix, principle: p.principle, estimate: p.estimate }));
+  }
+
+  // 11. The action minimums (a senior animator's first look): a strike has weight behind it, a
+  // jump leaves the ground, a hop falls into the ground, a wave clears the head, an idle breathes.
+  // Only for figures: a UI part, an effect or a scene is not judged as a body.
+  if (!NOT_A_BODY.has(options.subject)) {
+    for (const a of actionFindings(sk, name, { action: options.action })) {
+      findings.push(finding('warn', a.code, at, a.message, { severity: a.severity, measure: a.measure, fix: a.fix, principle: a.principle }));
+    }
   }
 
   // Checks the subject's brief says do not apply (twinning on a symmetric badge is a design).

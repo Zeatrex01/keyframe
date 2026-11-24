@@ -12,6 +12,7 @@
 
 import { StudioError } from '../shared/errors.js';
 import { GLYPHS, GLYPH_NAMES } from './glyphs.js';
+import { readableOn } from './style.js';
 
 export const COMPONENTS = Object.freeze({
   button: 'A button with a label and/or an icon; states hover, pressed, disabled. One part.',
@@ -30,6 +31,8 @@ const sizeOf = (style, key, fallback) => { const s = style.sizes[key]; return Ar
 
 /** The body of a button-like shape in one state, inside a box of w x (h + drop). */
 function buttonShapes(style, { w, h, r, color, label, icon, size, state, round }) {
+  // With an outline round every letter the light text reads on any fill; without one, pick by contrast.
+  const ink = style.type.outline ? 'text' : readableOn(style, color);
   const drop = style.light.shadow;
   const pressed = state === 'pressed', disabled = state === 'disabled', hover = state === 'hover';
   const fill = disabled ? `${color}-15~` : pressed ? `${color}-18` : hover ? `${color}+${round ? 32 : 22}` : color;
@@ -37,14 +40,14 @@ function buttonShapes(style, { w, h, r, color, label, icon, size, state, round }
   const out = [];
   if (drop > 0) out.push({ ...(round ? { circle: [w / 2, h / 2 + drop, h / 2] } : { rect: [0, drop, w, h], r }), fill: disabled ? 'ink~' : 'ink', stroke: false, shade: false, opacity: pressed ? 0.25 : style.light.shadowAlpha + 0.2 });
   out.push({ ...(round ? { circle: [w / 2, h / 2 + y, h / 2 - style.stroke.bold / 2] } : { rect: [style.stroke.bold / 2, y + style.stroke.bold / 2, w - style.stroke.bold, h - style.stroke.bold], r }), fill, sw: 'bold', shine: !pressed && !disabled });
-  const textColor = disabled ? 'muted' : 'text';
+  const textColor = disabled ? 'muted' : ink;
   const iconSize = round ? h * 0.56 : h * 0.52;
   if (icon && label) {
     const lw = label.length * size * 0.72;
     const total = iconSize + size * 0.4 + lw, x0 = w / 2 - total / 2;
-    out.push({ icon, box: [x0, y + h / 2 - iconSize / 2, iconSize], fill: disabled ? 'muted' : 'text' });
+    out.push({ icon, box: [x0, y + h / 2 - iconSize / 2, iconSize], fill: disabled ? 'muted' : ink });
     out.push({ text: label, at: [x0 + iconSize + size * 0.4, y + h / 2 + size / 2], size, align: 'start', color: textColor });
-  } else if (icon) out.push({ icon, box: [w / 2 - iconSize / 2, y + h / 2 - iconSize / 2, iconSize], fill: disabled ? 'muted' : 'text' });
+  } else if (icon) out.push({ icon, box: [w / 2 - iconSize / 2, y + h / 2 - iconSize / 2, iconSize], fill: disabled ? 'muted' : ink });
   else if (label) out.push({ text: label, at: [w / 2, y + h / 2 + size / 2], size, color: textColor });
   return out;
 }
@@ -67,7 +70,7 @@ export function componentParts(c, style, name) {
     const round = kind === 'iconButton';
     const [dw, dh] = round ? [style.sizes.buttonSmall?.[1] ?? 56, style.sizes.buttonSmall?.[1] ?? 56] : sizeOf(style, 'button', [220, 80]);
     const h = num(c.h ?? c.size, dh), w = round ? h : num(c.w, dw);
-    const params = { w, h, r: c.r ?? 'pill', color: c.color ?? (round ? 'danger' : 'primary'), label: text(c.label), icon: icon ?? (round ? 'close' : undefined), size: num(c.textSize, Math.round(h * 0.36)), round };
+    const params = { w, h, r: c.r ?? (style.shape === 'sharp' ? 'sm' : 'pill'), color: c.color ?? (round ? 'danger' : 'primary'), label: text(c.label), icon: icon ?? (round ? 'close' : undefined), size: num(c.textSize, Math.round(h * 0.36)), round };
     const states = Object.fromEntries(BUTTON_STATES.map(s => [s, { box: [w, h + drop], shapes: buttonShapes(style, { ...params, state: s }) }]));
     return [{ name, box: [w, h + drop], shapes: buttonShapes(style, { ...params, state: 'normal' }), offset: [0, -drop / 2], states }];
   }
@@ -94,7 +97,7 @@ export function componentParts(c, style, name) {
     shapes.push({ rect: [inset, band ? band * 0.75 + inset * 0.5 : inset, w - inset * 2, h - (band ? band * 0.75 + inset * 1.5 : inset * 2)], r: 'md', fill: `${c.color ?? 'panel'}-8`, stroke: false, shade: false });
     const lines = (Array.isArray(c.lines) ? c.lines : []).slice(0, 6).map(text);
     const top = band ? band * 0.75 + inset * 1.5 : inset * 2, ls = num(c.bodySize, style.type.size.sm);
-    lines.forEach((line, i) => shapes.push({ text: line, at: [w / 2, top + ls * (1.25 + i * 1.9)], size: ls, color: 'textDark', outline: false }));
+    lines.forEach((line, i) => shapes.push({ text: line, at: [w / 2, top + ls * (1.25 + i * 1.9)], size: ls, color: readableOn(style, c.color ?? 'panel'), outline: false }));
     /** @type {any[]} */
     const parts = [{ name, box: [w, h + drop], shapes, offset: [0, -drop / 2] }];
     if (title) {

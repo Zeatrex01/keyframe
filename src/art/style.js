@@ -137,6 +137,14 @@ export function colorOf(style, value) {
   return c;
 }
 
+/** The text role that reads best on a fill: the light text colour or the dark one. */
+export function readableOn(style, fill) {
+  const bg = colorOf(style, fill);
+  if (bg === 'none') return 'textDark';
+  const light = colorOf(style, style.palette.text ? 'text' : '#ffffff'), dark = colorOf(style, style.palette.textDark ? 'textDark' : 'ink');
+  return contrast(light, bg) >= contrast(dark, bg) ? (style.palette.text ? 'text' : '#ffffff') : (style.palette.textDark ? 'textDark' : 'ink');
+}
+
 /** A stroke weight by name (thin, regular, bold) or number. */
 export function weightOf(style, value) {
   if (typeof value === 'number') return value;

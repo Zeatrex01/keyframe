@@ -12,9 +12,14 @@ All notable changes to this project. The format follows
   - `draw_rig` draws from UI components (button, icon button, panel, popup, progress, toggle, badge, icon) and parametric shapes in the guide, with labels in a built-in stroke font and a 30-glyph icon family; states (hover, pressed, disabled, on/off) become other looks of one slot; `restyle` redraws a drawing in a changed guide; `as: "artboard"` draws designs that are never rigged.
   - `critique_art`: palette drift, outline weights, alignment, silhouettes at small size, states too alike, contrast; writes a contact sheet.
   - `export_art`: trimmed PNGs per part and state at any scale with pivots, sprite sheets with a JSON map, clean SVG, and clips as PNG sequences and sheets.
+- `export_art` kind `web`: an embeddable player for web pages and HTML games (`keyframe-player.js`, one classic script): `KeyframePlayer.create(canvas, ...)` with play, stop, pause, seek, speed, `setLook` for drawn states and `start`/`complete`/`loop`/`event` listeners, and a `<keyframe-player>` element.
+- `critique_animation` holds a figure to the minimums of its action (`src/understand/actions.js`): a strike moves the body behind it, winds up, lands fast and holds the hit; a jump rises a quarter of the height after a crouch; a hop falls into the ground instead of floating; a wave clears the head and swings; an idle breathes; a walk bobs. UI parts, effects and props are not judged as a body.
 - Parts reach the page as safe trees (`src/render/svg-safe.js`): only shapes, groups and gradients survive, so nothing in a drawing can run.
 
 ### Fixed
+- Labels and popup text pick the readable text colour for their fill in every style.
+- Pip's jump rises a quarter of the body's height (it read as a hop); Mika's wave clears her head.
+- The privacy gate no longer reads image file names such as `ui@3x.json` as e-mail addresses.
 - The Draw board shows parts whose SVG has no `xmlns`.
 - A drawing the AI makes shows on an open Draw board at once, and the board fits it again once it becomes visible.
 - The Draw settings panel has a readable label; every key the page's markup names is now checked against the English catalog.

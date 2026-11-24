@@ -25,8 +25,9 @@ const MACHINE_LOCAL = /(^|\/)(studio\.config\.json|\.mcp\.json|\.env(\..*)?|sett
 const TEXT = /\.(js|mjs|cjs|json|md|html|css|txt|yml|yaml|atlas|cmd|webmanifest)$/i;
 // A home folder followed by a real-looking user name; the placeholders are allowed.
 const HOME_PATH = /(?:\b[A-Za-z]:[\\/]+Users[\\/]+|\/Users\/|\/home\/)(?!(?:you|sen|user|runner|me|name|<)[\\/"'`\s,)])[A-Za-z0-9._-]{2,}/;
-// An e-mail address that is not a placeholder or a no-reply address (a URL's user part, after // or :, is not one).
-const EMAIL = /(?<![/:A-Za-z0-9._%+-])[A-Za-z0-9._%+-]+@(?!(?:example\.(?:com|org|net)|users\.noreply\.github\.com|anthropic\.com|evil\.org)\b)[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}\b/;
+// An e-mail address that is not a placeholder or a no-reply address (a URL's user part, after // or :, is not one;
+// nor is a file name such as ui@3x.json, icon@1.5x.png or clip@sheet.json).
+const EMAIL = /(?<![/:A-Za-z0-9._%+-])[A-Za-z0-9._%+-]+@(?!\d+(?:\.\d+)?x\.)(?!(?:example\.(?:com|org|net)|users\.noreply\.github\.com|anthropic\.com|evil\.org)\b)[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.(?!(?:json|png|jpe?g|svg|webp|gif|atlas|skel|txt|js|mjs|cjs|tres|tscn)\b)[A-Za-z]{2,}\b/;
 
 export function personalIn(text) {
   return [HOME_PATH.exec(text)?.[0], EMAIL.exec(text)?.[0]].filter(Boolean);
@@ -103,6 +104,8 @@ test('the gate catches a home path and an address, and lets placeholders through
   assert.equal(personalIn('mail ' + 'bob' + '@' + 'company.io').length, 1);
   assert.equal(personalIn('e.g. C:\\Games\\Hero or /Users/you/hero').length, 0);
   assert.equal(personalIn('https://user:pw@vimeo.com/1 https://user@vimeo.com/1').length, 0, 'a URL user part is not an address');
+  assert.equal(personalIn('ui@3x.json icon@1.5x.png sheet@2x.webp clip-press@sheet.json').length, 0, 'a file name is not an address');
+  assert.equal(personalIn('mail ' + 'bob' + '@' + '3m.com').length, 1, 'a domain that starts with a digit still counts');
   assert.equal(personalIn('noreply@anthropic.com, a@example.com, 1+x@users.noreply.github.com').length, 0);
   assert.ok(MACHINE_LOCAL.test('examples/cat/.keyframe/chat.jsonl'));
   assert.ok(MACHINE_LOCAL.test('reference/run.mp4'));

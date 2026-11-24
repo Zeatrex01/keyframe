@@ -41,7 +41,7 @@ test('the proposal and the confirmed brief carry display size, loops and the sub
   const { brief } = validateBrief({ subject: 'ui', clips: [{ name: 'press', seconds: 0.2 }, { name: 'shine', intent: 'loop' }], display: { height: 80 } }, sk);
   assert.deepEqual(brief.clips.map(c => [c.name, c.intent, c.loop, c.planned]), [['press', 'action', false, false], ['shine', 'loop', true, true]]);
   assert.equal(brief.display.pixelsPerUnit, 0.2);
-  assert.deepEqual(critiqueOptions(brief, 'shine'), { loop: true, pixelsPerUnit: 0.2, skip: ['twinning', 'no-overlap', 'no-anticipation'] });
+  assert.deepEqual(critiqueOptions(brief, 'shine'), { subject: 'ui', loop: true, pixelsPerUnit: 0.2, skip: ['twinning', 'no-overlap', 'no-anticipation'] });
 });
 
 test('critique_animation leaves out the checks a subject\'s brief says do not apply', () => {

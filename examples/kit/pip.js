@@ -21,7 +21,7 @@ const NAME = 'pip';
 const DIR = fileURLToPath(new URL(`../showcase/${NAME}/`, import.meta.url));
 const SOURCE = fileURLToPath(new URL('./pack/human/', import.meta.url));   // the painted rig as human_build.cjs writes it
 const LOOK = 'boy_casual';
-const VIEW = { x: -230, y: -440, width: 460, height: 600 };
+const VIEW = { x: -276, y: -440, width: 552, height: 720 }; // room above for the jump
 const TOP_AT = 44.2;              // where `top` sits along the waist bone
 
 export function upgrade() {
@@ -108,7 +108,7 @@ export const clips = {
   jump: {
     bones: {
       // arcs: up decelerating (outQuad), a hang, down accelerating (inQuad)
-      body: xy([[0, 0, 0], [6, 0, 0, 'outQuad'], [15, 0, 88], [18, 0, 91, 'inQuad'], [23, 0, 0], [33, 0, 0]]),
+      body: xy([[0, 0, 0], [6, 0, 0, 'outQuad'], [15, 0, 165], [18, 0, 170, 'inQuad'], [23, 0, 0], [33, 0, 0]]),
       // anticipation: the crouch; after the landing the knees absorb it
       hips: xy([[0, 0, 0, 'inOutSine'], [5, 0, -36, 'outCubic'], [8, 0, 3, 'inOutSine'], [23, 0, 0, 'outQuad'], [26, 0, -28, 'inOutSine'], [33, 0, 0]]),
       // squash and stretch on the leaf `trunk` (its x is up): crouch, stretch at take-off, squash on contact; x * y stays near 1

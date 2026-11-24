@@ -139,6 +139,7 @@ export function critiqueOptions(brief, clip) {
   const preset = PRESETS[brief.subject];
   return {
     ...(typeof entry?.loop === 'boolean' ? { loop: entry.loop } : {}),
+    ...(typeof brief.subject === 'string' ? { subject: brief.subject } : {}),
     ...(brief.display?.pixelsPerUnit > 0 ? { pixelsPerUnit: brief.display.pixelsPerUnit } : {}),
     skip: [...new Set([...(preset?.skip ?? []), ...(Array.isArray(brief.preset?.skip) ? brief.preset.skip : [])])],
   };
