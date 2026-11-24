@@ -26,6 +26,8 @@ import startHere from './tools/start-here.js';
 import briefTool from './tools/brief.js';
 import addEffectTool from './tools/add-effect.js';
 import drawRigTool from './tools/draw-rig.js';
+import styleGuideTool from './tools/style-guide.js';
+import { critiqueArtTool, exportArtTool } from './tools/art.js';
 import { waitForMessageTool, replyTool } from './tools/chat.js';
 import { seeReferenceTool, measureReferenceTool, applyMotionTool, compareReferenceTool } from './tools/reference.js';
 
@@ -49,7 +51,7 @@ export const INSTRUCTIONS = [
 /** Every tool this build carries. Only the `core` tier is served unless the server is started with `all`. */
 export const TOOLS = [help, startHere, waitForMessageTool, replyTool, seeReferenceTool, measureReferenceTool, applyMotionTool, compareReferenceTool, scanProject, briefTool, readRigTool, readAnimationTool, sampleAnimationTool, describeAnimationTool,
   critiqueAnimationTool, critiqueRigTool, checkSkeleton, seeAnimation, writeAnimation, deleteAnimation,
-  setCurves, addEffectTool, drawRigTool, bakeAnimation, paintWeightsTool, migrateSwapToSkin, mergeAnimation, editWeights, readWeights,
+  setCurves, addEffectTool, styleGuideTool, drawRigTool, critiqueArtTool, exportArtTool, bakeAnimation, paintWeightsTool, migrateSwapToSkin, mergeAnimation, editWeights, readWeights,
   diffSkeletonsTool, readAtlasTool, checkAssetsTool, listHistoryTool, spineInfoTool, restoreFileTool, exportBinaryTool, exportPlayerTool, exportGodotTool].map(withGuide);
 
 /**

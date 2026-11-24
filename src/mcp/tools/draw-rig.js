@@ -10,17 +10,29 @@ import { checkSkeleton } from '../../spine/check.js';
 import { readAssetSvg } from '../../core/asset-library.js';
 import { appendFeed } from '../../core/draw-feed.js';
 import { safeTree } from '../../render/svg-safe.js';
+import { expandParts } from '../../art/draw-spec.js';
+import { COMPONENTS } from '../../art/components.js';
+import { GLYPH_NAMES } from '../../art/glyphs.js';
+import { projectStyle } from '../style-file.js';
+import { drawingSvg } from '../../render/compose-svg.js';
+import { rasterizeSvg } from '../../engine/svg.js';
+import { encodePng } from '../../render/png.js';
 
 const PART = {
-  type: 'object', required: ['name', 'svg', 'at'], additionalProperties: false,
+  type: 'object', required: ['name', 'at'], additionalProperties: false,
   properties: {
     name: { type: 'string', short: 'part, bone and slot name', description: 'The part, its bone and its slot (arm_l, head, lid).' },
-    svg: { type: 'string', short: 'one SVG, or asset:<pack>/<item>', description: 'One SVG document drawing the part in its own viewBox, or an asset library item: asset:<pack>/<item> (the page lists the packs).' },
+    svg: { type: 'string', short: 'one SVG, or asset:<pack>/<item>', description: 'One SVG document drawing the part in its own viewBox, or an asset library item: asset:<pack>/<item> (the page lists the packs). Give svg, shapes or component.' },
+    box: { type: 'array', items: { type: 'number' }, short: '[w, h] for shapes', description: 'With `shapes`: the drawing space [w, h] of the part (y down, 0,0 top left).' },
+    shapes: { type: 'array', items: { type: 'object' }, short: 'parametric shapes (style guide)', description: 'The part as shapes in the project style guide, far cheaper than SVG: { rect: [x,y,w,h], r }, { circle: [cx,cy,r] }, { ellipse: [cx,cy,rx,ry] }, { poly: [[x,y],...] }, { path: d }, { line: [x1,y1,x2,y2] }, { star: [cx,cy,r], points }, { text, at: [x, baseline], size: sm|md|lg|n, align }, { icon: name, box: [x,y,size] }. Paint by role: fill, stroke ("primary", "primary-20" darker, "primary+20" lighter, "primary~" greyed, "#rrggbb", "none"; stroke false for none), sw thin|regular|bold|n, r sm|md|lg|pill|n, shade, shine, shadow, opacity, grad: [top, bottom].' },
+    component: { type: 'object', short: 'a UI component (button, panel, popup...)', description: `A ready component drawn in the style guide, split into the parts an animator needs: { component: ${Object.keys(COMPONENTS).join(' | ')}, label, icon, color, w, h, ... }. ${Object.entries(COMPONENTS).map(([k, v]) => `${k}: ${v}`).join(' ')} Extra fields: title, lines (popup body), button (popup action label), value (badge), on (toggle), plate (icon: round | square), size.` },
+    states: { short: 'other looks: ["hover","pressed","disabled"]', description: 'Other looks of the part, attachments <name>_<state> of its slot that a clip switches to: with `shapes`, a list of hover | pressed | disabled is derived from the same shapes (lighter, darker and pressed down, greyed), or { state: { shapes } } draws your own; with `svg`, { state: svg }.' },
     at: { type: 'array', items: { type: 'number' }, short: '[x, y] art centre, y up', description: 'Centre of the art in the rig, [x, y] in units, y up.' },
     pivot: { type: 'array', items: { type: 'number' }, short: '[x, y] bone (default at)', description: 'Where the bone sits (it turns there), [x, y]; default `at`.' },
     parent: { type: 'string', short: 'carrying part (default root)', description: 'The part whose bone carries this one; default the root.' },
     size: { type: 'array', items: { type: 'number' }, short: '[w, h] (default viewBox)', description: 'Size in the rig [w, h] in units; default the viewBox size.' },
     blend: { type: 'string', enum: ['normal', 'additive', 'multiply', 'screen'], short: 'blend (default normal)', description: 'Slot blend mode; default normal.' },
+    source: { type: 'object', short: 'how it was drawn (keep as read)', description: 'Kept from an earlier drawing (the drawing board sends it back): how the part was drawn, so restyle can draw it again. Leave it as read.' },
     hidden: { type: 'boolean', short: 'hidden in setup', description: 'Hidden in the setup pose (a closed lid, a flash); default false.' },
   },
 };
@@ -34,6 +46,19 @@ function mergeParts(previousDoc, parts) {
   for (const p of parts) {
     const i = out.findIndex(q => q.name === p.name);
     if (i >= 0) out[i] = p; else out.push(p);
+  }
+  return out;
+}
+
+/** A drawing as the parts that drew it, so a changed style guide can draw them again. */
+function sourcesOf(doc) {
+  const out = [];
+  for (const p of doc.parts) {
+    const { svg, states, source, size, ...placed } = p;
+    if (source?.of && !source.component) continue;              // drawn with its component
+    if (source?.component) out.push({ name: p.name, component: source.component, at: source.at ?? p.at, ...(source.pivot ? { pivot: source.pivot } : {}), ...(source.parent ? { parent: source.parent } : {}) });
+    else if (source?.shapes) out.push({ ...placed, box: source.box, shapes: source.shapes, ...(source.states ? { states: source.states } : {}) });
+    else out.push(p);
   }
   return out;
 }
@@ -80,60 +105,93 @@ export default {
   writes: true,
   summary: 'Draws placeholder art as SVG parts and builds the rig from it: a skeleton, an atlas and a page image the studio plays at once.',
   description: `Starts a project from a description: draw each part (head, body, arm_l, lid, coin) as one small SVG, place it (\`at\`), say where it turns (\`pivot\`) and what carries it (\`parent\`). The studio draws the SVGs into an atlas page and writes <folder>/<name>.json (a Spine 4.2 skeleton whose setup pose is the finished picture), <name>.atlas, <name>.png and <name>.parts.json (the parts, which the drawing board in the page edits and rebuilds from). Parts are listed back to front.
-SVG that is drawn: rect, circle, ellipse, line, polyline, polygon, path (all commands), g with transform, fill and stroke (colours, linear and radial gradients), opacity, stroke-linecap. Not drawn (and named in \`skipped\`): text, filters, masks, clip paths, images, <use>. Keep one part per moving piece and draw it in a flat, readable style with a dark outline. Ready-made props and effect sprites (coin, star, spark, heart, gem, cloud, leaf, drop) come from the bundled asset library as \`svg: "asset:keyframe-basics/coin"\`.
+SVG that is drawn: rect, circle, ellipse, line, polyline, polygon, path (all commands), g with transform, fill and stroke (colours, linear and radial gradients), opacity, stroke-linecap. Not drawn (and named in \`skipped\`): text, filters, masks, clip paths, images, <use>. Prefer \`shapes\` and \`component\` over raw SVG: they cost a tenth of the tokens and follow the project's style guide (style_guide) by name, with labels in the built-in stroke font and icons from the family (${GLYPH_NAMES.length} glyphs: ${GLYPH_NAMES.join(', ')}). \`restyle: true\` with no parts redraws every part drawn from shapes or a component with the current guide. Keep one part per moving piece. Ready-made props and effect sprites (coin, star, spark, heart, gem, cloud, leaf, drop) come from the bundled asset library as \`svg: "asset:keyframe-basics/coin"\`.
 With \`merge: true\` the parts are added to the drawing of the same name (a part with an existing name replaces it in place, a new one goes in front) and the rest is kept: draw a figure one part or a few parts per call, back to front, and the page shows each part being drawn as it arrives (every call is shown live on the drawing board). Drawing again under the same name without \`merge\` replaces the whole drawing and keeps the clips already written (keys on a part that no longer exists are dropped and listed); every file is backed up first. A name whose files the studio did not draw is refused. Then animate it with write_animation and look at it with see_animation.`,
   inputSchema: {
-    type: 'object', required: ['name', 'parts'], additionalProperties: false,
+    type: 'object', required: ['name'], additionalProperties: false,
     properties: {
       name: { type: 'string', short: 'rig name', description: 'The rig name: the files are <name>.json, .atlas, .png and .parts.json.' },
-      parts: { type: 'array', minItems: 1, maxItems: 64, items: PART, short: 'parts, back to front', description: 'The parts, back to front.' },
+      parts: { type: 'array', minItems: 1, maxItems: 64, items: PART, short: 'parts, back to front', description: 'The parts, back to front (a component counts once and may give several).' },
       folder: { type: 'string', short: 'folder (default root)', description: 'Project-relative folder for the files; created when missing. Default the project root.' },
       resolution: { type: 'number', minimum: 0.25, maximum: 8, short: 'atlas px per unit (default 2)', description: 'Atlas pixels per rig unit. Default 2 (crisp at twice the rig size).' },
+      as: { type: 'string', enum: ['rig', 'artboard'], short: 'rig (default) or artboard', description: 'rig (default): a skeleton to animate. artboard: a design that is never rigged (an icon set, a logo, a UI sheet): writes <name>.svg and <name>.png with the parts, no skeleton. A drawing keeps its kind when drawn again.' },
+      restyle: { type: 'boolean', short: 'redraw with the current style guide', description: 'Redraw every part of the drawing that was drawn from shapes or a component with the current style guide (no parts needed). Parts given as SVG stay as they are.' },
       merge: { type: 'boolean', short: 'add to the drawing (part by part)', description: 'Add these parts to the drawing of the same name (same name replaces in place, a new name goes in front) and keep the others. Default false: the parts are the whole drawing.' },
     },
   },
-  run({ name, parts, folder = '', resolution, merge = false }, { session }) {
+  run({ name, parts, folder = '', resolution, merge = false, restyle = false, as }, { session }) {
     const project = projectOf(session);
     const dirAbs = folder ? project.resolve(folder) : project.dir;
-    const resolved = parts.map(p => (typeof p?.svg === 'string' && p.svg.startsWith('asset:') ? { ...p, svg: readAssetSvg(p.svg) } : p));
-    const abs = Object.fromEntries(Object.entries({ json: `${name}.json`, atlas: `${name}.atlas`, png: `${name}.png`, parts: `${name}.parts.json` })
+    const abs = Object.fromEntries(Object.entries({ json: `${name}.json`, atlas: `${name}.atlas`, png: `${name}.png`, parts: `${name}.parts.json`, svg: `${name}.svg` })
       .map(([k, f]) => [k, path.join(dirAbs, f)]));
     let previous = null, previousDoc = null;
-    if (fs.existsSync(abs.json) || fs.existsSync(abs.atlas) || fs.existsSync(abs.png)) {
+    if (['json', 'atlas', 'png', 'parts', 'svg'].some(k => fs.existsSync(abs[k]))) {
       try { previousDoc = JSON.parse(fs.readFileSync(abs.parts, 'utf8')); } catch { previousDoc = null; }
-      if (previousDoc?.format !== PARTS_FORMAT) throw new StudioError('not-ours', `${project.rel(abs.json)} (or its atlas or page) exists and was not drawn by the studio; choose another name or folder.`, { file: project.rel(abs.json) });
+      if (previousDoc?.format !== PARTS_FORMAT) throw new StudioError('not-ours', `${project.rel(abs.json)} (or its atlas, page or svg) exists and was not drawn by the studio; choose another name or folder.`, { file: project.rel(abs.json) });
       try { previous = JSON.parse(fs.readFileSync(abs.json, 'utf8')); } catch { previous = null; }
     }
-    const all = merge ? mergeParts(previousDoc, resolved) : resolved;
-    const built = buildSvgRig({ name, parts: all, resolution: resolution ?? (merge ? previousDoc?.resolution : undefined) ?? 2 });
-    const dropped = carryOver(previous, built.skeleton);
-    const findings = checkSkeleton(built.skeleton).filter(f => f.level === 'fatal');
+    const kind = as ?? previousDoc?.kind ?? 'rig';
+    const { style } = projectStyle(project.dir);
+    let input = parts ?? [];
+    if (restyle) {
+      if (!previousDoc) throw new StudioError('bad-argument', `There is no drawing "${name}" to restyle.`, { name });
+      input = sourcesOf(previousDoc);
+    } else if (!input.length) throw new StudioError('bad-argument', 'Give the parts to draw (or restyle: true to redraw the drawing with the current style guide).', {});
+    const read = input.map(p => (typeof p?.svg === 'string' && p.svg.startsWith('asset:') ? { ...p, svg: readAssetSvg(p.svg) } : p));
+    for (const [i, p] of read.entries()) {
+      const given = ['svg', 'shapes', 'component'].filter(k => p?.[k] !== undefined);
+      if (given.length !== 1) throw new StudioError('bad-argument', `parts[${i}] (${p?.name}) needs exactly one of svg, shapes or component${given.length ? ` (got ${given.join(' and ')})` : ''}.`, { part: p?.name });
+      if (p.shapes !== undefined && !Array.isArray(p.box)) throw new StudioError('bad-argument', `parts[${i}] (${p.name}): shapes need box [w, h].`, { part: p.name });
+    }
+    const expanded = expandParts(read, style);
+    const all = merge && !restyle ? mergeParts(previousDoc, expanded.parts) : expanded.parts;
+    const built = buildSvgRig({ name, parts: all, resolution: resolution ?? (merge || restyle ? previousDoc?.resolution : undefined) ?? 2 });
+    if (kind === 'artboard') built.document.kind = 'artboard';
+    const dropped = kind === 'rig' ? carryOver(previous, built.skeleton) : [];
+    const findings = kind === 'rig' ? checkSkeleton(built.skeleton).filter(f => f.level === 'fatal') : [];
     if (findings.length) throw new StudioError('check-failed', `The drawn rig does not pass the check: ${findings.map(f => f.message).join(' ')}`, { findings });
+    // A rig writes the skeleton, its atlas and page; an artboard (an icon sheet, a logo, a UI sheet
+    // that is never animated) writes the whole drawing as one SVG and one PNG. Both keep the parts.
+    const outputs = kind === 'rig' ? ['png', 'atlas', 'json', 'parts'] : ['svg', 'png', 'parts'];
     fs.mkdirSync(dirAbs, { recursive: true });
     const backups = {};
-    for (const [k, file] of Object.entries(abs)) {
-      const stamp = fs.existsSync(file) ? snapshot(project.dir, file, project.rel(file)) : null;
+    for (const k of outputs) {
+      const stamp = fs.existsSync(abs[k]) ? snapshot(project.dir, abs[k], project.rel(abs[k])) : null;
       if (stamp) backups[k] = stamp;
     }
-    fs.writeFileSync(abs.png, built.png);
-    fs.writeFileSync(abs.atlas, built.atlasText);
-    fs.writeFileSync(abs.json, `${JSON.stringify(built.skeleton, null, 1)}\n`);
+    if (kind === 'rig') {
+      fs.writeFileSync(abs.png, built.png);
+      fs.writeFileSync(abs.atlas, built.atlasText);
+      fs.writeFileSync(abs.json, `${JSON.stringify(built.skeleton, null, 1)}\n`);
+    } else {
+      const sheet = drawingSvg(built.document);
+      fs.writeFileSync(abs.svg, sheet.svg);
+      const res = built.document.resolution;
+      fs.writeFileSync(abs.png, encodePng(rasterizeSvg(sheet.svg, { width: Math.max(1, Math.round(sheet.size[0] * res)), height: Math.max(1, Math.round(sheet.size[1] * res)) })));
+    }
     fs.writeFileSync(abs.parts, `${JSON.stringify(built.document, null, 1)}\n`);
     let feed = null;
-    try { feed = appendFeed(project.dir, feedEvents(project.rel(abs.parts), name, built.document, resolved)).at(-1)?.seq ?? null; } catch { feed = null; }
+    try { feed = appendFeed(project.dir, feedEvents(project.rel(abs.parts), name, built.document, restyle ? built.document.parts : expanded.parts)).at(-1)?.seq ?? null; } catch { feed = null; }
+    const states = built.document.parts.filter(p => p.states).map(p => `${p.name}: ${Object.keys(p.states).map(k => `${p.name}_${k}`).join(', ')}`);
     return {
-      file: project.rel(abs.json),
-      written: Object.values(abs).map(f => project.rel(f)),
-      parts: built.skeleton.slots.map(s => s.name),
-      bones: built.skeleton.bones.map(b => (b.parent ? `${b.name} < ${b.parent}` : b.name)),
+      file: project.rel(kind === 'rig' ? abs.json : abs.svg),
+      kind,
+      written: outputs.map(k => project.rel(abs[k])),
+      parts: built.document.parts.map(p => p.name),
+      ...(kind === 'rig' ? { bones: built.skeleton.bones.map(b => (b.parent ? `${b.name} < ${b.parent}` : b.name)) } : {}),
+      ...(states.length ? { states } : {}),
       size: [built.skeleton.skeleton.width, built.skeleton.skeleton.height],
       ...(merge ? { drawing: built.document.parts.map(p => p.name) } : {}),
+      ...(expanded.parametric ? { style: style.name } : {}),
+      ...(expanded.missing.length ? { notInFont: expanded.missing } : {}),
       ...(feed ? { feed } : {}),
       ...(Object.keys(backups).length ? { backups } : {}),
-      ...(previous ? { keptClips: Object.keys(built.skeleton.animations) } : {}),
+      ...(kind === 'rig' && previous ? { keptClips: Object.keys(built.skeleton.animations) } : {}),
       ...(dropped.length ? { dropped } : {}),
       ...(built.skipped.length ? { skipped: built.skipped } : {}),
-      next: `write_animation { file: "${project.rel(abs.json)}", ... } to animate it; see_animation to look at it.`,
+      next: kind === 'rig'
+        ? `critique_art { file: "${project.rel(abs.parts)}" } to check the drawing; then write_animation { file: "${project.rel(abs.json)}", ... }.`
+        : `critique_art { file: "${project.rel(abs.parts)}" } to check the drawing; export_art to get PNGs at other scales.`,
     };
   },
 };

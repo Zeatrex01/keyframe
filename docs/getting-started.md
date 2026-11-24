@@ -62,7 +62,7 @@ Check that the server answers the way a client will talk to it:
 npm run connect -- --check
 ```
 
-`ok ... 26 tools served` means any client configured with those lines will work. Restart the agent
+`ok ... 29 tools served` means any client configured with those lines will work. Restart the agent
 after adding the lines; most clients read their MCP settings only at start.
 
 The server follows the project open in the page, so switching projects there brings the agent

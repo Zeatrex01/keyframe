@@ -5,8 +5,8 @@ import { projectOf } from '../project.js';
 import { DELIVERY_MARKER } from '../../deliver/compose.js';
 import { WRITING_RULES, CLIP_TIMING, FPS_BASIS } from '../../understand/principles.js';
 
-const DRAW = { step: 'DRAW', why: 'There is no art yet: draw placeholder parts as SVG with draw_rig (one part per moving piece, back to front, each with its pivot), then follow the steps below on the rig it writes.',
-  tools: ['draw_rig'] };
+const DRAW = { step: 'DRAW', why: 'There is no art yet. Set the art direction first (style_guide: palette by role, outline weights, radii, light), draw the parts with draw_rig from components and shapes in that guide (one part per moving piece, back to front, each with its pivot; states as other looks), check them with critique_art and look at its sheet, then follow the steps below on the rig it writes.',
+  tools: ['style_guide', 'draw_rig', 'critique_art'] };
 const STEPS = [
   { step: 'SEE', why: 'Know the subject, the rig and what already moves before writing anything. Confirm the brief once (what the skeleton is, what each clip is for, the display size): critique_animation judges by it. Read an existing clip that does something similar (describe_animation) and the rig\'s `conventions` from read_rig: they show how THIS rig does a blink or an expression (which slots switch together).',
     tools: ['scan_project', 'brief', 'read_rig', 'read_animation', 'describe_animation', 'see_animation', 'see_reference'] },

@@ -119,6 +119,23 @@ AnimationTree:
   (ADR-6), optional, and with a gate. Each one is a maintainer decision recorded in
   `docs/concept.md`.
 
+### Phase 4b: the drawing side, as deep as the animation side
+
+The studio is two crafts: an art director who draws and a senior animator who moves what was
+drawn. The drawing side gets the same steps as the animation side (direction, making, critique,
+proof, delivery); `docs/drawing.md` has the details and the boundary.
+
+- Done: a per-project style guide (`style_guide`); parametric shapes and UI components drawn from
+  it by name, with labels in a built-in stroke font and an icon family; states (hover, pressed,
+  disabled, on/off) as other looks of one part; artboards that are never rigged; `critique_art`
+  with a contact sheet; `export_art` (trimmed PNGs with pivots at any scale, sprite sheets with a
+  JSON map, clean SVG, clips as PNG sequences); live drawing on the board.
+- Next: an Art Director and a Senior Animator as agent roles the Director coordinates; a small
+  embeddable web player module with a documented API; a UI pack made with the studio's own tools
+  as a showcase.
+- Later: boolean operations on shapes, outline fonts, text on paths, a vector editor in the page
+  beyond moving and scaling parts.
+
 ### Phase 5: a brand, a professional app, fewer and better examples
 
 Decided 2026-11-24: fewer, better examples, a brand, and a simple web interface finished to the

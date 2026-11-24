@@ -63,10 +63,28 @@ export const GUIDE = Object.freeze({
     next: ['see_animation', 'critique_animation'],
   },
   draw_rig: {
-    when: 'There is no art yet, or a part is missing: draw placeholder parts as SVG and get a rig the studio plays at once.',
+    when: 'There is no art yet, or a part is missing: draw the parts (components, shapes in the style guide, or SVG) and get a rig the studio plays at once, or an artboard that is never rigged.',
     notWhen: 'The owner has art: work on their skeleton instead; never redraw a file the studio did not draw.',
-    example: { name: 'pal', parts: [{ name: 'body', svg: '<svg viewBox="0 0 100 120"><rect x="5" y="5" width="90" height="110" rx="30" fill="#7cc4ff" stroke="#2b1b4d" stroke-width="6"/></svg>', at: [0, 60], pivot: [0, 0] }, { name: 'head', svg: '<svg viewBox="0 0 90 90"><circle cx="45" cy="45" r="40" fill="#ffd84d" stroke="#2b1b4d" stroke-width="6"/></svg>', at: [0, 150], pivot: [0, 115], parent: 'body' }] },
-    next: ['brief', 'write_animation', 'see_animation'],
+    example: { name: 'menu', folder: 'ui', parts: [{ name: 'play', component: { component: 'button', label: 'PLAY', icon: 'play' }, at: [0, 0] }, { name: 'coin', box: [64, 64], shapes: [{ circle: [32, 32, 28], fill: 'reward', shine: true }], at: [160, 0], states: ['hover', 'pressed'] }] },
+    next: ['critique_art', 'brief', 'write_animation'],
+  },
+  style_guide: {
+    when: 'Before drawing anything for a project, and whenever its look changes: fix the palette by role, outline weights, corner radii, light, type and sizes every drawn part follows.',
+    notWhen: 'The owner brought their own art: their look is in their files, not in a guide.',
+    example: { preset: 'casual-game', set: { palette: { primary: '#4cc461' } } },
+    next: ['draw_rig'],
+  },
+  critique_art: {
+    when: 'After every draw_rig, before animating or exporting: check the drawing against the style guide and look at its contact sheet.',
+    notWhen: 'The motion is in question, not the drawing: that is critique_animation.',
+    example: { file: 'ui/buttons.parts.json' },
+    next: ['draw_rig', 'write_animation', 'export_art'],
+  },
+  export_art: {
+    when: 'The drawing (or one of its clips) is needed outside the studio: PNGs at 1x/2x/3x for an engine, a sprite sheet with its map, clean SVG for the web, a clip as frames.',
+    notWhen: 'The animation goes to an engine with a skeletal runtime: deliver the skeleton itself (write_animation) instead of frames.',
+    example: { file: 'ui/buttons.parts.json', scales: [1, 2, 3] },
+    next: ['critique_art'],
   },
   brief: {
     when: 'Before writing motion on a skeleton for the first time: confirm what it is (character, creature, prop, UI, VFX, scene), what each clip is for and how big it is shown.',

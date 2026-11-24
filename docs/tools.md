@@ -2,7 +2,7 @@
 
 <!-- Written by `npm run docs:tools` from the tool definitions; do not edit by hand. -->
 
-The studio serves 26 tools to any MCP client by default; 12 more are on the shelf and served with
+The studio serves 29 tools to any MCP client by default; 12 more are on the shelf and served with
 `--all` (or `"all": true` in the connection). Any tool's full contract is also one `help { tool }` call away.
 Every refusal carries `fix` (how to get past it) and, for argument problems, an `example` call that works.
 
@@ -29,7 +29,10 @@ Every refusal carries `fix` (how to get past it) and, for argument problems, an 
 | [`delete_animation`](#delete_animation) | core | Deletes named animations from a delivery file, all or nothing; owner files are refused. |
 | [`set_curves`](#set_curves) | core | Applies an easing preset (or raw handles) to the segments of an animation; key values and times never move. |
 | [`add_effect`](#add_effect) | core | Adds an effect to a clip (burst, trail, flash, glow, shake) as ordinary bones, slots and keys every player shows the same. |
+| [`style_guide`](#style_guide) | core | The project's art direction: palette by role, stroke weights, corner radii, light, grid, type and sizes. Read it, start it from a preset, or change it. |
 | [`draw_rig`](#draw_rig) | core | Draws placeholder art as SVG parts and builds the rig from it: a skeleton, an atlas and a page image the studio plays at once. |
+| [`critique_art`](#critique_art) | core | The art director's check of a drawing against the style guide: palette drift, outline weights, alignment, silhouettes at small size, states too alike, contrast. Writes a contact sheet to look at. |
+| [`export_art`](#export_art) | core | Exports a drawing for engines and the web: trimmed transparent PNGs per part and state at chosen scales with pivots, a sprite sheet with a JSON map, clean SVG, and a clip as a PNG sequence and sheet. |
 | [`bake_animation`](#bake_animation) | core | Bakes constraint results (physics, IK, transform, path) or curves into plain linear bone keys, verified by replay on the runtime. |
 | [`paint_weights`](#paint_weights) | core | Binds a mesh (or a flat image turned into a grid mesh) to a chain of bones with smooth weights, so the part bends instead of moving rigidly. |
 | [`list_history`](#list_history) | core | The backups the studio keeps of a file it wrote, newest first. |
@@ -730,62 +733,168 @@ Example:
 
 **Next:** `see_animation`, `critique_animation`
 
+## style_guide
+
+*core, writes files.* The project's art direction: palette by role, stroke weights, corner radii, light, grid, type and sizes. Read it, start it from a preset, or change it.
+
+**Use when:** Before drawing anything for a project, and whenever its look changes: fix the palette by role, outline weights, corner radii, light, type and sizes every drawn part follows.
+
+**Not when:** The owner brought their own art: their look is in their files, not in a guide.
+
+The art-direction step before drawing. The guide lives in <project>/keyframe.style.json and every part drawn with `shapes` or a `component` in draw_rig follows it by name: fill "primary", sw "bold", r "md". With no arguments it returns the guide (or the default preset while the project has none). `preset` starts the guide from one of: casual-game (Chunky, friendly game UI: thick dark outline, pill and soft corners, light from the top, a glossy shine.) flat-web (Clean web UI: no outline, small radii, flat fills with a soft shadow, sentence case.) dark-sci (Sci-fi HUD: sharp corners, thin bright lines on dark panels, glow instead of shadow.) `set` changes parts of it: { palette: { primary: "#4cc461", ... }, stroke: { thin, regular, bold, color }, radius: { sm, md, lg, pill }, light: { from: top | top-left | top-right, shade 0-1, shine 0-1, shadow units, shadowAlpha 0-1 }, grid, type: { size: { sm, md, lg }, weight: bold | regular, case: upper | none, outline }, sizes: { button: [w, h], icon, ... }, note }. Palette roles are your own words too (brand, gold). After a change, draw_rig { name, restyle: true } redraws a drawing with it. The answer warns when a label colour cannot be read on its fill.
+
+| Argument | Type | Meaning |
+|---|---|---|
+| `preset` | `casual-game` \\| `flat-web` \\| `dark-sci` | Start the guide (or start it again) from a preset. |
+| `set` | object | The settings to change; the rest stays. |
+| `name` | string | A name for the guide (the art direction of this project). |
+
+Example:
+
+```json
+{
+ "preset": "casual-game",
+ "set": {
+  "palette": {
+   "primary": "#4cc461"
+  }
+ }
+}
+```
+
+**Next:** `draw_rig`
+
 ## draw_rig
 
 *core, writes files.* Draws placeholder art as SVG parts and builds the rig from it: a skeleton, an atlas and a page image the studio plays at once.
 
-**Use when:** There is no art yet, or a part is missing: draw placeholder parts as SVG and get a rig the studio plays at once.
+**Use when:** There is no art yet, or a part is missing: draw the parts (components, shapes in the style guide, or SVG) and get a rig the studio plays at once, or an artboard that is never rigged.
 
 **Not when:** The owner has art: work on their skeleton instead; never redraw a file the studio did not draw.
 
 Starts a project from a description: draw each part (head, body, arm_l, lid, coin) as one small SVG, place it (`at`), say where it turns (`pivot`) and what carries it (`parent`). The studio draws the SVGs into an atlas page and writes <folder>/<name>.json (a Spine 4.2 skeleton whose setup pose is the finished picture), <name>.atlas, <name>.png and <name>.parts.json (the parts, which the drawing board in the page edits and rebuilds from). Parts are listed back to front.
-SVG that is drawn: rect, circle, ellipse, line, polyline, polygon, path (all commands), g with transform, fill and stroke (colours, linear and radial gradients), opacity, stroke-linecap. Not drawn (and named in `skipped`): text, filters, masks, clip paths, images, <use>. Keep one part per moving piece and draw it in a flat, readable style with a dark outline. Ready-made props and effect sprites (coin, star, spark, heart, gem, cloud, leaf, drop) come from the bundled asset library as `svg: "asset:keyframe-basics/coin"`.
+SVG that is drawn: rect, circle, ellipse, line, polyline, polygon, path (all commands), g with transform, fill and stroke (colours, linear and radial gradients), opacity, stroke-linecap. Not drawn (and named in `skipped`): text, filters, masks, clip paths, images, <use>. Prefer `shapes` and `component` over raw SVG: they cost a tenth of the tokens and follow the project's style guide (style_guide) by name, with labels in the built-in stroke font and icons from the family (30 glyphs: star, heart, coin, gem, check, close, plus, minus, play, pause, home, lock, gear, sound, mute, music, back, next, info, question, trophy, shield, bolt, clock, cart, user, menu, refresh, key, flag). `restyle: true` with no parts redraws every part drawn from shapes or a component with the current guide. Keep one part per moving piece. Ready-made props and effect sprites (coin, star, spark, heart, gem, cloud, leaf, drop) come from the bundled asset library as `svg: "asset:keyframe-basics/coin"`.
 With `merge: true` the parts are added to the drawing of the same name (a part with an existing name replaces it in place, a new one goes in front) and the rest is kept: draw a figure one part or a few parts per call, back to front, and the page shows each part being drawn as it arrives (every call is shown live on the drawing board). Drawing again under the same name without `merge` replaces the whole drawing and keeps the clips already written (keys on a part that no longer exists are dropped and listed); every file is backed up first. A name whose files the studio did not draw is refused. Then animate it with write_animation and look at it with see_animation.
 
 | Argument | Type | Meaning |
 |---|---|---|
 | `name` (required) | string | The rig name: the files are <name>.json, .atlas, .png and .parts.json. |
-| `parts` (required) | object[] | The parts, back to front. |
+| `parts` | object[] | The parts, back to front (a component counts once and may give several). |
 | `folder` | string | Project-relative folder for the files; created when missing. Default the project root. |
 | `resolution` | number (≥ 0.25, ≤ 8) | Atlas pixels per rig unit. Default 2 (crisp at twice the rig size). |
+| `as` | `rig` \\| `artboard` | rig (default): a skeleton to animate. artboard: a design that is never rigged (an icon set, a logo, a UI sheet): writes <name>.svg and <name>.png with the parts, no skeleton. A drawing keeps its kind when drawn again. |
+| `restyle` | boolean | Redraw every part of the drawing that was drawn from shapes or a component with the current style guide (no parts needed). Parts given as SVG stay as they are. |
 | `merge` | boolean | Add these parts to the drawing of the same name (same name replaces in place, a new name goes in front) and keep the others. Default false: the parts are the whole drawing. |
 
 Example:
 
 ```json
 {
- "name": "pal",
+ "name": "menu",
+ "folder": "ui",
  "parts": [
   {
-   "name": "body",
-   "svg": "<svg viewBox=\"0 0 100 120\"><rect x=\"5\" y=\"5\" width=\"90\" height=\"110\" rx=\"30\" fill=\"#7cc4ff\" stroke=\"#2b1b4d\" stroke-width=\"6\"/></svg>",
+   "name": "play",
+   "component": {
+    "component": "button",
+    "label": "PLAY",
+    "icon": "play"
+   },
    "at": [
-    0,
-    60
-   ],
-   "pivot": [
     0,
     0
    ]
   },
   {
-   "name": "head",
-   "svg": "<svg viewBox=\"0 0 90 90\"><circle cx=\"45\" cy=\"45\" r=\"40\" fill=\"#ffd84d\" stroke=\"#2b1b4d\" stroke-width=\"6\"/></svg>",
+   "name": "coin",
+   "box": [
+    64,
+    64
+   ],
+   "shapes": [
+    {
+     "circle": [
+      32,
+      32,
+      28
+     ],
+     "fill": "reward",
+     "shine": true
+    }
+   ],
    "at": [
-    0,
-    150
+    160,
+    0
    ],
-   "pivot": [
-    0,
-    115
-   ],
-   "parent": "body"
+   "states": [
+    "hover",
+    "pressed"
+   ]
   }
  ]
 }
 ```
 
-**Next:** `brief`, `write_animation`, `see_animation`
+**Next:** `critique_art`, `brief`, `write_animation`
+
+## critique_art
+
+*core, writes files.* The art director's check of a drawing against the style guide: palette drift, outline weights, alignment, silhouettes at small size, states too alike, contrast. Writes a contact sheet to look at.
+
+**Use when:** After every draw_rig, before animating or exporting: check the drawing against the style guide and look at its contact sheet.
+
+**Not when:** The motion is in question, not the drawing: that is critique_animation.
+
+Run after every draw_rig, before animating or exporting: the PROVE step of drawing. It measures the parts of a drawing (<name>.parts.json) against the project's style guide: colours outside the palette and its tones (palette), outline weights off thin/regular/bold after the part's scale (stroke), parts that almost line up and corners off the grid (align), parts that blur away at 24 px (silhouette), hover/pressed/disabled looks too close to the normal one (states), parts that melt into the surface colour (contrast). Each finding names the part, the number measured and the fix. It also draws every part and state side by side on the surface colour, named underneath, into <project>/.keyframe/art/<name>-sheet.png: look at it (an image you can open) before calling the drawing done.
+
+| Argument | Type | Meaning |
+|---|---|---|
+| `file` (required) | string | The drawing: the <name>.parts.json draw_rig wrote. |
+
+Example:
+
+```json
+{
+ "file": "ui/buttons.parts.json"
+}
+```
+
+**Next:** `draw_rig`, `write_animation`, `export_art`
+
+## export_art
+
+*core, writes files.* Exports a drawing for engines and the web: trimmed transparent PNGs per part and state at chosen scales with pivots, a sprite sheet with a JSON map, clean SVG, and a clip as a PNG sequence and sheet.
+
+**Use when:** The drawing (or one of its clips) is needed outside the studio: PNGs at 1x/2x/3x for an engine, a sprite sheet with its map, clean SVG for the web, a clip as frames.
+
+**Not when:** The animation goes to an engine with a skeletal runtime: deliver the skeleton itself (write_animation) instead of frames.
+
+Writes new files into <folder>/<name>-export/ (never touches the drawing or the owner's files; a second export replaces the folder's files): `parts` png@<s>x/<part>.png, each part and each state at scale s (pixels per rig unit), transparent and trimmed, with parts.json listing for each its trim offset, source size and pivot in pixels so an engine places and turns it like the rig; `sheet` <name>@<s>x.png and .json, all of them packed into one sprite sheet with a frame map in the common JSON-hash layout (frame, spriteSourceSize, sourceSize, pivot) that game engines and web libraries read; `svg` svg/<part>.svg and <name>.svg, clean SVG with a <g id> per part for web pages and design tools; `clip` (with `animation`) clip-<anim>/frame_0000.png... and clip-<anim>@sheet.png/.json at `fps`, for engines without a skeletal runtime. Kinds: parts, sheet, svg, clip; default parts, sheet and svg. Scales default [1, 2]; `pixels` instead sets the longest side of the whole drawing.
+
+| Argument | Type | Meaning |
+|---|---|---|
+| `file` (required) | string | The drawing: the <name>.parts.json draw_rig wrote. |
+| `kinds` | string[] | What to export; default parts, sheet and svg. |
+| `scales` | number[] | Pixels per rig unit, one export each (1x, 2x, 3x). Default [1, 2]. |
+| `pixels` | number (≥ 8, ≤ 8192) | Instead of scales: the longest side of the whole drawing in pixels. |
+| `animation` | string | The animation to export as frames (kind clip). Read from the latest delivery (<name>_v2.json) when there is one. |
+| `fps` | number (≥ 1, ≤ 60) | Frames per second of the clip export; default 24. |
+| `size` | number (≥ 16, ≤ 2048) | Square frame size of the clip export in pixels; default 256. |
+
+Example:
+
+```json
+{
+ "file": "ui/buttons.parts.json",
+ "scales": [
+  1,
+  2,
+  3
+ ]
+}
+```
+
+**Next:** `critique_art`
 
 ## bake_animation
 

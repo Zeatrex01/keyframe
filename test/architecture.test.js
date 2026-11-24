@@ -14,15 +14,16 @@ const ALLOWED = {
   core: [],
   spine: [],
   engine: ['spine'],
+  art: ['engine'],
   runtime: ['spine', 'engine'],
   understand: ['spine', 'engine', 'runtime'],
-  render: ['core', 'spine', 'engine', 'runtime', 'understand'],
+  render: ['core', 'spine', 'engine', 'runtime', 'understand', 'art'],
   deliver: ['core', 'spine', 'engine', 'runtime', 'understand'],
-  mcp: ['core', 'spine', 'engine', 'runtime', 'understand', 'render', 'deliver'],
+  mcp: ['core', 'spine', 'engine', 'runtime', 'understand', 'render', 'deliver', 'art'],
   agent: ['core', 'mcp'],
-  server: ['core', 'spine', 'engine', 'runtime', 'understand', 'render', 'deliver', 'mcp', 'agent'],
+  server: ['core', 'spine', 'engine', 'runtime', 'understand', 'render', 'deliver', 'mcp', 'agent', 'art'],
 };
-const ISOMORPHIC = new Set(['shared', 'spine', 'engine', 'understand']);
+const ISOMORPHIC = new Set(['shared', 'spine', 'engine', 'understand', 'art']);
 
 function listJs(dir, out = []) {
   if (!fs.existsSync(dir)) return out;

@@ -7,6 +7,11 @@ All notable changes to this project. The format follows
 
 ### Added
 - Live drawing: `draw_rig` can draw a rig part by part (`merge: true`), and the Draw board shows each part being drawn as it arrives: outlines traced, then fills, with the part's name and the view following it. Replay, a speed menu and an instant mode (also used when the system asks for reduced motion).
+- The drawing side, as deep as the animation side (`docs/drawing.md`):
+  - `style_guide`: a per-project art direction (palette by role, outline weights, radii, light, grid, type, sizes) with three presets.
+  - `draw_rig` draws from UI components (button, icon button, panel, popup, progress, toggle, badge, icon) and parametric shapes in the guide, with labels in a built-in stroke font and a 30-glyph icon family; states (hover, pressed, disabled, on/off) become other looks of one slot; `restyle` redraws a drawing in a changed guide; `as: "artboard"` draws designs that are never rigged.
+  - `critique_art`: palette drift, outline weights, alignment, silhouettes at small size, states too alike, contrast; writes a contact sheet.
+  - `export_art`: trimmed PNGs per part and state at any scale with pivots, sprite sheets with a JSON map, clean SVG, and clips as PNG sequences and sheets.
 - Parts reach the page as safe trees (`src/render/svg-safe.js`): only shapes, groups and gradients survive, so nothing in a drawing can run.
 
 ### Fixed

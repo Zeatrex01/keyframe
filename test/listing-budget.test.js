@@ -11,7 +11,9 @@ import { compactSchema } from '../src/mcp/describe.js';
 // 2026-11-24: raised to 23,500 for add_effect (roadmap Phase 4), the 25th core tool; its tuning
 // knobs sit in one `tune` object described by help, so the tool costs about 1,200 bytes.
 // 2026-11-24: raised to 25,000 for draw_rig (Phase 4, #24), the 26th: placeholder art to a rig.
-const BUDGET_BYTES = 25000;
+// 2026-11-24: raised to 30,000 for the drawing side: style_guide, critique_art and export_art
+// (the art director's guide, check and exports), and the parametric shapes and components of draw_rig.
+const BUDGET_BYTES = 30000;
 const SUMMARY_MAX = 220;      // one or two sentences
 
 test('the compact listing of the real tool set stays under budget', async () => {
@@ -28,9 +30,9 @@ test('every tool has a short summary, a full description, and core tools form th
     assert.ok(tool.description.length > tool.summary.length, `${tool.name} description adds to its summary`);
   }
   const core = TOOLS.filter(t => t.tier === 'core').map(t => t.name).sort();
-  assert.deepEqual(core, ['add_effect', 'apply_motion', 'bake_animation', 'brief', 'check_skeleton', 'compare_reference', 'critique_animation', 'delete_animation', 'describe_animation', 'draw_rig', 'help', 'list_history',
+  assert.deepEqual(core, ['add_effect', 'apply_motion', 'bake_animation', 'brief', 'check_skeleton', 'compare_reference', 'critique_animation', 'critique_art', 'delete_animation', 'describe_animation', 'draw_rig', 'export_art', 'help', 'list_history',
     'measure_reference', 'paint_weights', 'read_animation', 'read_rig', 'reply', 'restore_file', 'sample_animation', 'scan_project', 'see_animation',
-    'see_reference', 'set_curves', 'start_here', 'wait_for_message', 'write_animation']);
+    'see_reference', 'set_curves', 'start_here', 'style_guide', 'wait_for_message', 'write_animation']);
 });
 
 test('by default only the core tools are on the wire; `all` adds the shelf', async () => {
@@ -41,7 +43,7 @@ test('by default only the core tools are on the wire; `all` adds the shelf', asy
     return sent[0].result.tools.map(t => t.name);
   };
   const served = await names({});
-  assert.equal(served.length, 26);
+  assert.equal(served.length, 29);
   assert.ok(served.includes('bake_animation') && !served.includes('export_binary'));
   assert.equal((await names({ all: true })).length, TOOLS.length);
 

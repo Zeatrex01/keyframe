@@ -15,6 +15,8 @@ src/engine      pure and isomorphic: the studio's own skeleton model and player 
 src/runtime     the pose API with two backends: the engine (default) and, only when the owner
                 turned the Spine add-on on, the official spine-ts 4.2 runtime (ADR-2, ADR-11)
 src/understand  read, sample, critique, describe — numbers and sentences about a skeleton
+src/art         pure and isomorphic: the drawing side — style guide, parametric shapes, the
+                stroke font, the icon family, UI components, the art critique
 src/render      frames to pixels, headless
 src/deliver     the one-way rule: base-preserving export, delivery beside the source, history
 src/mcp         the wire and the tools
@@ -34,13 +36,14 @@ import `shared`, which imports nothing:
 | `engine` | `spine` (curve presets and findings) |
 | `runtime` | `spine` (the pure draw-order guard it runs before parsing), `engine` |
 | `understand` | `spine`, `engine`, `runtime` |
-| `render` | `core`, `spine`, `engine`, `runtime`, `understand` |
+| `art` | `engine` (the SVG renderer) |
+| `render` | `core`, `spine`, `engine`, `runtime`, `understand`, `art` |
 | `deliver` | `core`, `spine`, `engine`, `runtime`, `understand` |
-| `mcp` | `core`, `spine`, `engine`, `runtime`, `understand`, `render`, `deliver` |
+| `mcp` | `core`, `spine`, `engine`, `runtime`, `understand`, `render`, `deliver`, `art` |
 | `agent` | `core`, `mcp` (tool names and the server name) |
-| `server` | `core`, `spine`, `engine`, `runtime`, `understand`, `render`, `deliver`, `mcp`, `agent` |
+| `server` | `core`, `spine`, `engine`, `runtime`, `understand`, `render`, `deliver`, `mcp`, `agent`, `art` |
 
-Isomorphic layers (`shared`, `spine`, `engine`, `understand`) never import `node:*`; `runtime` reaches `node:*` only
+Isomorphic layers (`shared`, `spine`, `engine`, `understand`, `art`) never import `node:*`; `runtime` reaches `node:*` only
 through a dynamic `import()` on its Node path. `test/architecture.test.js` enforces both rules
 from this table.
 

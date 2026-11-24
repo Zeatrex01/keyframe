@@ -25,6 +25,8 @@ const SPECIFIC = {
   'not-ours': 'draw_rig only redraws files it drew (a <name>.parts.json sits beside them): choose another `name` or `folder`.',
   'check-failed': 'The findings name what the check rejects in the drawing: fix those parts and call again.',
   'bad-parts': 'Fix the parts the message lists (unique names, an existing parent, one SVG with a viewBox each) and call again.',
+  'bad-style': 'Fix the settings the message lists: palette colours as #rrggbb, weights and radii as numbers, light amounts from 0 to 1; style_guide with no arguments shows the guide as it is.',
+  'no-drawing': 'Give the <name>.parts.json file draw_rig wrote (scan_project lists the project\'s files), or draw it first with draw_rig.',
   'bad-svg': 'Give every part one complete SVG document with a viewBox, e.g. <svg viewBox="0 0 100 100">...</svg>.',
   'base-protected': 'The owner\'s file is never written: write into a delivery (leave `into` empty for <base>_v2.json, or name a new file).',
   'base-is-delivery': 'Pass the owner\'s base as `from` (scan_project shows which file is the base).',

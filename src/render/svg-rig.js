@@ -2,12 +2,14 @@
 // Spine 4.2 skeleton whose setup pose is the finished picture, and the parts document that the
 // drawing board edits and rebuilds from (roadmap Phase 4, issue #24).
 //
-// A part: { name, svg, at: [x, y], pivot?: [x, y], parent?, size?: [w, h], blend?, hidden? }
+// A part: { name, svg, at: [x, y], pivot?: [x, y], parent?, size?: [w, h], blend?, hidden?, states?, source? }
 //   svg     one SVG document; its viewBox is the part's own drawing space
 //   at      where the centre of the art sits in the rig (y up, units)
 //   pivot   where its bone sits in the rig: it turns and scales there (default `at`)
 //   parent  the part whose bone carries this one (default the root)
 //   size    the art's size in the rig (default the viewBox size)
+//   states  other looks of the part, { pressed: svg, ... }: attachments <name>_<state> of its slot
+//   source  how it was drawn (parametric shapes or a component), kept so it can be redrawn
 // Parts are listed back to front: the first is drawn first. A parent may come later in the list
 // (an arm drawn behind the body it hangs from). Pure, no I/O: the caller writes the files.
 
@@ -23,6 +25,19 @@ const pair = (v, label) => {
   if (!Array.isArray(v) || v.length !== 2 || !v.every(Number.isFinite)) throw new StudioError('bad-argument', `${label} is [x, y] in rig units.`, { value: v });
   return v;
 };
+
+/** A part's other looks (hover, pressed, on, off): extra attachments of its slot, each one SVG. */
+function states(p, where, problems) {
+  if (p.states === undefined) return {};
+  if (!p.states || typeof p.states !== 'object' || Array.isArray(p.states)) { problems.push(`${where}.states maps a state name to one SVG.`); return {}; }
+  const out = {};
+  for (const [k, v] of Object.entries(p.states)) {
+    if (!/^[a-z][a-zA-Z0-9]{0,23}$/.test(k)) problems.push(`${where}.states: "${k}" must be a short word.`);
+    else if (typeof v !== 'string' || v.length > 200000) problems.push(`${where}.states.${k} must be one SVG document.`);
+    else out[k] = v;
+  }
+  return Object.keys(out).length ? { states: out } : {};
+}
 
 /** Check a parts document; returns the cleaned parts or throws with every problem. */
 export function validateParts(parts) {
@@ -45,6 +60,8 @@ export function validateParts(parts) {
         size: p.size ? pair(p.size, `${where}.size`).map(Number) : size ? [size.width, size.height] : [0, 0],
         ...(p.blend === 'additive' || p.blend === 'multiply' || p.blend === 'screen' ? { blend: p.blend } : {}),
         ...(p.hidden ? { hidden: true } : {}),
+        ...(states(p, where, problems)),
+        ...(p.source && typeof p.source === 'object' ? { source: p.source } : {}),
       };
     } catch (err) {
       problems.push(`${where}: ${err.message}`);
@@ -53,6 +70,7 @@ export function validateParts(parts) {
   });
   for (const p of out) if (p && !(p.size[0] > 0 && p.size[1] > 0)) problems.push(`${p.name}: size must be positive.`);
   const names = new Set(out.filter(Boolean).map(p => p.name));
+  for (const p of out) for (const k of Object.keys(p?.states ?? {})) if (names.has(`${p.name}_${k}`)) problems.push(`${p.name}: state "${k}" is named like the part "${p.name}_${k}".`);
   for (const p of out) {
     if (!p?.parent) continue;
     if (!names.has(p.parent)) { problems.push(`${p.name}.parent "${p.parent}" is not a part.`); continue; }
@@ -95,9 +113,11 @@ export function buildSvgRig({ name, parts, resolution = 2 }) {
   const res = Math.max(0.25, Math.min(8, Number(resolution) || 2));
   const clean = validateParts(parts);
   const skipped = [];
-  const images = clean.map(p => {
-    const img = rasterizeSvg(p.svg, { width: Math.max(1, Math.round(p.size[0] * res)), height: Math.max(1, Math.round(p.size[1] * res)) });
-    for (const s of img.skipped) skipped.push(`${p.name}: ${s}`);
+  // One region per part, and one per state of a part (<part>_<state>), all at the part's size.
+  const regions = clean.flatMap(p => [{ part: p, region: p.name, svg: p.svg }, ...Object.entries(p.states ?? {}).map(([k, svg]) => ({ part: p, region: `${p.name}_${k}`, svg }))]);
+  const images = regions.map(({ part: p, region, svg }) => {
+    const img = rasterizeSvg(svg, { width: Math.max(1, Math.round(p.size[0] * res)), height: Math.max(1, Math.round(p.size[1] * res)) });
+    for (const s of img.skipped) skipped.push(`${region}: ${s}`);
     return img;
   });
   const { at, width, height } = pack(images);
@@ -108,7 +128,7 @@ export function buildSvgRig({ name, parts, resolution = 2 }) {
   });
   const page = `${name}.png`;
   let atlasText = `${page}\nsize:${width},${height}\nfilter:Linear,Linear\npma:false\n`;
-  clean.forEach((p, i) => { atlasText += `${p.name}\nbounds:${at[i][0]},${at[i][1]},${images[i].width},${images[i].height}\n`; });
+  regions.forEach((r, i) => { atlasText += `${r.region}\nbounds:${at[i][0]},${at[i][1]},${images[i].width},${images[i].height}\n`; });
 
   // Bones parents first; slots keep the drawing order.
   const pivotOf = new Map([['root', [0, 0]]]);
@@ -130,9 +150,10 @@ export function buildSvgRig({ name, parts, resolution = 2 }) {
     skeleton: { hash: `kf-${name}`, spine: '4.2.43', x: round(minX), y: round(minY), width: round(maxX - minX), height: round(maxY - minY), images: './', audio: '' },
     bones,
     slots: clean.map(p => ({ name: p.name, bone: p.name, ...(p.hidden ? {} : { attachment: p.name }), ...(p.blend ? { blend: p.blend } : {}) })),
-    skins: [{ name: 'default', attachments: Object.fromEntries(clean.map(p => [p.name, { [p.name]: {
-      x: round(p.at[0] - p.pivot[0]), y: round(p.at[1] - p.pivot[1]), width: round(p.size[0]), height: round(p.size[1]),
-    } }])) }],
+    skins: [{ name: 'default', attachments: Object.fromEntries(clean.map(p => {
+      const box = { x: round(p.at[0] - p.pivot[0]), y: round(p.at[1] - p.pivot[1]), width: round(p.size[0]), height: round(p.size[1]) };
+      return [p.name, Object.fromEntries([p.name, ...Object.keys(p.states ?? {}).map(k => `${p.name}_${k}`)].map(a => [a, { ...box }]))];
+    })) }],
     animations: {},
   };
   const document = { format: PARTS_FORMAT, version: 1, name, resolution: res, parts: clean.map(({ parent, ...p }) => (parent ? { ...p, parent } : p)) };

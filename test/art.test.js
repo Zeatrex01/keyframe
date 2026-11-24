@@ -1,0 +1,234 @@
+// Gate for the drawing side (src/art): the style guide, parametric shapes, the stroke font, the icon
+// family, components with states, draw_rig drawing from them (and restyling, and artboards),
+// critique_art and export_art, and the token budget that makes drawing cheap.
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { presetStyle, validateStyle, colorOf, contrast, STYLE_PRESETS } from '../src/art/style.js';
+import { layoutText, FONT_CHARACTERS } from '../src/art/font.js';
+import { renderShapes } from '../src/art/shapes.js';
+import { GLYPH_NAMES } from '../src/art/glyphs.js';
+import { componentParts, COMPONENTS } from '../src/art/components.js';
+import { expandParts, deriveShapes } from '../src/art/draw-spec.js';
+import { critiqueArt } from '../src/art/critique-art.js';
+import { rasterizeSvg } from '../src/engine/svg.js';
+import { safeTree } from '../src/render/svg-safe.js';
+import { decodePng } from '../src/render/png.js';
+import { createServer } from '../src/mcp/server.js';
+
+const style = validateStyle(presetStyle('casual-game'));
+
+test('a style guide fills from its preset, names colours by role and refuses what it cannot use', () => {
+  for (const name of Object.keys(STYLE_PRESETS)) assert.equal(validateStyle(presetStyle(name)).preset, name);
+  const own = validateStyle({ preset: 'flat-web', palette: { brand: '#ff00aa' } });
+  assert.equal(own.palette.brand, '#ff00aa');
+  assert.equal(own.palette.primary, STYLE_PRESETS['flat-web'].palette.primary, 'the rest comes from the preset');
+  assert.equal(colorOf(style, 'primary'), style.palette.primary);
+  assert.notEqual(colorOf(style, 'primary-20'), style.palette.primary);
+  assert.ok(contrast(colorOf(style, 'primary-40'), '#000000') < contrast(style.palette.primary, '#000000'), 'minus is darker');
+  assert.ok(contrast(colorOf(style, 'primary+40'), '#000000') > contrast(style.palette.primary, '#000000'), 'plus is lighter');
+  assert.equal(colorOf(style, 'none'), 'none');
+  assert.throws(() => colorOf(style, 'brandX'), /not a palette role/);
+  assert.throws(() => validateStyle({ palette: { primary: 'green' } }), { code: 'bad-style' });
+  assert.throws(() => validateStyle({ light: { shade: 3 } }), /light.shade/);
+});
+
+test('the stroke font sets labels, Turkish capitals included, and names what it cannot draw', () => {
+  const play = layoutText('PLAY', { size: 20, x: 50, y: 30 });
+  assert.ok(play.strokes.length >= 4);
+  const xs = play.strokes.flat().map(p => p[0]);
+  assert.ok(Math.abs((Math.min(...xs) + Math.max(...xs)) / 2 - 50) < 2, 'centred on x');
+  assert.ok(play.strokes.flat().every(p => p[1] <= 30.1 && p[1] >= 9.9), 'sits between the cap line and the baseline');
+  assert.deepEqual(layoutText('\u00c7\u011e\u0130\u00d6\u015e\u00dc \u00e7\u011f\u0131\u00f6\u015f\u00fc 0123456789', { size: 10 }).missing, []);
+  assert.deepEqual(layoutText('a\u20acb', { size: 10 }).missing, ['\u20ac']);
+  assert.ok(FONT_CHARACTERS.includes('Z') && FONT_CHARACTERS.includes('9'));
+});
+
+test('shapes become one clean SVG in the guide: gradients, outline, shine, text and icons all draw', () => {
+  const { svg, missing } = renderShapes({ box: [220, 90], shapes: [
+    { rect: [0, 0, 220, 80], r: 'pill', fill: 'primary', shine: true, shadow: true },
+    { text: 'PLAY', at: [110, 54], size: 'md' },
+    { icon: 'star', box: [10, 10, 40] },
+    { circle: [200, 20, 10], fill: '#123456', stroke: false },
+  ] }, style);
+  assert.deepEqual(missing, []);
+  assert.match(svg, /^<svg xmlns="http:\/\/www.w3.org\/2000\/svg" viewBox="0 0 220 90"/);
+  assert.match(svg, /linearGradient/);
+  assert.match(svg, new RegExp(`stroke="${style.palette.ink}"`));
+  const img = rasterizeSvg(svg, { width: 220, height: 90 });
+  assert.deepEqual(img.skipped, []);
+  assert.ok(img.data[(40 * 220 + 110) * 4 + 3] > 200, 'the body is drawn');
+  const tree = safeTree(svg, 'p');
+  assert.equal(tree.shapes > 5, true, 'the safe subset keeps it whole');
+  for (const name of GLYPH_NAMES) assert.doesNotThrow(() => rasterizeSvg(renderShapes({ box: [64, 64], shapes: [{ icon: name }] }, style).svg, { width: 32, height: 32 }), name);
+  assert.throws(() => renderShapes({ box: [10, 10], shapes: [{ blob: 1 }] }, style), /names no shape/);
+  assert.throws(() => renderShapes({ box: [10, 10], shapes: [{ icon: 'unicorn' }] }, style), /icon family/);
+});
+
+test('components split into the parts an animator needs, with states as other looks', () => {
+  assert.ok(Object.keys(COMPONENTS).length >= 8);
+  const button = componentParts({ component: 'button', label: 'GO' }, style, 'go');
+  assert.equal(button.length, 1);
+  assert.deepEqual(Object.keys(button[0].states), ['hover', 'pressed', 'disabled']);
+  assert.deepEqual(componentParts({ component: 'progress' }, style, 'xp').map(p => p.name), ['xp_track', 'xp_fill', 'xp_frame']);
+  const fill = componentParts({ component: 'progress' }, style, 'xp')[1];
+  assert.equal(fill.pivot[0], -fill.box[0] / 2, 'the fill turns and scales from its left edge');
+  assert.deepEqual(componentParts({ component: 'toggle' }, style, 's').map(p => p.name), ['s_track', 's_knob']);
+  assert.deepEqual(componentParts({ component: 'popup', title: 'HI' }, style, 'w').map(p => p.name), ['w_dim', 'w', 'w_title', 'w_ok', 'w_close']);
+  assert.ok(componentParts({ component: 'badge', value: '5' }, style, 'b').some(p => p.blend === 'additive'));
+  assert.throws(() => componentParts({ component: 'carousel' }, style, 'x'), /not a component/);
+  const pressed = deriveShapes([{ rect: [0, 0, 10, 10], fill: 'primary', shine: true }], 'pressed', style)[0];
+  assert.equal(pressed.fill, 'primary-18');
+  assert.equal(pressed.shine, false);
+  assert.equal(pressed.rect[1], style.light.shadow * 0.75, 'a pressed state sinks by the shadow depth');
+});
+
+function studio() {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'kf-art-'));
+  const sent = [];
+  const { wire } = createServer({ session: { dir, writable: () => true }, version: 'test', write: m => sent.push(m), all: true });
+  let chars = 0;
+  const call = async (name, args) => { chars += JSON.stringify(args).length; sent.length = 0; await wire.handle({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name, arguments: args } }); return sent[0].result.structuredContent; };
+  return { dir, call, chars: () => chars, done: () => fs.rmSync(dir, { recursive: true, force: true }) };
+}
+
+const PACK = [
+  { name: 'play', component: { component: 'button', label: 'PLAY', icon: 'play' }, at: [0, 300] },
+  { name: 'shop', component: { component: 'button', label: 'SHOP', color: 'secondary', icon: 'cart' }, at: [0, 180] },
+  { name: 'gear', component: { component: 'iconButton', icon: 'gear', color: 'surfaceAlt' }, at: [240, 300] },
+  { name: 'xp', component: { component: 'progress' }, at: [0, 80] },
+  { name: 'sound', component: { component: 'toggle' }, at: [240, 180] },
+  { name: 'reward', component: { component: 'badge', icon: 'coin', value: '+250' }, at: [480, 240] },
+  { name: 'heart', component: { component: 'icon', icon: 'heart', plate: 'round', color: 'danger' }, at: [240, 80] },
+  { name: 'win', component: { component: 'popup', title: 'YOU WIN!', lines: ['Level 3 complete'], button: 'NEXT' }, at: [0, -240] },
+];
+
+test('draw_rig draws components and shapes in the style guide, states as slot attachments, at a small token cost', async () => {
+  const s = studio();
+  try {
+    const guide = await s.call('style_guide', { preset: 'casual-game', name: 'pack' });
+    assert.equal(guide.guide.name, 'pack');
+    assert.ok(fs.existsSync(path.join(s.dir, 'keyframe.style.json')));
+    const before = s.chars();
+    const r = await s.call('draw_rig', { name: 'ui', folder: 'ui', parts: PACK });
+    assert.equal(r.error, undefined, JSON.stringify(r.error));
+    const spent = s.chars() - before;
+    assert.equal(r.style, 'pack');
+    const sk = JSON.parse(fs.readFileSync(path.join(s.dir, 'ui', 'ui.json'), 'utf8'));
+    const skin = sk.skins[0].attachments;
+    assert.deepEqual(Object.keys(skin.play), ['play', 'play_hover', 'play_pressed', 'play_disabled']);
+    assert.equal(sk.slots.find(x => x.name === 'play').attachment, 'play', 'the setup look is the normal one');
+    const atlas = fs.readFileSync(path.join(s.dir, 'ui', 'ui.atlas'), 'utf8');
+    assert.match(atlas, /^play_pressed$/m);
+    assert.ok(sk.bones.find(b => b.name === 'win_ok').parent === 'win', 'the popup button rides on the popup');
+    // The token budget: the whole pack costs a few hundred tokens to ask for, a fraction of its SVG.
+    const doc = JSON.parse(fs.readFileSync(path.join(s.dir, 'ui', 'ui.parts.json'), 'utf8'));
+    const svgChars = doc.parts.reduce((n, p) => n + p.svg.length + Object.values(p.states ?? {}).reduce((m, v) => m + v.length, 0), 0);
+    assert.ok(spent <= 1200, `the pack's arguments are ${spent} characters (budget 1200, about 300 tokens)`);
+    assert.ok(svgChars / spent >= 50, `written as SVG it would be ${Math.round(svgChars / spent)}x larger`);
+    const answer = JSON.stringify(r).length;
+    assert.ok(answer <= 2500, `the answer stays short (${answer} characters)`);
+  } finally { s.done(); }
+});
+
+test('a changed style guide redraws a drawing (restyle), and an artboard writes SVG and PNG with no skeleton', async () => {
+  const s = studio();
+  try {
+    await s.call('draw_rig', { name: 'ui', parts: PACK.slice(0, 2).concat({ name: 'dot', box: [40, 40], shapes: [{ circle: [20, 20, 16], fill: 'accent' }], at: [300, 0], states: ['hover'] }) });
+    const before = JSON.parse(fs.readFileSync(path.join(s.dir, 'ui.parts.json'), 'utf8'));
+    await s.call('style_guide', { set: { palette: { primary: '#aa22cc', accent: '#00aaff' } } });
+    const again = await s.call('draw_rig', { name: 'ui', restyle: true });
+    assert.equal(again.error, undefined, JSON.stringify(again.error));
+    const after = JSON.parse(fs.readFileSync(path.join(s.dir, 'ui.parts.json'), 'utf8'));
+    assert.deepEqual(after.parts.map(p => p.name), before.parts.map(p => p.name));
+    assert.notEqual(after.parts[0].svg, before.parts[0].svg);
+    assert.match(after.parts.find(p => p.name === 'dot').svg, /#00aaff|#[0-9a-f]{6}/);
+    assert.notEqual(after.parts.find(p => p.name === 'dot').svg, before.parts.find(p => p.name === 'dot').svg);
+    assert.equal(after.parts[1].svg, before.parts[1].svg.replace(/x/g, 'x'), 'a secondary-coloured button does not change');
+
+    const board = await s.call('draw_rig', { name: 'icons', as: 'artboard', parts: ['heart', 'star', 'coin'].map((icon, i) => ({ name: icon, box: [64, 64], shapes: [{ icon }], at: [i * 80, 0] })) });
+    assert.equal(board.kind, 'artboard');
+    assert.deepEqual(board.written.sort(), ['icons.parts.json', 'icons.png', 'icons.svg']);
+    assert.ok(!fs.existsSync(path.join(s.dir, 'icons.json')), 'no skeleton for an artboard');
+    const png = decodePng(fs.readFileSync(path.join(s.dir, 'icons.png')));
+    assert.ok(png.width > png.height * 2, 'three icons side by side');
+    assert.match(fs.readFileSync(path.join(s.dir, 'icons.svg'), 'utf8'), /<g id="heart"/);
+    const kept = await s.call('draw_rig', { name: 'icons', parts: [{ name: 'heart', box: [64, 64], shapes: [{ icon: 'heart' }], at: [0, 0] }] });
+    assert.equal(kept.kind, 'artboard', 'a drawing keeps its kind');
+  } finally { s.done(); }
+});
+
+test('critique_art flags off-palette colours, states that look alike and near-misses, and passes a clean drawing', () => {
+  const part = (name, svg, at, extra = {}) => ({ name, svg, at, pivot: at, size: [100, 40], ...extra });
+  const button = renderShapes({ box: [100, 40], shapes: [{ rect: [2, 2, 96, 36], r: 'md', fill: 'primary' }] }, style).svg;
+  const clean = { name: 'c', parts: [part('a', button, [0, 0]), part('b', button, [0, 60])] };
+  assert.equal(critiqueArt(clean, style).counts.warn, 0, JSON.stringify(critiqueArt(clean, style).findings));
+  const odd = button.replace(/#[0-9a-f]{6}"\/><\/svg>|stop-color="#[0-9a-f]{6}"/, 'stop-color="#13f2a0"');
+  const bad = { name: 'b', parts: [
+    part('a', odd, [0, 0]),
+    part('b', button, [2, 60], { states: { pressed: button } }),
+  ] };
+  const checks = critiqueArt(bad, style).findings.map(f => f.check);
+  assert.ok(checks.includes('palette'), 'an off-palette colour');
+  assert.ok(checks.includes('states'), 'a pressed look identical to the normal one');
+  assert.ok(checks.includes('align'), 'two parts 2 units apart');
+});
+
+test('critique_art writes a contact sheet; export_art writes trimmed PNGs with pivots, a sprite sheet with its map, and clean SVG', async () => {
+  const s = studio();
+  try {
+    await s.call('draw_rig', { name: 'ui', parts: PACK.slice(0, 4) });
+    const c = await s.call('critique_art', { file: 'ui.parts.json' });
+    assert.ok(Array.isArray(c.findings));
+    const sheet = decodePng(fs.readFileSync(path.join(s.dir, c.sheet)));
+    assert.ok(sheet.width > 300 && sheet.height > 150);
+    const e = await s.call('export_art', { file: 'ui.parts.json', scales: [1, 3] });
+    assert.equal(e.error, undefined, JSON.stringify(e.error));
+    const out = path.join(s.dir, 'ui-export');
+    const manifest = JSON.parse(fs.readFileSync(path.join(out, 'parts.json'), 'utf8'));
+    const one = manifest.parts.play.png['1x'].play, three = manifest.parts.play.png['3x'].play;
+    assert.ok(Math.abs(three.size[0] / one.size[0] - 3) < 0.1, 'three times the pixels at 3x');
+    const img = decodePng(fs.readFileSync(path.join(out, one.file)));
+    assert.deepEqual([img.width, img.height], one.size);
+    const edge = [0, img.width - 1].some(x => [...Array(img.height).keys()].some(y => img.data[(y * img.width + x) * 4 + 3] > 0));
+    assert.ok(edge, 'trimmed: the image reaches its own edge');
+    assert.ok(fs.existsSync(path.join(out, 'png@1x', 'play_pressed.png')), 'states export too');
+    const map = JSON.parse(fs.readFileSync(path.join(out, 'ui@3x.json'), 'utf8'));
+    assert.ok(map.frames.play.frame.w > 0 && map.meta.image === 'ui@3x.png' && map.frames.xp_fill.pivot.x < 0.1, 'the fill turns at its left edge');
+    const svg = fs.readFileSync(path.join(out, 'ui.svg'), 'utf8');
+    assert.match(svg, /<g id="play"/);
+    assert.doesNotMatch(svg, /script|on[a-z]+=/i);
+    assert.ok(fs.existsSync(path.join(out, 'svg', 'shop.svg')));
+  } finally { s.done(); }
+});
+
+test('export_art turns a clip into a PNG sequence and a sheet with its frame times', async () => {
+  const s = studio();
+  try {
+    await s.call('draw_rig', { name: 'b', parts: [PACK[0]] });
+    const file = path.join(s.dir, 'b.json');
+    const sk = JSON.parse(fs.readFileSync(file, 'utf8'));
+    sk.animations = { press: { bones: { play: { scale: [{ x: 1, y: 1 }, { time: 0.25, x: 1.1, y: 0.9 }, { time: 0.5, x: 1, y: 1 }] } } } };
+    fs.writeFileSync(file, JSON.stringify(sk));
+    const e = await s.call('export_art', { file: 'b.parts.json', kinds: ['clip'], animation: 'press', fps: 12, size: 64 });
+    assert.equal(e.error, undefined, JSON.stringify(e.error));
+    assert.equal(e.clip.frames, 7);
+    const map = JSON.parse(fs.readFileSync(path.join(s.dir, 'b-export', 'clip-press@sheet.json'), 'utf8'));
+    assert.equal(Object.keys(map.frames).length, 7);
+    assert.equal(map.meta.fps, 12);
+    assert.ok(fs.existsSync(path.join(s.dir, 'b-export', 'clip-press', 'frame_0006.png')));
+  } finally { s.done(); }
+});
+
+test('draw_rig refuses a part with two ways of drawing it, and shapes without a box', async () => {
+  const s = studio();
+  try {
+    const both = await s.call('draw_rig', { name: 'x', parts: [{ name: 'a', svg: '<svg viewBox="0 0 1 1"/>', shapes: [{ circle: [1, 1, 1] }], box: [2, 2], at: [0, 0] }] });
+    assert.match(both.error.message, /exactly one of svg, shapes or component/);
+    const nobox = await s.call('draw_rig', { name: 'x', parts: [{ name: 'a', shapes: [{ circle: [1, 1, 1] }], at: [0, 0] }] });
+    assert.match(nobox.error.message, /box/);
+    assert.deepEqual(expandParts([{ name: 'a', svg: '<svg/>', at: [0, 0] }], style).parametric, 0);
+  } finally { s.done(); }
+});
