@@ -306,6 +306,12 @@ test('a side-view figure for platformers: in profile, far limbs behind and darke
     assert.deepEqual([run.clip.loop, jump.clip.loop], [true, false]);
     assert.deepEqual(run.clip.origin, jump.clip.origin, 'every clip keeps the same ground origin, so switching clips never jumps');
     assert.deepEqual([run.clip.frames, jump.clip.frames], [6, 7]);
+    // Found on its own: a 0.6 s run at 12 fps loops (its end is never on the fps grid), a jump does not.
+    const run12 = await s.call('export_art', { file: 'hero.parts.json', kinds: ['clip'], animation: 'run', fps: 12, size: 128 });
+    const jump12 = await s.call('export_art', { file: 'hero.parts.json', kinds: ['clip'], animation: 'jump', fps: 12, size: 128 });
+    assert.deepEqual([run12.clip.loop, run12.clip.frames, jump12.clip.loop], [true, 7, false]);
+    const runMap = JSON.parse(fs.readFileSync(path.join(s.dir, 'hero-export', 'clip-run@sheet.json'), 'utf8'));
+    assert.equal(Object.values(runMap.frames)[0].duration, Math.round(600 / 7), 'the frames share the cycle exactly');
     const map = JSON.parse(fs.readFileSync(path.join(s.dir, 'hero-export', 'clip-jump@sheet.json'), 'utf8'));
     assert.deepEqual(map.meta.origin, { x: jump.clip.origin[0], y: jump.clip.origin[1] });
     assert.ok(map.meta.origin.y > 64, 'the ground sits low in the frame, room above for the jump');
@@ -382,12 +388,13 @@ test('export_art turns a clip into a PNG sequence and a sheet with its frame tim
     fs.writeFileSync(file, JSON.stringify(sk));
     const e = await s.call('export_art', { file: 'b.parts.json', kinds: ['clip'], animation: 'press', fps: 12, size: 64 });
     assert.equal(e.error, undefined, JSON.stringify(e.error));
-    assert.deepEqual([e.clip.frames, e.clip.loop], [6, true], 'a clip that ends where it starts loops, without the closing copy of its first frame');
+    assert.deepEqual([e.clip.frames, e.clip.loop], [7, false], 'a press plays once, even though it ends where it starts');
     const map = JSON.parse(fs.readFileSync(path.join(s.dir, 'b-export', 'clip-press@sheet.json'), 'utf8'));
-    assert.equal(Object.keys(map.frames).length, 6);
-    assert.deepEqual([map.meta.fps, map.meta.loop], [12, true]);
-    assert.ok(fs.existsSync(path.join(s.dir, 'b-export', 'clip-press', 'frame_0005.png')));
-    assert.ok(!fs.existsSync(path.join(s.dir, 'b-export', 'clip-press', 'frame_0006.png')));
+    assert.equal(Object.keys(map.frames).length, 7);
+    assert.deepEqual([map.meta.fps, map.meta.loop], [12, false]);
+    assert.ok(fs.existsSync(path.join(s.dir, 'b-export', 'clip-press', 'frame_0006.png')));
+    const cycled = await s.call('export_art', { file: 'b.parts.json', kinds: ['clip'], animation: 'press', fps: 12, size: 64, loop: true });
+    assert.deepEqual([cycled.clip.frames, cycled.clip.loop], [6, true], 'asked to loop, it is cut into whole frames without the closing copy');
     // Frames never touch: clear pixels around each one and from the sheet's edges.
     const frames = Object.values(map.frames).map(f => f.frame);
     for (const f of frames) assert.ok(f.x >= 2 && f.y >= 2 && f.x + f.w <= map.meta.size.w - 2 && f.y + f.h <= map.meta.size.h - 2, JSON.stringify(f));

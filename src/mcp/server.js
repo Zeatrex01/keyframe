@@ -68,7 +68,8 @@ export function createServer({ session, write, version, tools = TOOLS, fullDescr
   // The official runtime only when the owner turned the Spine add-on on (asked again on each use).
   configureSpineRuntime({ locate: () => locateSpineRuntime(process.env) });
   const registry = buildRegistry(all ? tools : tools.filter(t => t.tier === 'core'));
+  const shelved = all ? [] : tools.filter(t => t.tier !== 'core').map(t => t.name);
   const wire = createWire({ registry, session, write, instructions: INSTRUCTIONS,
-    serverInfo: { name: SERVER_NAME, version }, fullDescriptions, onRefusal });
+    serverInfo: { name: SERVER_NAME, version }, fullDescriptions, onRefusal, shelved });
   return { registry, wire };
 }

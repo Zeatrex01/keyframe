@@ -235,3 +235,11 @@ test('slots: attachment swaps, colour, draw order and events reach Godot', () =>
   assert.deepEqual(scene.slots[0].attachments.map(a => a.name), ['a', 'b']);
   assert.deepEqual(scene.slots[0].attachments[1].uv, [10, 10, 10, 0, 20, 0, 20, 10], 'uv in page pixels');
 });
+
+test('a one-shot clip plays once in Godot even when it lands back in its first pose; a cycle loops', () => {
+  const json = { skeleton: { spine: '4.2.43' }, bones: [{ name: 'root' }, { name: 'body', parent: 'root' }],
+    slots: [{ name: 'body', bone: 'body', attachment: 'a' }], skins: [{ name: 'default', attachments: { body: { a: { width: 10, height: 10 } } } }],
+    animations: Object.fromEntries(['jump', 'punch', 'run', 'idle'].map(n => [n, { bones: { body: { translate: [{ time: 0, x: 0, y: 0 }, { time: 0.3, x: 0, y: 20 }, { time: 0.6, x: 0, y: 0 }] } } }])) };
+  const scene = godotScene(json, { atlasText: 'p.png\nsize: 16, 16\na\nbounds: 0, 0, 10, 10\n' });
+  assert.deepEqual(Object.fromEntries(scene.animations.map(a => [a.name, a.loop])), { jump: false, punch: false, run: true, idle: true });
+});

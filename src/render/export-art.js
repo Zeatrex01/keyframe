@@ -16,6 +16,7 @@ import { encodePng } from './png.js';
 import { partSvg, drawingSvg } from './compose-svg.js';
 import { renderFrames } from './frames.js';
 import { StudioError } from '../shared/errors.js';
+import { clipLoops } from '../engine/loops.js';
 
 const r2 = v => Math.round(v * 100) / 100;
 export const EXPORT_KINDS = Object.freeze(['parts', 'sheet', 'svg', 'clip']);
@@ -118,7 +119,8 @@ export function exportDrawing(doc, { scales = [1, 2], kinds = ['parts', 'sheet',
  * character keeps its size and its feet stay on the same pixel row when a game switches from idle to
  * run to jump. The sheet's map gives that anchor (the skeleton's origin, the ground under a
  * character) as `meta.origin` in pixels and as each frame's `pivot` (0-1). A clip that ends where it
- * starts is a loop: its last frame, a copy of the first, is left out so it cycles without a hitch.
+ * starts is a loop (unless its name says it plays once, src/engine/loops.js): it is cut into whole
+ * frames that cycle exactly, without a closing copy of the first.
  * @param {{ json: object, atlasText: string, pages: object, animation: string, fps?: number, size?: number, padding?: number, loop?: boolean }} input
  */
 export async function exportClip({ json, atlasText, pages, animation, fps = 24, size = 256, padding = 2, loop: asked }) {
@@ -133,16 +135,19 @@ export async function exportClip({ json, atlasText, pages, animation, fps = 24, 
     const { viewport: b } = await renderFrames({ json, atlasText, pages, animation: name, times, width: size, height: size, boundsOnly: true });
     if (b) view = view ? { x: Math.min(view.x, b.x), y: Math.min(view.y, b.y), width: Math.max(view.x + view.width, b.x + b.width) - Math.min(view.x, b.x), height: Math.max(view.y + view.height, b.y + b.height) - Math.min(view.y, b.y) } : b;
   }
-  const count = Math.max(1, Math.min(240, Math.round(end * fps) + 1));
-  const times = Array.from({ length: count }, (_, i) => r2(i / fps));
+  // Does the clip end where it starts? Compared on its exact first and last instants, not on the
+  // last frame of the fps grid (a 0.6 s run at 12 fps never samples 0.6 s).
+  const ends = await renderFrames({ json, atlasText, pages, animation, times: [0, end], width: 64, height: 64, ...(view ? { viewport: view } : {}) });
+  const same = (a, b) => { for (let i = 0; i < a.data.length; i++) if (Math.abs(a.data[i] - b.data[i]) > 2) return false; return true; };
+  const loop = clipLoops(animation, end > 0 && same(ends.frames[0].image, ends.frames[1].image), asked);
+  // A loop is cut into whole frames that cycle exactly (its closing copy of the first left out); a
+  // one-shot keeps its last instant.
+  const steps = Math.max(1, Math.min(240, Math.round(end * fps)));
+  const times = loop ? Array.from({ length: steps }, (_, i) => r2(end * i / steps)) : Array.from({ length: steps + 1 }, (_, i) => r2(Math.min(end, i / fps)));
   const margin = 0.06;
   const rendered = await renderFrames({ json, atlasText, pages, animation, times, width: size, height: size, margin, ...(view ? { viewport: view } : {}) });
-  let frames = rendered.frames;
-  const same = (a, b) => { for (let i = 0; i < a.data.length; i++) if (Math.abs(a.data[i] - b.data[i]) > 2) return false; return true; };
-  // A clip that ends where it starts cycles, unless the caller says it plays once (a jump that lands back on its feet).
-  const closes = frames.length > 2 && same(frames[0].image, frames[frames.length - 1].image);
-  const loop = typeof asked === 'boolean' ? asked : closes;
-  if (loop && closes) frames = frames.slice(0, -1);
+  const frames = rendered.frames;
+  const frameMs = Math.round(1000 * (loop && end > 0 ? end / steps : 1 / fps));
   const box = rendered.viewport, k = rendered.scale;
   const origin = box && k ? [r2(size / 2 - (box.x + box.width / 2) * k), r2(size / 2 + (box.y + box.height / 2) * k)] : [size / 2, size / 2];
   /** @type {Record<string, Uint8Array | string>} */
@@ -153,7 +158,7 @@ export async function exportClip({ json, atlasText, pages, animation, fps = 24, 
   const pivot = { x: r2(origin[0] / size), y: r2(origin[1] / size) };
   files[`clip-${animation}@sheet.png`] = encodePng(image);
   files[`clip-${animation}@sheet.json`] = `${JSON.stringify({
-    frames: Object.fromEntries(frames.map((f, i) => [`${animation}_${String(i).padStart(4, '0')}`, { frame: { x: at[i][0], y: at[i][1], w: size, h: size }, rotated: false, trimmed: false, spriteSourceSize: { x: 0, y: 0, w: size, h: size }, sourceSize: { w: size, h: size }, pivot, duration: Math.round(1000 / fps) }])),
+    frames: Object.fromEntries(frames.map((f, i) => [`${animation}_${String(i).padStart(4, '0')}`, { frame: { x: at[i][0], y: at[i][1], w: size, h: size }, rotated: false, trimmed: false, spriteSourceSize: { x: 0, y: 0, w: size, h: size }, sourceSize: { w: size, h: size }, pivot, duration: frameMs }])),
     meta: { app: 'Keyframe Studio', image: `clip-${animation}@sheet.png`, size: { w: image.width, h: image.height }, fps, frames: frames.length, loop, origin: { x: origin[0], y: origin[1] }, scale: r2(k) },
   }, null, 1)}\n`;
   return { files, frames: frames.length, fps, loop, origin };

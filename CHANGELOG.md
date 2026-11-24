@@ -29,6 +29,8 @@ All notable changes to this project. The format follows
 - Parts reach the page as safe trees (`src/render/svg-safe.js`): only shapes, groups and gradients survive, so nothing in a drawing can run.
 
 ### Fixed
+- Calling an advanced tool (such as `export_godot`) without `--all` now says so and how to turn it on, instead of "Unknown tool".
+- One-shot clips play once: a clip named for a jump, an attack, a hit or a reveal no longer loops in the Godot addon or in a sprite sheet's map just because it lands back in its first pose, and a cycle whose length is not on the fps grid (a 0.6 s run at 12 fps) is still found to loop and is cut into frames that cycle exactly.
 - The web player no longer grows a canvas that has no CSS size on every frame at a display scale above 1; it keeps the canvas at its laid-out size.
 - A text shape takes its `fill` as its colour (it was saved and not drawn), and on the Draw board a popup's title tab or action button edits its own colour instead of the whole panel's.
 - Text is set to fit the shape it sits on and centred on its ink; a popup's title ribbon is measured from its title, so "YOU WON 250" is no longer clipped.

@@ -17,6 +17,7 @@ import { regionUVs, meshUVs } from './draws.js';
 import { parseAtlas, atlasRegions } from './atlas.js';
 import { controlPoints } from './curve.js';
 import { toSkeletonJson, isKeyframeDocument } from './keyframe-format.js';
+import { clipLoops } from './loops.js';
 
 export const GODOT_FORMAT = 'keyframe-godot';
 const DEG = Math.PI / 180;
@@ -254,7 +255,7 @@ function sceneAnimation(model, animation, { fps, skin, blocked: always, slots, r
     tracks.push({ target: 'root', property: 'events', type: 'method', keys: events.events.map(e => ({ time: round(e.time), name: e.name,
       int: e.int ?? 0, float: e.float ?? 0, string: e.string ?? '' })) });
   }
-  return { name: animation.name, length: round(duration), loop: seamless(poses), tracks };
+  return { name: animation.name, length: round(duration), loop: clipLoops(animation.name, seamless(poses)), tracks };
 }
 
 function hasMovingAncestor(model, index, touched) {
@@ -293,7 +294,7 @@ function deformed(pose, slotIndex, attachment, type) {
   return flipPairs(out);
 }
 
-/** A clip whose last pose is its first loops in Godot. */
+/** A clip whose last pose is its first (it loops in Godot unless its name says it plays once). */
 function seamless(poses) {
   const [a, b] = [poses[0], poses[poses.length - 1]];
   if (poses.length < 3) return false;

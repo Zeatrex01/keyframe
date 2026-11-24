@@ -55,3 +55,14 @@ test('a long answer arrives whole through a pipe', () => {
     assert.equal(JSON.parse(out.stdout).samples.length, times.length, 'the JSON is complete and parses');
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
+
+
+test('a tool off the default set is refused with how to turn it on', () => {
+  const dir = project();
+  try {
+    const r = run('export_godot', '--project', dir, '--args', JSON.stringify({ file: 'ident.json' }));
+    assert.equal(r.status, 1);
+    assert.match(r.stdout + r.stderr, /advanced tool.*--all/);
+    assert.equal(run('export_godot', '--project', dir, '--all', '--args', JSON.stringify({ file: 'ident.json' })).status, 0);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});

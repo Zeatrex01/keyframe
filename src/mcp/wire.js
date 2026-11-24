@@ -46,10 +46,11 @@ const versionOf = msg => {
  * @param {string} deps.instructions
  * @param {{ name: string, version: string }} deps.serverInfo
  * @param {{ listing(): object[], read(uri: string): object|null }} [deps.resources]
+ * @param {string[]} [deps.shelved]  tools this build carries but does not serve now (named in a refusal)
  * @param {boolean} [deps.fullDescriptions]  serve full descriptions in tools/list
  * @param {(record: object) => void} [deps.onRefusal]  observes refusals and errors; must not throw
  */
-export function createWire({ registry, session, write, instructions, serverInfo, resources = null,
+export function createWire({ registry, session, write, instructions, serverInfo, resources = null, shelved = [],
   fullDescriptions = false, onRefusal = () => {} }) {
   const capabilities = { tools: {}, ...(resources ? { resources: {} } : {}) };
   const toolList = registry.tools.map(t => toWire(t, { full: fullDescriptions }));
@@ -65,6 +66,7 @@ export function createWire({ registry, session, write, instructions, serverInfo,
     const name = params?.name;
     if (typeof name !== 'string' || !name) return out.failWith(id, -32602, 'tools/call needs params.name (a tool name).');
     const tool = registry.byName.get(name);
+    if (!tool && shelved.includes(name)) return out.failWith(id, -32602, `"${name}" is an advanced tool, off by default: start the server (or the command line) with --all to use it.`);
     if (!tool) return out.failWith(id, -32602, `Unknown tool "${name}". Tools: ${registry.tools.map(t => t.name).join(', ')}`);
     // Every refusal says how to get past it (`fix`), and where the argument shape may be the
     // problem, carries a call that works (`example`).
