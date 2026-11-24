@@ -28,6 +28,7 @@ the animation principles and saves it beside your file, which is never changed.
 - A Windows app: portable or installed, Node bundled, opens in the default browser, and updates installed on the owner's word after a checksum check (`docs/desktop-app.md`).
 
 ### Added
+- Connecting Claude Desktop is one click: Settings > AI connection (and the first run) has Add to Claude Desktop, which adds the studio to Claude Desktop's config, keeps the other servers and saves a backup first. The Claude Code line now adds the studio for every folder (`--scope user`).
 - The Windows app (`npm run package:win`): a portable folder and zip with Node bundled, a launcher without a console that opens the studio in the default browser, a per-user setup with Start menu and desktop shortcuts and an uninstaller, and data kept in `%LOCALAPPDATA%\Keyframe Studio` so updates never touch it. The studio stops a few minutes after its last page is closed; the launcher goes back to the previous version if an update fails on its first start.
 - Updates for the Windows app: Settings > About and a header pill say when a newer release is out, show its notes, and install it on the owner's confirmation; the package must match the release's `SHA256SUMS.txt`. The check can be turned off and stays quiet while there is no release.
 - `export_godot` is served by default (thirty tools): Godot is the first engine target.
@@ -153,6 +154,7 @@ the animation principles and saves it beside your file, which is never changed.
 - CI runs on Linux, Windows and macOS with Node.js 18, 20, 22 and 24.
 
 ### Fixed
+- The Windows setup and Install.cmd call PowerShell by its full path, so they work when PATH is cut down.
 - Switching the language redraws the agent slots and the update box too, so no role name stays in the language the page started in.
 - The copies `export_art` writes into `<name>-export/` are no longer taken for project skeletons or drawings, so the stage stays on the delivery after an export.
 - A project that holds only a studio result (`hero_v2.json` without `hero.json`) can be written: the result is updated in place with a backup, the answer says the base is missing, and `start_here` points at the result instead of suggesting a new drawing.

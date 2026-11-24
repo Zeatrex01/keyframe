@@ -7,7 +7,7 @@ $Name = 'Keyframe Studio'
 if (-not $Here) {
   $Copy = Join-Path $env:TEMP 'keyframe-studio-uninstall.ps1'
   Copy-Item -LiteralPath $PSCommandPath -Destination $Copy -Force
-  Start-Process powershell.exe -WindowStyle Hidden -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', "`"$Copy`"", '-Here', '-Target', "`"$Target`"")
+  Start-Process (Join-Path $PSHOME 'powershell.exe') -WindowStyle Hidden -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', "`"$Copy`"", '-Here', '-Target', "`"$Target`"")
   exit 0
 }
 $Target = $Target.TrimEnd('\')

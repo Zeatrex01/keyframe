@@ -2,6 +2,7 @@
 // with their previews, opening a folder or making a new one. The first run shows instead of
 // Projects while no project has ever been opened.
 
+import { loadDesktop } from './connect.js';
 import { pillState } from './agent-rules.js';
 import { loadAgentSlots } from './agent-slots.js';
 import { S, el } from './store.js';
@@ -122,6 +123,7 @@ export function renderFirst() {
   for (const b of el.firstClient.querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset.client === client));
   el.firstCode.textContent = connection?.[client] ?? '';
   el.firstCode.closest('.code').hidden = !connection;
+  el.firstDesktop.hidden = client !== 'claudeDesktop';
   el.firstDirector.hidden = !director;
   el.firstDirectorGo.hidden = !director;
   if (director) el.firstDirector.textContent = director.installed ? t('first.directorFound', { name: director.name }) : t('first.directorMissing', { install: director.install ?? '' });
@@ -190,7 +192,7 @@ el.firstDirectorGo.addEventListener('click', async () => {
   el.settingsNav.querySelector('[data-section="setAi"]')?.click();
   el.slotList.querySelector('select')?.focus({ preventScroll: true });
 });
-el.firstClient.addEventListener('click', event => { const pick = event.target.closest('[data-client]')?.dataset.client; if (pick) { client = pick; renderFirst(); } });
+el.firstClient.addEventListener('click', event => { const pick = event.target.closest('[data-client]')?.dataset.client; if (pick) { client = pick; renderFirst(); if (pick === 'claudeDesktop') loadDesktop(); } });
 el.firstCopy.addEventListener('click', () => {
   const label = el.firstCopy.querySelector('span');
   navigator.clipboard?.writeText(el.firstCode.textContent).then(() => {

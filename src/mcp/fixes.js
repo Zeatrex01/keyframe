@@ -22,6 +22,8 @@ const SPECIFIC = {
   'agent-off': 'The slot has no agent: choose Claude Code, Codex CLI or Gemini CLI for it in Settings.',
   'no-team': 'Only the studio\'s own Director has a team: do the work yourself, or add helpers in the studio\'s Settings (AI connection).',
   'team-timeout': 'Do the work yourself, or ask the helper again with a smaller task.',
+  'claude-desktop-missing': 'Install Claude Desktop from claude.ai/download and open it once, then press Add again; or use Claude Code instead.',
+  'claude-desktop-config-invalid': 'Open Claude Desktop > Settings > Developer > Edit Config, fix or empty the file, then press Add again; or paste the block shown in Settings by hand.',
   'update-too-big': 'Download the new version from the releases page instead; this download was not a Keyframe Studio package.',
   'update-unreachable': 'Check the internet connection and try again from Settings > About, or download the new version from the releases page.',
   'update-no-checksum': 'Nothing was installed. Try again later, or download the new version from the releases page.',

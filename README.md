@@ -111,15 +111,27 @@ have a team: add an **Art Director**, a **Senior Animator** or a **Researcher** 
 agent, and the Director hands each the part it does best, checks the work and answers you.
 Details: [`docs/agents.md`](docs/agents.md).
 
-**Any MCP client.** Claude Code, Codex, Gemini CLI, Cursor, VS Code, Windsurf, Claude Desktop or any
-other client that speaks MCP. Add the studio once:
+**Claude Code in your own terminal.** Run this once (Settings → AI connection shows it with this
+studio's path filled in and a copy button):
 
 ```bash
-claude mcp add keyframe-studio -- node "/path/to/keyframe-studio/tools/mcp-server.js"
-npm run connect        # prints the line for every client, with this checkout's path filled in
+claude mcp add --scope user keyframe-studio -- node "/path/to/keyframe/tools/mcp-server.js"
 ```
 
-Settings in the page shows the same lines with copy buttons, and checks the connection. Ask the AI
+`--scope user` makes the studio available in every folder you start Claude Code in. Start
+`claude`, and ask it to call `start_here`.
+
+**Claude Desktop.** In Settings → AI connection choose Claude Desktop and press **Add to Claude
+Desktop**. The studio adds itself to Claude Desktop's config, keeps your other servers, and saves
+a backup of the file first. Then quit Claude Desktop completely and open it again.
+
+**Any other MCP client** (Codex, Gemini CLI, Cursor, VS Code, Windsurf…): Settings shows the line
+or block for each, and `npm run connect` prints them all.
+
+Whichever you use, the AI works only through the studio's tools, on the project open in the page,
+and runs on your own AI account: its usage is billed there.
+
+Settings also checks the connection (**Check again**). Ask the AI
 to call `start_here` first: it returns the project's state, the order of work and the next call.
 The first session, step by step: [`docs/getting-started.md`](docs/getting-started.md).
 
@@ -195,6 +207,7 @@ Command-line flags win over environment variables.
 | `KS_CONFIG` | both | `studio.config.json` in the checkout | the file that remembers projects |
 | `KS_DATA_DIR` | packaged builds | per-user app data | where a packaged build keeps its config and logs |
 | `KS_PACKAGED` | studio | unset (the Windows app sets `1`) | run as the packaged app: data in the per-user app data folder |
+| `KS_CLAUDE_DESKTOP_CONFIG` | studio | Claude Desktop's own config file | where the Add to Claude Desktop button writes |
 | `KS_UPDATE_FEED` | Windows app | the repository's GitHub releases | where the app looks for a newer version (a test feed, a mirror) |
 | `KS_LIBRARY` | both | per user | where learned motions are kept |
 | `KS_SPINE_RUNTIME` | both | the app data folder | where the Spine add-on keeps the official runtime |

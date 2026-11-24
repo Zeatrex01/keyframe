@@ -40,6 +40,7 @@ import { listPacks, ASSET_ROOT } from '../core/asset-library.js';
 import { PARTS_FORMAT } from '../render/svg-rig.js';
 import { copyExample, findExample, listExamples } from './examples.js';
 import { updateRoutes } from './update-routes.js';
+import { connectRoutes } from './connect-routes.js';
 import { appRootOf } from '../core/update.js';
 
 export { statusFor } from './respond.js';
@@ -76,7 +77,7 @@ export function saveReference(projectDir, folder, name, data) {
 export function connectionBlocks(root = ROOT, appRoot = appRootOf(root)) {
   const { server, clients } = connectionFor(root, { appRoot });
   const text = id => clients.find(c => c.id === id).text;
-  return { server, claudeCommand: text('claude-code'), claudeJson: text('claude-desktop'), codexToml: text('codex'), clients };
+  return { server, claudeCommand: text('claude-code'), claudeDesktop: text('claude-desktop'), claudeJson: text('other'), codexToml: text('codex'), clients };
 }
 
 /** The optional programs and whether each is here: the add-on contract in src/core/addons.js. */
@@ -194,6 +195,7 @@ export function createStudioServer({ projectDir, version, configFile, maxUpload 
   let polled = 0;
   const routes = {
     ...updateRoutes({ version, appRoot, registry, restart, ...update }),
+    ...connectRoutes({ root: ROOT, appRoot }),
     'GET /api/projects': { run: () => projects() },
     'GET /api/examples': { run: () => ({ examples: listExamples(ROOT).map(e => ({ name: e.name, preview: Boolean(e.preview) })) }) },
     'GET /api/examples/preview': { raw: true, run: ({ req, res, url }) => {

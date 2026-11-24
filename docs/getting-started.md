@@ -42,7 +42,7 @@ npm run connect -- cursor      # just one: claude-code, codex, gemini, cursor, v
 **Settings** in the studio page shows the same lines with copy buttons. For example:
 
 ```bash
-claude mcp add keyframe-studio -- node "/path/to/keyframe-studio/tools/mcp-server.js"
+claude mcp add --scope user keyframe-studio -- node "/path/to/keyframe-studio/tools/mcp-server.js"
 ```
 
 ```toml

@@ -60,7 +60,7 @@ if (-not $NoShortcuts) {
 
 $Key = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\KeyframeStudio'
 New-Item -Path $Key -Force | Out-Null
-$Uninstall = 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "' + (Join-Path $Dest 'uninstall.ps1') + '"'
+$Uninstall = '"' + (Join-Path $PSHOME 'powershell.exe') + '" -NoProfile -ExecutionPolicy Bypass -File "' + (Join-Path $Dest 'uninstall.ps1') + '"'
 $Strings = @{ DisplayName = $Name; DisplayVersion = $Version; Publisher = 'Keyframe Studio contributors'; DisplayIcon = $Icon;
   InstallLocation = $Dest; UninstallString = $Uninstall; URLInfoAbout = 'https://github.com/Zeatrex01/keyframe' }
 foreach ($k in $Strings.Keys) { New-ItemProperty -Path $Key -Name $k -Value $Strings[$k] -PropertyType String -Force | Out-Null }

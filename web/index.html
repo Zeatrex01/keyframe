@@ -356,10 +356,13 @@
             <p class="t-caption" data-i18n="first.connectLead"></p>
             <div class="seg" id="firstClient" role="group" data-i18n-label="first.client">
               <button type="button" data-client="claudeCommand" aria-pressed="true">Claude Code</button>
+              <button type="button" data-client="claudeDesktop" aria-pressed="false">Claude Desktop</button>
               <button type="button" data-client="codexToml" aria-pressed="false">Codex</button>
               <button type="button" data-client="claudeJson" aria-pressed="false" data-i18n="first.other"></button>
             </div>
             <div class="code"><pre id="firstCode"></pre><button type="button" class="btn sm copy" id="firstCopy"><svg class="ic" aria-hidden="true"><use href="#i-copy"/></svg><span data-i18n="settings.copy"></span></button></div>
+            <div class="row desktop-add" id="firstDesktop" hidden><button type="button" class="btn" data-desktop-add data-i18n="connect.desktopAdd"></button><span class="status" data-desktop-status role="status"></span></div>
+            <p class="t-caption" data-i18n="connect.scope"></p>
           </details>
           <p class="waiting" id="firstStatus" role="status"><span class="dot" id="firstDot"></span><span id="firstStatusText"></span></p>
         </div>
@@ -447,6 +450,7 @@
         </div>
         <div class="seg" id="settingsClient" role="group" data-i18n-label="first.client">
           <button type="button" data-client="claudeCommand" aria-pressed="true">Claude Code</button>
+          <button type="button" data-client="claudeDesktop" aria-pressed="false">Claude Desktop</button>
           <button type="button" data-client="codexToml" aria-pressed="false">Codex</button>
           <button type="button" data-client="claudeJson" aria-pressed="false" data-i18n="settings.otherClient"></button>
         </div>
@@ -456,7 +460,9 @@
           <summary data-i18n="settings.jsonInstead"></summary>
           <div class="code block"><pre id="clientJson"></pre><button type="button" class="btn sm copy"><svg class="ic" aria-hidden="true"><use href="#i-copy"/></svg><span data-i18n="settings.copy"></span></button></div>
         </details>
+        <div class="row desktop-add" id="settingsDesktop" hidden><button type="button" class="btn" data-desktop-add data-i18n="connect.desktopAdd"></button><span class="status" data-desktop-status role="status"></span></div>
         <p class="t-caption" data-i18n="settings.agentHow"></p>
+        <p class="t-caption" data-i18n="connect.scope"></p>
       </section>
       <section class="panel sec" id="setAddons" aria-labelledby="setAddonsTitle" tabindex="-1">
         <div class="sec-head"><div><h2 class="t-title" id="setAddonsTitle" data-i18n="settings.addonsTitle"></h2><p class="t-caption" data-i18n="settings.addonsLead"></p></div></div>

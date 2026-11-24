@@ -24,7 +24,7 @@ test('the section nav names four sections, in order, and each exists', () => {
 
 test('the AI connection keeps the external instructions and the slots for an embedded agent', () => {
   for (const id of ['agentSlots', 'slotList', 'slotAdd', 'externalTitle', 'settingsClient', 'clientCode', 'clientJson', 'checkButton']) assert.match(settings, new RegExp(`id="${id}"`), id);
-  assert.deepEqual([...settings.matchAll(/data-client="(\w+)"/g)].map(m => m[1]), ['claudeCommand', 'codexToml', 'claudeJson']);
+  assert.deepEqual([...settings.matchAll(/data-client="(\w+)"/g)].map(m => m[1]), ['claudeCommand', 'claudeDesktop', 'codexToml', 'claudeJson']);
   assert.equal(en['settings.externalTitle'], 'Or connect any MCP client');
   const slots = fs.readFileSync(new URL('../web/agent-slots.js', import.meta.url), 'utf8');
   assert.match(slots, /fetch\('\/api\/agent'/);

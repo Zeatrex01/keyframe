@@ -9,6 +9,7 @@ import { renderSettings } from './views.js';
 import { renderDraw } from './draw.js';
 import { renderAgentSlots } from './agent-slots.js';
 import { renderUpdate } from './update.js';
+import { renderDesktop } from './connect.js';
 
 // ---------- small helpers ----------
 
@@ -75,6 +76,7 @@ export async function setLang(lang) {
   // (the agent slots' roles, the update box). test/i18n-leak.test.js keeps this list whole.
   renderAgentSlots();
   renderUpdate();
+  renderDesktop();
   renderDraw();
   renderAll();
 }

@@ -1,6 +1,7 @@
 // The other views: Projects, Settings, and the opening at every start.
 
 import { loadUpdate } from './update.js';
+import { loadDesktop } from './connect.js';
 import { disposePlayer } from './stage.js';
 import { S, el } from './store.js';
 import { loadProjects, placeProjects } from './projects.js';
@@ -121,7 +122,7 @@ el.spineToggle.addEventListener('click', toggleSpineAddon);
 
 const ADDON_ICONS = { ffmpeg: 'i-video', ytdlp: 'i-link', spineCli: 'i-terminal' };
 /** Where each connection snippet goes, by the client the owner picked. */
-const CLIENT_WHERE = { claudeCommand: 'settings.whereClaude', codexToml: 'settings.whereCodex', claudeJson: 'settings.whereOther' };
+const CLIENT_WHERE = { claudeCommand: 'settings.whereClaude', claudeDesktop: 'connect.whereDesktop', codexToml: 'settings.whereCodex', claudeJson: 'settings.whereOther' };
 let client = 'claudeCommand';
 function renderClient() {
   const connection = S.settings?.connection ?? {};
@@ -130,6 +131,8 @@ function renderClient() {
   el.clientWhere.textContent = t(CLIENT_WHERE[client]);
   // Claude Code can also take the settings file the other apps use.
   el.clientMore.hidden = client !== 'claudeCommand';
+  el.settingsDesktop.hidden = client !== 'claudeDesktop';
+  if (client === 'claudeDesktop') loadDesktop();
   el.clientJson.textContent = connection.claudeJson ?? '';
 }
 el.settingsClient.addEventListener('click', event => { const pick = event.target.closest('[data-client]')?.dataset.client; if (pick) { client = pick; renderClient(); } });

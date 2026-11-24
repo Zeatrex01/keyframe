@@ -67,7 +67,7 @@ test('agent clients of the packaged app start through the shim, which survives u
   const { server, clients } = connectionFor('C:\\app\\app-0.0.1-beta\\studio', { appRoot: 'C:\\Apps\\Keyframe Studio' });
   assert.equal(server, 'C:\\Apps\\Keyframe Studio\\keyframe-mcp.cmd');
   const text = id => clients.find(c => c.id === id).text;
-  assert.equal(text('claude-code'), 'claude mcp add keyframe-studio -- cmd /c "C:\\Apps\\Keyframe Studio\\keyframe-mcp.cmd"');
+  assert.equal(text('claude-code'), 'claude mcp add --scope user keyframe-studio -- cmd /c "C:\\Apps\\Keyframe Studio\\keyframe-mcp.cmd"');
   assert.deepEqual(JSON.parse(text('claude-desktop')).mcpServers['keyframe-studio'], { command: 'cmd', args: ['/c', 'C:\\Apps\\Keyframe Studio\\keyframe-mcp.cmd'] });
   assert.match(text('codex'), /command = "cmd"\nargs = \["\/c", "C:\\\\Apps/);
   assert.ok(!JSON.stringify(clients).includes('app-0.0.1-beta'), 'no version folder in a client\'s setting');

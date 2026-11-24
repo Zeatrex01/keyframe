@@ -28,7 +28,8 @@ static class Setup
             string package = Path.Combine(tmp, Name);
             string current = File.ReadAllText(Path.Combine(package, "current")).Trim();
             string script = Path.Combine(package, current, "install", "install.ps1");
-            var info = new ProcessStartInfo("powershell.exe", "-NoProfile -ExecutionPolicy Bypass -File \"" + script + "\" -Source \"" + package + "\"")
+            string powershell = Path.Combine(Environment.SystemDirectory, "WindowsPowerShell", "v1.0", "powershell.exe");
+            var info = new ProcessStartInfo(File.Exists(powershell) ? powershell : "powershell.exe", "-NoProfile -ExecutionPolicy Bypass -File \"" + script + "\" -Source \"" + package + "\"")
             {
                 UseShellExecute = false,
                 CreateNoWindow = true,

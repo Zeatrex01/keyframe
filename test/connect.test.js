@@ -21,7 +21,7 @@ test('every client gets the same server, in a form it parses', () => {
       const parsed = JSON.parse(c.text);
       const entry = (parsed.mcpServers ?? parsed.servers)['keyframe-studio'];
       assert.deepEqual(entry.args, [server], c.id);
-      assert.equal(entry.command, 'node');
+      assert.equal(entry.command, c.id === 'claude-desktop' ? process.execPath : 'node', 'Claude Desktop starts no terminal, so it gets Node by its full path');
     }
   }
   assert.match(clients.find(c => c.id === 'codex').text, /^\[mcp_servers\.keyframe-studio\]/);
