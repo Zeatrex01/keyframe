@@ -104,22 +104,12 @@ function pack(images) {
 }
 
 /**
- * Build a rig from parts.
- * @param {{ name: string, parts: any[], resolution?: number }} input  resolution: atlas pixels per rig unit (default 2)
- * @returns {{ skeleton: object, atlasText: string, png: Uint8Array, page: string, document: object, skipped: string[] }}
+ * The rig around images already drawn: one atlas page, a Spine 4.2 skeleton whose setup pose is
+ * the picture. Shared by drawn SVG parts and raster parts (src/art/raster-import.js).
+ * @param {{ name: string, parts: any[], regions: string[], images: Array<{ width: number, height: number, data: Uint8Array|Uint8ClampedArray }> }} input
+ *   parts: validated ({ name, at, pivot, parent, size, states?, hidden?, blend? }); regions[i] names images[i]
  */
-export function buildSvgRig({ name, parts, resolution = 2 }) {
-  if (typeof name !== 'string' || !/^[A-Za-z0-9_-]{1,64}$/.test(name)) throw new StudioError('bad-argument', 'The rig name is 1-64 letters, digits, _ or -.', { name });
-  const res = Math.max(0.25, Math.min(8, Number(resolution) || 2));
-  const clean = validateParts(parts);
-  const skipped = [];
-  // One region per part, and one per state of a part (<part>_<state>), all at the part's size.
-  const regions = clean.flatMap(p => [{ part: p, region: p.name, svg: p.svg }, ...Object.entries(p.states ?? {}).map(([k, svg]) => ({ part: p, region: `${p.name}_${k}`, svg }))]);
-  const images = regions.map(({ part: p, region, svg }) => {
-    const img = rasterizeSvg(svg, { width: Math.max(1, Math.round(p.size[0] * res)), height: Math.max(1, Math.round(p.size[1] * res)) });
-    for (const s of img.skipped) skipped.push(`${region}: ${s}`);
-    return img;
-  });
+export function rigFromImages({ name, parts: clean, regions, images }) {
   const { at, width, height } = pack(images);
   const data = new Uint8Array(width * height * 4);
   images.forEach((img, i) => {
@@ -128,7 +118,7 @@ export function buildSvgRig({ name, parts, resolution = 2 }) {
   });
   const page = `${name}.png`;
   let atlasText = `${page}\nsize:${width},${height}\nfilter:Linear,Linear\npma:false\n`;
-  regions.forEach((r, i) => { atlasText += `${r.region}\nbounds:${at[i][0]},${at[i][1]},${images[i].width},${images[i].height}\n`; });
+  regions.forEach((r, i) => { atlasText += `${r}\nbounds:${at[i][0]},${at[i][1]},${images[i].width},${images[i].height}\n`; });
 
   // Bones parents first; slots keep the drawing order.
   const pivotOf = new Map([['root', [0, 0]]]);
@@ -156,6 +146,27 @@ export function buildSvgRig({ name, parts, resolution = 2 }) {
     })) }],
     animations: {},
   };
+  return { skeleton, atlasText, png: encodePng({ width, height, data }), page };
+}
+
+/**
+ * Build a rig from parts.
+ * @param {{ name: string, parts: any[], resolution?: number }} input  resolution: atlas pixels per rig unit (default 2)
+ * @returns {{ skeleton: object, atlasText: string, png: Uint8Array, page: string, document: object, skipped: string[] }}
+ */
+export function buildSvgRig({ name, parts, resolution = 2 }) {
+  if (typeof name !== 'string' || !/^[A-Za-z0-9_-]{1,64}$/.test(name)) throw new StudioError('bad-argument', 'The rig name is 1-64 letters, digits, _ or -.', { name });
+  const res = Math.max(0.25, Math.min(8, Number(resolution) || 2));
+  const clean = validateParts(parts);
+  const skipped = [];
+  // One region per part, and one per state of a part (<part>_<state>), all at the part's size.
+  const regions = clean.flatMap(p => [{ part: p, region: p.name, svg: p.svg }, ...Object.entries(p.states ?? {}).map(([k, svg]) => ({ part: p, region: `${p.name}_${k}`, svg }))]);
+  const images = regions.map(({ part: p, region, svg }) => {
+    const img = rasterizeSvg(svg, { width: Math.max(1, Math.round(p.size[0] * res)), height: Math.max(1, Math.round(p.size[1] * res)) });
+    for (const s of img.skipped) skipped.push(`${region}: ${s}`);
+    return img;
+  });
+  const { skeleton, atlasText, png, page } = rigFromImages({ name, parts: clean, regions: regions.map(r => r.region), images });
   const document = { format: PARTS_FORMAT, version: 1, name, resolution: res, parts: clean.map(({ parent, ...p }) => (parent ? { ...p, parent } : p)) };
-  return { skeleton, atlasText, png: encodePng({ width, height, data }), page, document, skipped };
+  return { skeleton, atlasText, png, page, document, skipped };
 }

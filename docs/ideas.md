@@ -37,3 +37,18 @@ Proposal, not yet decided:
 - Take from the earlier project only "find the scenes, sample frames, name each moment from a fixed list".
 - Keep the measuring in the studio's own tracker.
 - Make what is learned reach the model when it writes an animation. Today nothing measured reaches `write_animation`.
+
+## 2026-11-24: Raster art from another image AI (trial on branch raster-trial)
+
+Trial, not decided. A second AI (Codex image generation first, then Gemini) draws a side-view
+character as a PNG on one flat key colour; the studio keys the background out, cuts the parts,
+places them on a skeleton, paints weights and animates them. `tools/raster-trial.js` and
+`src/render/raster-import.js` run the trial; no MCP tool is served for it yet.
+
+- What works: a parts sheet (every limb drawn apart on the key colour) cuts cleanly into pieces,
+  stands up as a side-view biped and animates, checks and exports (Godot, HTML player) like any rig.
+- What does not, yet: one fused figure bound with distance-only weights smears the torso when the
+  limbs swing. It needs a mask per limb (segmentation) before paint_weights, or parts drawn apart.
+- Open for a decision: an import tool (cut, name, assemble) beside the drawing tools; an image AI as
+  a hub slot, so the studio can ask it for art; bring-your-own local image model (any program that
+  writes a PNG into the project folder) through the same slot, with no service tied in.
