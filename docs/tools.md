@@ -549,7 +549,7 @@ The write path. `clip` is ONE animation in the studio's animation JSON (the same
 | `replace` | boolean | Default false: timelines you do not write this call keep what earlier calls wrote; a timeline you do write replaces that timeline whole. true rebuilds this clip from the base before applying yours. |
 | `fps` | number (≥ 1, ≤ 240) | Snap every key time to this frame grid and report the moved keys; empty keeps times as written. |
 | `holdFromStart` | boolean | Default true. false keeps value channels showing the setup pose until their first key. |
-| `plant` | array | Feet (or hands) that stay planted while the body moves: "footFront", or { bone, from, to, at: [x, y] }. The two bones above each (shin and thigh) are turned frame by frame so its joint stays where it stood at `from` (or at `at`), and baked to rotate keys; the foot keeps its angle. Use it for a punch, a lean, a crouch, a landing: anything where the body moves and the feet must not slide. The answer lists them under `planted` with how far each leg had to stretch (reach 1 = straight). |
+| `plant` | array | Feet (or hands) that stay planted while the body moves: "footFront", or { bone, from, to, at: [x, y], on }. The two bones above each (shin and thigh) are turned frame by frame so its joint stays where it stood at `from` (or at `at`), and baked to rotate keys; the foot keeps its angle. Use it for a punch, a lean, a crouch, a landing: anything where the body moves and the feet must not slide. With `on: "<bone>"` the point travels with that bone (`at` in its units): a back hand that stays on a spear shaft or the nock of a bow while the weapon moves. The answer lists them under `planted` with how far each leg had to stretch (reach 1 = straight). |
 
 Example:
 

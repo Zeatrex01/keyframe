@@ -138,14 +138,47 @@ export function weaponPart(g, c, hex) {
       { path: `M${X(-22)} ${Y(-76)} Q${X(22)} ${Y(0)} ${X(-22)} ${Y(76)}`, fill: 'none', stroke: wood, sw: r2(6 * s) },
       { rect: [X(-3), Y(-7), r2(7 * s), r2(14 * s)], r: 'sm', fill: grip, sw: 'thin', shade: false },
     ],
+    // The bow at full draw (a state of its own, `weapon_drawn`, that a shot switches to): the
+    // string pulled back to the arrow's nock at the archer's cheek.
+    drawn: [
+      { path: `M${X(-22)} ${Y(-76)} L${X(-70)} ${Y(0)} L${X(-22)} ${Y(76)}`, fill: 'none', stroke: darken(blade, 0.1), sw: 'thin' },
+      { path: `M${X(-22)} ${Y(-76)} Q${X(26)} ${Y(0)} ${X(-22)} ${Y(76)}`, fill: 'none', stroke: wood, sw: r2(6 * s) },
+      { rect: [X(-3), Y(-7), r2(7 * s), r2(14 * s)], r: 'sm', fill: grip, sw: 'thin', shade: false },
+    ],
     // A one-handed axe: a short haft and a bearded head.
     axe: [
       { rect: [X(-14), Y(-3), r2(84 * s), r2(6 * s)], r: 'sm', fill: wood, sw: 'thin', shade: false },
       { path: `M${X(54)} ${Y(-4)} L${X(54)} ${Y(-18)} Q${X(70)} ${Y(-24)} ${X(74)} ${Y(-12)} L${X(72)} ${Y(14)} Q${X(62)} ${Y(22)} ${X(58)} ${Y(8)} L${X(54)} ${Y(4)} Z`, fill: metal, sw: 'regular', bbox: [X(54), Y(-24), r2(20 * s), r2(46 * s)] },
     ],
   };
-  const [first, ...rest] = list;
+  const [first, ...more] = list;
+  const rest = list.includes('bow') ? [...more, 'drawn'] : more;
   return { name: 'weapon', parent: 'handFront', box: [r2(W), r2(H)],
     offset: [r2(g.grip[0] + W / 2 - gx), r2(g.grip[1] - H / 2 + gy)], pivot: [r2(gx - W / 2), r2(H / 2 - gy)],
     shapes: draw[first], ...(rest.length ? { states: Object.fromEntries(rest.map(w => [w, { box: [r2(W), r2(H)], shapes: draw[w] }])) } : {}) };
+}
+
+/**
+ * An arrow for the bow, nocked on its string and pointing where the bow points: a part of its own
+ * (`arrow`), hung on the weapon so it travels with the bow, hidden until a clip shows it (on the draw)
+ * and hides it again (on the release, when the game sends its own arrow flying).
+ * @param {object} g  the figure's measures
+ * @param {object} c  the component spec
+ * @param {(v: any) => string} hex
+ * @returns {any | null}
+ */
+export function arrowPart(g, c, hex) {
+  const list = Array.isArray(c.weapons) ? c.weapons : typeof c.weapons === 'string' ? [c.weapons] : [];
+  if (!list.includes('bow')) return null;
+  const s = g.H / 300, W = 152 * s, H = 14 * s, gx = 74 * s, gy = 7 * s;   // the bow's grip, in the arrow's box
+  const wood = hex(c.shaft ?? '#c9a26b'), metal = hex(c.metal ?? '#b9c2cd'), feather = hex(c.fletching ?? 'reward');
+  const X = v => r2(gx + v * s), Y = v => r2(gy + v * s);
+  return { name: 'arrow', parent: 'weapon', box: [r2(W), r2(H)], hidden: true,
+    offset: [r2(g.grip[0] + W / 2 - gx), r2(g.grip[1] - H / 2 + gy)], pivot: [r2(gx - W / 2), r2(H / 2 - gy)],
+    shapes: [
+      // Fletching at the nock, on the drawn string (x -70 in the bow's units), the shaft, a steel head.
+      { path: `M${X(-72)} ${Y(0)} L${X(-62)} ${Y(-5)} L${X(-50)} ${Y(-5)} L${X(-56)} ${Y(0)} L${X(-50)} ${Y(5)} L${X(-62)} ${Y(5)} Z`, fill: feather, sw: 'thin', shade: false, bbox: [X(-72), Y(-5), r2(22 * s), r2(10 * s)] },
+      { rect: [X(-72), Y(-1.4), r2(138 * s), r2(2.8 * s)], r: 'sm', fill: wood, sw: 'thin', shade: false },
+      { path: `M${X(64)} ${Y(-4.5)} L${X(78)} ${Y(0)} L${X(64)} ${Y(4.5)} Z`, fill: metal, sw: 'thin', bbox: [X(64), Y(-4.5), r2(14 * s), r2(9 * s)] },
+    ] };
 }

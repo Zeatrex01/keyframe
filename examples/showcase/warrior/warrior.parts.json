@@ -527,12 +527,34 @@
    "states": {
     "spear": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 270 170\" width=\"270\" height=\"170\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#bec6d1\"/><stop offset=\"1\" stop-color=\"#a9b2bc\"/></linearGradient><linearGradient id=\"g2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#f5b74c\"/><stop offset=\"1\" stop-color=\"#e0a339\"/></linearGradient></defs><rect x=\"5\" y=\"82.4\" width=\"226\" height=\"5.2\" rx=\"2.6\" fill=\"#9a6a3e\" stroke=\"#74502f\" stroke-width=\"1\" stroke-linejoin=\"round\"/><path d=\"M229 79 Q245 78 267 85 Q245 92 229 91 Z\" fill=\"url(#g1)\" stroke=\"#8b929a\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><rect x=\"223\" y=\"81\" width=\"7\" height=\"8\" rx=\"3.5\" fill=\"url(#g2)\" stroke=\"#b7862f\" stroke-width=\"1\" stroke-linejoin=\"round\"/></svg>",
     "bow": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 270 170\" width=\"270\" height=\"170\"><line x1=\"83\" y1=\"9\" x2=\"83\" y2=\"161\" fill=\"none\" stroke=\"#ccd1d6\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><path d=\"M83 9 Q127 85 83 161\" fill=\"none\" stroke=\"#9a6a3e\" stroke-width=\"6\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><rect x=\"102\" y=\"78\" width=\"7\" height=\"14\" rx=\"3.5\" fill=\"#8a5a3a\" stroke=\"#68442c\" stroke-width=\"1\" stroke-linejoin=\"round\"/></svg>",
-    "axe": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 270 170\" width=\"270\" height=\"170\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#bec6d1\"/><stop offset=\"1\" stop-color=\"#a9b2bc\"/></linearGradient></defs><rect x=\"91\" y=\"82\" width=\"84\" height=\"6\" rx=\"3\" fill=\"#9a6a3e\" stroke=\"#74502f\" stroke-width=\"1\" stroke-linejoin=\"round\"/><path d=\"M159 81 L159 67 Q175 61 179 73 L177 99 Q167 107 163 93 L159 89 Z\" fill=\"url(#g1)\" stroke=\"#8b929a\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></svg>"
+    "axe": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 270 170\" width=\"270\" height=\"170\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#bec6d1\"/><stop offset=\"1\" stop-color=\"#a9b2bc\"/></linearGradient></defs><rect x=\"91\" y=\"82\" width=\"84\" height=\"6\" rx=\"3\" fill=\"#9a6a3e\" stroke=\"#74502f\" stroke-width=\"1\" stroke-linejoin=\"round\"/><path d=\"M159 81 L159 67 Q175 61 179 73 L177 99 Q167 107 163 93 L159 89 Z\" fill=\"url(#g1)\" stroke=\"#8b929a\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></svg>",
+    "drawn": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 270 170\" width=\"270\" height=\"170\"><path d=\"M83 9 L35 85 L83 161\" fill=\"none\" stroke=\"#ccd1d6\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><path d=\"M83 9 Q131 85 83 161\" fill=\"none\" stroke=\"#9a6a3e\" stroke-width=\"6\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><rect x=\"102\" y=\"78\" width=\"7\" height=\"14\" rx=\"3.5\" fill=\"#8a5a3a\" stroke=\"#68442c\" stroke-width=\"1\" stroke-linejoin=\"round\"/></svg>"
    },
    "source": {
     "of": "warrior"
    },
    "parent": "handFront"
+  },
+  {
+   "name": "arrow",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 152 14\" width=\"152\" height=\"14\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#bec6d1\"/><stop offset=\"1\" stop-color=\"#a9b2bc\"/></linearGradient></defs><path d=\"M2 7 L12 2 L24 2 L18 7 L24 12 L12 12 Z\" fill=\"#f4b23e\" stroke=\"#b7862f\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><rect x=\"2\" y=\"5.6\" width=\"138\" height=\"2.8\" rx=\"1.4\" fill=\"#c9a26b\" stroke=\"#977a50\" stroke-width=\"1\" stroke-linejoin=\"round\"/><path d=\"M138 2.5 L152 7 L138 11.5 Z\" fill=\"url(#g1)\" stroke=\"#8b929a\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></svg>",
+   "at": [
+    -0.58,
+    79.83
+   ],
+   "pivot": [
+    -2.58,
+    79.83
+   ],
+   "size": [
+    152,
+    14
+   ],
+   "hidden": true,
+   "source": {
+    "of": "warrior"
+   },
+   "parent": "weapon"
   },
   {
    "name": "handFront",

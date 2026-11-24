@@ -13,7 +13,7 @@
 // Pure: shapes only, rendered by src/art/shapes.js.
 
 import { colorOf, darken } from './style.js';
-import { armourPieces, weaponPart } from './figure-gear.js';
+import { armourPieces, weaponPart, arrowPart } from './figure-gear.js';
 
 export const SIDE_PARTS = Object.freeze(['upperArmBack', 'forearmBack', 'handBack', 'thighBack', 'shinBack', 'footBack', 'body', 'head', 'eye',
   'thighFront', 'shinFront', 'footFront', 'upperArmFront', 'forearmFront', 'handFront']);
@@ -63,7 +63,7 @@ export function sideParts(c, style) {
     arms: { Back: armAt('Back'), Front: armAt('Front') }, legs: { Back: legAt('Back'), Front: legAt('Front') },
     grip: [wristFront[0] + d0 * 0.02, wristFront[1] - d0 * 0.32] };
   const gear = armourPieces(g, c, hex);
-  const weapon = weaponPart(g, c, hex);
+  const weapon = weaponPart(g, c, hex), arrow = arrowPart(g, c, hex);
 
   /** @type {any[]} */
   const parts = [];
@@ -76,6 +76,7 @@ export function sideParts(c, style) {
     if (bracer) parts.push(bracer);
     // The weapon goes under the near fist, so the fingers close over its grip.
     if (s === 'Front' && weapon) parts.push(weapon);
+    if (s === 'Front' && arrow) parts.push(arrow);
     const d = handD + sw, wrist = [elbow[0], elbow[1] - forearm];
     // A fist, the thumb on top towards the front.
     parts.push({ name: `hand${s}`, parent: `forearm${s}`, box: [r2(d * 1.2), r2(d * 1.2)], offset: [r2(wrist[0]), r2(wrist[1] - d * 0.3)], pivot: [0, r2(d * 0.3)], shapes: [

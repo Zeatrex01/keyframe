@@ -29,3 +29,32 @@ test('warrior: planted feet stay on their point through every stance and attack'
     }
   }
 });
+
+const bone = (pose, name) => pose.bones.find(b => b.name === name);
+const toWorld = ({ matrix: m, worldX, worldY }, [x, y]) => [m.a * x + m.b * y + worldX, m.c * x + m.d * y + worldY];
+
+test('warrior: two hands on the spear, the back one riding the shaft behind the front fist', () => {
+  for (const name of ['idle_spear', 'attack_spear']) {
+    const clip = brief.clips.find(c => c.name === name);
+    for (const pose of sample(model, name, frames(clip.seconds))) {
+      const [x, y] = toWorld(bone(pose, 'weapon'), [-60, 0]), hand = bone(pose, 'handBack');
+      assert.ok(Math.hypot(hand.worldX - x, hand.worldY - y) < 0.6, `${name}: the back hand leaves the shaft`);
+    }
+  }
+});
+
+test('warrior: the shot nocks an arrow, draws the string to it, and lets it go', () => {
+  const at = t => sample(model, 'shoot_bow', [t])[0];
+  const look = t => { const p = at(t); return [p.slots.find(s => s.name === 'weapon').attachment ?? null, p.slots.find(s => s.name === 'arrow').attachment ?? null]; };
+  assert.deepEqual(look(0.1), ['weapon_bow', null]);
+  assert.deepEqual(look(0.45), ['weapon_drawn', 'arrow']);
+  assert.deepEqual(look(0.8), ['weapon_bow', null], 'released: the game sends its own arrow');
+  for (const t of [0.3, 0.4, 0.5, 0.6]) {
+    const p = at(t), [x, y] = toWorld(bone(p, 'weapon'), [-76, -2]), hand = bone(p, 'handBack');
+    assert.ok(Math.hypot(hand.worldX - x, hand.worldY - y) < 0.6, `the drawing hand holds the nock at ${t}`);
+  }
+  // Every other clip puts the arrow away, so none inherits one from an interrupted shot.
+  for (const name of Object.keys(skeleton.animations).filter(n => n !== 'shoot_bow')) {
+    assert.deepEqual(skeleton.animations[name].slots?.arrow?.attachment?.map(k => k.name ?? null), [null], name);
+  }
+});

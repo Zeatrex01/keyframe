@@ -66,8 +66,11 @@ export const clips = {
     upperArmFront: { rotate: K([[0, 24], [0.3, 92, 'outCubic'], [0.62, 92], [0.7, 96], [0.9, 92], [1.1, 24]]) },
     forearmFront: { rotate: K([[0, 16], [0.3, 0], [0.62, 0], [0.7, 2], [1.1, 16]]) },
     handFront: { rotate: K([[0, -36], [0.3, -92], [0.62, -92], [0.7, -96], [1.1, -36]]) },
-    upperArmBack: { rotate: K([[0, 10], [0.3, 84, 'outCubic'], [0.6, 76], [0.64, 52, 'outQuad'], [0.82, 46], [1.1, 10]]) },
-    forearmBack: { rotate: K([[0, 30], [0.3, 150, 'outCubic'], [0.6, 160], [0.64, 120, 'outQuad'], [0.82, 116], [1.1, 30]]) },
+    // The drawing arm: elbow up and back at the nock (where the plant holds the hand), a short
+    // recoil back past the cheek on the release, then down.
+    upperArmBack: { rotate: K([[0, 10], [0.3, -118.7, 'outCubic'], [0.62, -118.7, 'outQuad'], [0.68, -132], [0.84, -110], [1.1, 10]]) },
+    forearmBack: { rotate: K([[0, 30], [0.3, 165.1, 'outCubic'], [0.62, 165.1, 'outQuad'], [0.68, 150], [0.84, 120], [1.1, 30]]) },
+    handBack: { rotate: K([[0, 0], [0.3, -172.4, 'outCubic'], [0.62, -172.4], [0.84, -120], [1.1, 0]]) },
   } },
   idle_unarmed: { slots: weapon(null), bones: { ...stance(1.6, 1, -1),
     body: { rotate: K([[0, -1], [0.8, 1], [1.6, -1]]), translate: T([[0, 0, -21], [0.8, -1, -24], [1.6, 0, -21]]) },
@@ -111,7 +114,10 @@ export const clips = {
   } },
 };
 const on = (f, b) => [{ bone: 'footFront', at: [f, 13.7] }, { bone: 'footBack', at: [b, 13.7] }];
-const PLANT = { idle_sword: on(34, -40), attack_sword: on(34, -40), idle_spear: on(34, -40), attack_spear: on(34, -40), idle_bow: on(30, -36), shoot_bow: on(30, -36), punch: on(34, -40), jump: [{ bone: 'footFront', from: 0, to: 0.22 }, { bone: 'footBack', from: 0, to: 0.22 }, { bone: 'footFront', from: 0.7, to: 1 }, { bone: 'footBack', from: 0.7, to: 1 }] };
+// Two-handed holds: the back hand rides the spear shaft behind the front fist, and on the bow it
+// holds the arrow's nock through the draw (`plant` with `on`: the point travels with the weapon).
+const SHAFT = { bone: 'handBack', on: 'weapon', at: [-60, 0] }, NOCK = { bone: 'handBack', on: 'weapon', at: [-76, -2] };
+const PLANT = { idle_sword: on(34, -40), attack_sword: on(34, -40), idle_spear: [...on(34, -40), SHAFT], attack_spear: [...on(34, -40), SHAFT], idle_bow: on(30, -36), shoot_bow: [...on(30, -36), { ...NOCK, from: 0.3, to: 0.62 }], punch: on(34, -40), jump: [{ bone: 'footFront', from: 0, to: 0.22 }, { bone: 'footBack', from: 0, to: 0.22 }, { bone: 'footFront', from: 0.7, to: 1 }, { bone: 'footBack', from: 0.7, to: 1 }] };
 
 // Each body part eases in its own way, so the parts do not move to one rhythm: the hips smooth, the
 // arms sharper, the head and the hands quick to settle.
@@ -133,6 +139,14 @@ for (const name of ['idle_sword', 'idle_spear', 'idle_bow', 'idle_unarmed']) {
 clips.idle_axe = { ...structuredClone(clips.idle_sword), slots: weapon('weapon_axe') };
 clips.attack_axe = { ...structuredClone(clips.attack_sword), slots: weapon('weapon_axe') };
 Object.assign(PLANT, { idle_axe: PLANT.idle_sword, attack_axe: PLANT.attack_sword, idle_unarmed: PLANT.punch });
+
+// The arrow shows on the bow from the nock to the release (the game sends its own arrow flying);
+// every other clip puts it away, so no clip inherits a nocked arrow from an interrupted shot.
+for (const [name, clip] of Object.entries(clips)) {
+  clip.slots = { ...clip.slots, arrow: { attachment: name === 'shoot_bow' ? [{ time: 0, name: null }, { time: 0.3, name: 'arrow' }, { time: 0.62, name: null }] : [{ time: 0, name: null }] } };
+}
+// The string comes back with the hand: the drawn bow from the nock to the release.
+clips.shoot_bow.slots.weapon = { attachment: [{ time: 0, name: 'weapon_bow' }, { time: 0.3, name: 'weapon_drawn' }, { time: 0.62, name: 'weapon_bow' }] };
 
 /** @type {Record<string, { plant?: any[] }>} */
 const EXTRA = Object.fromEntries(Object.entries(PLANT).map(([clip, plant]) => [clip, { plant }]));

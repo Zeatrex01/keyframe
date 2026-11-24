@@ -85,3 +85,38 @@ test('a punch that carries the hips slides the feet, and critique says so; plant
     assert.match(JSON.stringify(bad.error), /two bones above it/);
   } finally { s.done(); }
 });
+
+test('a hand planted `on` another bone rides it: the back hand stays on the point of a moving fist, the short way round', async () => {
+  const s = studio();
+  try {
+    await s.call('draw_rig', { name: 'hero', parts: [{ name: 'hero', component: { component: 'figure', build: 'side', h: 300 }, at: [0, 0] }] });
+    // The near arm swings up through a big arc; the far hand holds on to the near fist.
+    const clip = { bones: {
+      upperArmFront: { rotate: K([[0, 20], [0.35, 95], [0.7, 20]]) }, forearmFront: { rotate: K([[0, 60], [0.35, 10], [0.7, 60]]) },
+      upperArmBack: { rotate: K([[0, 30], [0.7, 30]]) }, forearmBack: { rotate: K([[0, 70], [0.7, 70]]) },
+    } };
+    const r = await s.call('write_animation', { from: 'hero.json', animation: 'hold', clip, plant: [{ bone: 'handBack', on: 'handFront', at: [-4, 0] }] });
+    assert.equal(r.error, undefined, JSON.stringify(r.error));
+    assert.equal(r.planted[0].on, 'handFront');
+    assert.ok(r.planted[0].reach <= 1, `reach ${r.planted[0].reach}`);
+    const sk = JSON.parse(fs.readFileSync(path.join(s.dir, r.file), 'utf8'));
+    const model = compileSkeleton(sk), anim = model.animations.get('hold'), pose = new Pose(model);
+    const B = n => pose.bones[model.boneIndex.get(n)];
+    for (let i = 0; i <= 42; i++) {
+      pose.apply(anim, i / 60).updateWorld();
+      const f = B('handFront'), x = f.a * -4 + f.worldX, y = f.c * -4 + f.worldY, h = B('handBack');
+      assert.ok(Math.hypot(h.worldX - x, h.worldY - y) < 0.6, `off the fist by ${Math.hypot(h.worldX - x, h.worldY - y).toFixed(2)} at ${(i / 60).toFixed(3)}`);
+    }
+    // Baked keys turn the short way: a fist that swings right round carries the held hand's angle
+    // past ±180, and no limb may spin a full turn between two keys for it.
+    const round = await s.call('write_animation', { from: 'hero.json', animation: 'hold', replace: true, plant: [{ bone: 'handBack', on: 'handFront' }],
+      clip: { bones: { upperArmFront: { rotate: [{ time: 0, value: 0 }, { time: 0.7, value: 340 }] } } } });
+    const spun = JSON.parse(fs.readFileSync(path.join(s.dir, round.file), 'utf8'));
+    for (const bone of ['upperArmBack', 'forearmBack', 'handBack']) {
+      const keys = spun.animations.hold.bones[bone].rotate;
+      for (let i = 1; i < keys.length; i++) assert.ok(Math.abs(keys[i].value - keys[i - 1].value) < 90, `${bone} jumps ${keys[i - 1].value} -> ${keys[i].value}`);
+    }
+    const self = await s.call('write_animation', { from: 'hero.json', animation: 'hold', clip, plant: [{ bone: 'handBack', on: 'forearmBack' }], replace: true });
+    assert.match(JSON.stringify(self.error), /cannot hold on to itself/);
+  } finally { s.done(); }
+});

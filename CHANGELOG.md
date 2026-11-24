@@ -27,6 +27,8 @@ All notable changes to this project. The format follows
 - A Warrior example (`examples/showcase/warrior`): the side figure in plate armour with a sword, spear, bow and axe in one slot, a stance and an attack per weapon, a punch, a run and a jump, with sprite sheets for every clip; the feet stay planted through every stance and attack.
 - A `smooth` curve for cycles: each key is passed at speed (a spline through its neighbours, wrapping a loop's seam) instead of easing to a stop at every pose. `critique_animation` flags a walk or run whose legs halt mid-swing (`stop-start`), a run that never leaves the ground (`no-flight`), and an idle or a cycle leaning the whole clip (`constant-lean`).
 - The Warrior stands upright and runs in one flow: contact, down, passing and push-off with a moment in the air, the hips leading and the knees, feet, arms and head trailing.
+- `write_animation` `plant` takes `on: "<bone>"`: the planted point travels with that bone (`at` in its units), for a back hand that stays on a spear shaft or the nock of a bow while the weapon moves; the hand keeps its angle to that bone.
+- The Warrior holds the spear in both hands (the back hand rides the shaft through the stance and the thrust), and its shot nocks an arrow: the bow brings an `arrow` part and a drawn look (`weapon_drawn`), the drawing hand holds the nock with the elbow back, and the arrow leaves on the release (every other clip hides it).
 - Godot: an imported rig changes outfits and weapons at run time (`set_look`, `set_attachment`, `get_attachments` on the rig's root); every look of every piece is imported, and a clip that keys a slot (each Warrior stance keys its weapon) shows what the clip says.
 - The Warrior's armour fits the body: the cuirass follows the torso's outline with no shirt showing at its edges, tassets cover the thighs, and the bracers taper with the forearms.
 - The Warrior ships ready for Godot (`examples/showcase/warrior/godot/`): drop `warrior.kfscene` into a project with the add-on, and set the rig's **Look** and **Weapon** in the Inspector or from code.
@@ -39,6 +41,7 @@ All notable changes to this project. The format follows
 - Parts reach the page as safe trees (`src/render/svg-safe.js`): only shapes, groups and gradients survive, so nothing in a drawing can run.
 
 ### Fixed
+- Planted limbs turn the short way between baked keys: a solved angle crossing ±180 no longer spins a limb a full turn.
 - Calling an advanced tool (such as `export_godot`) without `--all` now says so and how to turn it on, instead of "Unknown tool".
 - One-shot clips play once: a clip named for a jump, an attack, a hit or a reveal no longer loops in the Godot addon or in a sprite sheet's map just because it lands back in its first pose, and a cycle whose length is not on the fps grid (a 0.6 s run at 12 fps) is still found to loop and is cut into frames that cycle exactly.
 - The web player no longer grows a canvas that has no CSS size on every frame at a display scale above 1; it keeps the canvas at its laid-out size.

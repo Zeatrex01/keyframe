@@ -54,12 +54,14 @@ rig.look = "leather"                        # every piece with a leather look we
 rig.look = ""                               # back to the look it was drawn in, pieces taken off included
 rig.weapon = "weapon_spear"                 # "" puts the weapon away
 rig.set_attachment("helmet", "")            # take one piece off
-rig.get_attachments("weapon")               # weapon, weapon_spear, weapon_bow, weapon_axe
+rig.get_attachments("weapon")               # weapon, weapon_spear, weapon_bow, weapon_axe, weapon_drawn
 ```
 
 A clip that keys a slot shows what the clip says while it plays: each stance and attack of the
 Warrior keys its own weapon (`idle_spear` puts the spear in the hand, `idle_unarmed` and `punch`
 put it away), while `run` and `jump` leave it alone, so they keep the weapon the game set.
+`shoot_bow` switches to the drawn bow (`weapon_drawn`) and shows the `arrow` slot from the nock to
+the release; spawn your own arrow on the release. Every other clip hides the arrow.
 
 Godot's 2D stack has no counterpart for IK constraints, inherit modes other than normal or shear
 under rotation, so the bones they move are baked into position, rotation, scale and skew keys at

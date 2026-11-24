@@ -56,6 +56,9 @@ A part is drawn one of three ways, cheapest first:
    the first weapon drawn and the others as states (`weapon_spear`). A game swaps outfits and
    weapons by switching attachments on one skeleton; a clip for a stance switches the weapon slot
    at its first key (an unarmed clip clears it), so each weapon gets its own idle and attack.
+   A bow brings an `arrow` part on the weapon, hidden until a shot shows it, and a drawn bow
+   (`weapon_drawn`, the string pulled to the nock); `plant` with `on: "weapon"` keeps the far hand
+   on the nock, or on a spear shaft, while the weapon moves.
    `build: kid | adult` is a full body standing, with legs, for when the owner asks
    for one (`h`, `skin`, `shirt`, `pants`, `hair`, `shoes`, `sleeves: long`, and `prefix` for a
    second figure in one drawing).

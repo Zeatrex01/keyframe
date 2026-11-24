@@ -164,6 +164,12 @@
    "y": -6.72
   },
   {
+   "name": "arrow",
+   "parent": "weapon",
+   "x": 0,
+   "y": 0
+  },
+  {
    "name": "pauldronFront",
    "parent": "upperArmFront",
    "x": 1.05,
@@ -290,6 +296,10 @@
    "name": "weapon",
    "bone": "weapon",
    "attachment": "weapon"
+  },
+  {
+   "name": "arrow",
+   "bone": "arrow"
   },
   {
    "name": "handFront",
@@ -568,6 +578,20 @@
       "y": 0,
       "width": 270,
       "height": 170
+     },
+     "weapon_drawn": {
+      "x": 30,
+      "y": 0,
+      "width": 270,
+      "height": 170
+     }
+    },
+    "arrow": {
+     "arrow": {
+      "x": 2,
+      "y": 0,
+      "width": 152,
+      "height": 14
      }
     },
     "handFront": {

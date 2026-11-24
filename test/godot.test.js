@@ -253,7 +253,8 @@ test('the dressable warrior reaches Godot with every look and weapon, each stanc
     assert.deepEqual(slot(piece).attachments.map(a => a.name).sort(), [piece, `${piece}_leather`], piece);
     assert.equal(slot(piece).attachment, piece);
   }
-  assert.deepEqual(slot('weapon').attachments.map(a => a.name).sort(), ['weapon', 'weapon_axe', 'weapon_bow', 'weapon_spear']);
+  assert.deepEqual(slot('weapon').attachments.map(a => a.name).sort(), ['weapon', 'weapon_axe', 'weapon_bow', 'weapon_drawn', 'weapon_spear']);
+  assert.deepEqual(slot('arrow').attachments.map(a => a.name), ['arrow'], 'the bow brings its arrow');
   const shown = (clip, slotName) => scene.animations.find(a => a.name === clip).tracks.find(t => t.target === 'slot' && t.name === slotName && t.property === 'attachment')?.keys[0]?.value;
   assert.equal(shown('idle_spear', 'weapon'), 'weapon_spear');
   assert.equal(shown('shoot_bow', 'weapon'), 'weapon_bow');
