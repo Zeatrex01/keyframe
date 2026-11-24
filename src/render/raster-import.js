@@ -122,10 +122,10 @@ export const SIDE_BIPED = Object.freeze([
 /**
  * The drawing order, back to front, apart from the placing order above: the far limbs go behind the
  * torso, every upper segment covers the rounded top of the one below it (sleeve over forearm, thigh
- * over shin, so a joint never shows two caps), and the torso's hem covers the tops of both thighs.
+ * over shin, so a joint never shows two caps), the torso's hem covers the tops of both thighs, and its collar covers the bottom of the neck.
  */
 export const SIDE_BIPED_DRAW = Object.freeze(['forearmBack', 'upperArmBack', 'shinBack', 'thighBack', 'shinFront', 'thighFront',
-  'torso', 'head', 'forearmFront', 'upperArmFront']);
+  'head', 'torso', 'forearmFront', 'upperArmFront']);
 
 /**
  * Place named pieces on a side-view skeleton (rig units, y up, feet near y = 0).
@@ -140,7 +140,10 @@ export function assembleSideBiped(named, { scale = 0.5, joints = {} } = {}) {
   const [tw, th] = size('torso');
   const legLength = Math.max(...['Front', 'Back'].map(s => limbReach(size(`thigh${s}`)) + limbReach(size(`shin${s}`))));
   // Torso centre such that the hip sits a leg's length above the ground.
-  const J = { shoulder: [0.55, 0.12], hip: [0.5, 0.9], neck: [0.55, 0.02], ...joints };
+  // The neck is measured: the middle of the torso's top edge (a collar drawn to the front moves it).
+  const timg = named.torso.image, collar = rowRun(timg, 0.03);
+  // The hip sits well inside the torso, so a hem or a shirt tail covers the round tops of the thighs.
+  const J = { shoulder: [0.55, 0.12], hip: [0.5, 0.75], neck: [collar.x / timg.width, 0.03], ...joints };
   const torsoAt = [0, legLength + th * (J.hip[1] - 0.5)];
   const onTorso = (/** @type {number[]} */ f) => [torsoAt[0] + (f[0] - 0.5) * tw, torsoAt[1] + (0.5 - f[1]) * th];
   const parts = new Map();
@@ -150,9 +153,11 @@ export function assembleSideBiped(named, { scale = 0.5, joints = {} } = {}) {
     if (p.name === 'torso') continue;
     const [w, h] = size(p.name);
     if (p.name === 'head') {
-      // The head turns at the neck: the bottom of the piece, a little in from its lower edge.
-      const pivot = onTorso(J.neck);
-      parts.set('head', { name: 'head', at: [pivot[0], pivot[1] + h / 2 - h * 0.08], pivot, parent: 'torso', size: [w, h] });
+      // The head turns at the neck: the middle of the neck at the bottom of the piece goes on the
+      // torso's neck point, sunk a little so the collar (drawn over it) hides where the neck ends.
+      const pivot = onTorso(J.neck), neck = rowRun(named.head.image, 0.97);
+      const sink = th * 0.05;
+      parts.set('head', { name: 'head', at: [pivot[0] + (w / 2 - neck.x * scale), pivot[1] - sink + h / 2], pivot, parent: 'torso', size: [w, h] });
       continue;
     }
     // A limb hangs straight down from its joint; it turns at the centre of its rounded top end,
@@ -176,8 +181,13 @@ const limbReach = s => s[1] - 2 * Math.min(s[0] / 2, s[1] / 4);
  * of the way in from that end (a boot or a hand at the far end does not move the knee or elbow).
  */
 export function endCentre(img, end) {
+  return rowRun(img, end === 'top' ? 0.2 : 0.55);
+}
+
+/** The centre (x, px) and width of the opaque run in the row at that fraction of the height. */
+export function rowRun(img, fy) {
   const { width: w, height: h, data } = img;
-  const y = Math.round(end === 'top' ? h * 0.2 : h * 0.55);
+  const y = Math.min(h - 1, Math.max(0, Math.round(h * fy)));
   let x0 = -1, x1 = -1;
   for (let x = 0; x < w; x++) if (data[(y * w + x) * 4 + 3] >= 128) { if (x0 < 0) x0 = x; x1 = x; }
   return x0 < 0 ? { x: w / 2, width: w } : { x: (x0 + x1 + 1) / 2, width: x1 - x0 + 1 };

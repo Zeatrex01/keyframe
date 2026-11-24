@@ -96,3 +96,23 @@ test('one fused picture becomes one image on the root with bones placed from pic
   assert.match(rig.atlasText, /body/);
   assert.throws(() => puppetRig({ name: 'fig', image: img, bones: [{ name: 'x', parent: 'nope', from: [0, 0], to: [1, 1] }] }), /parent/);
 });
+
+test('the head goes on the collar: its neck lines up with the top of the torso and tucks under it', () => {
+  // A torso whose top edge (a collar) is only at the front, and a head whose neck is at the back.
+  const shape = (w, h, inside) => {
+    const data = new Uint8Array(w * h * 4);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (inside(x / w, y / h)) data[(y * w + x) * 4 + 3] = 255;
+    return { image: { width: w, height: h, data } };
+  };
+  const solid = (w, h) => shape(w, h, () => true);
+  const named = { torso: shape(100, 200, (fx, fy) => fy > 0.1 || fx > 0.6), head: shape(100, 100, (fx, fy) => fy < 0.8 || fx < 0.3),
+    upperArmFront: solid(30, 90), forearmFront: solid(28, 90), upperArmBack: solid(30, 90), forearmBack: solid(28, 90),
+    thighFront: solid(40, 110), shinFront: solid(36, 110), thighBack: solid(40, 110), shinBack: solid(36, 110) };
+  const parts = Object.fromEntries(assembleSideBiped(named, { scale: 1 }).map(p => [p.name, p]));
+  const { torso, head } = parts;
+  const collarX = torso.at[0] - 50 + 80, neckX = head.at[0] - 50 + 15;
+  assert.ok(Math.abs(collarX - neckX) < 2, `neck ${neckX} on collar ${collarX}`);
+  assert.ok(head.at[1] - 50 < torso.at[1] + 100, 'the bottom of the neck sits inside the torso');
+  const drawn = SIDE_BIPED_DRAW;
+  assert.ok(drawn.indexOf('head') < drawn.indexOf('torso'), 'the collar is drawn over the neck');
+});
