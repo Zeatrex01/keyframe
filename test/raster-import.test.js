@@ -152,4 +152,12 @@ test('gear goes on the bone that carries it, in the hand at the grip, in its own
   assert.throws(() => placeGear(body, named, [{ name: 'x', on: 'tail', image: solid(4, 4) }]), /one of/);
   const [bow] = placeGear(body, named, [{ name: 'bow', on: 'hand', grip: 0.5, image: solid(10, 200) }], { scale: 1 }).filter(p => p.name === 'bow');
   assert.ok(Math.abs(bow.at[1] - bow.pivot[1]) < 1, 'a bow is held at its middle');
+  const far = placeGear(body, named, [{ name: 'staff', on: 'offhand', image: solid(10, 200) },
+    { name: 'shield', on: 'offhand', over: true, image: solid(80, 80) }], { scale: 1 }).map(p => p.name);
+  assert.equal(far.indexOf('staff') + 1, far.indexOf('forearmBack'), 'a staff passes behind the far fist');
+  assert.equal(far.indexOf('shield') - 1, far.indexOf('forearmBack'), 'a shield covers the hand that holds it');
+  const raised = placeGear(body, named, [{ name: 'shield', on: 'offhand', front: true, image: solid(80, 80) }], { scale: 1 });
+  const up = raised.map(p => p.name);
+  assert.ok(up.indexOf('shield') > up.indexOf('torso') && up.indexOf('shield') > up.indexOf('head'), 'a raised shield is over the body');
+  assert.ok(up.indexOf('shield') < up.indexOf('forearmFront'), 'and under the near arm');
 });

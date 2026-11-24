@@ -200,7 +200,7 @@ export function rowRun(img, fy) {
 const GEAR_ON = Object.freeze({
   head: { bone: 'head', drawAfter: 'torso' },          // hat, hood, helmet: over the head and the collar
   hand: { bone: 'forearmFront', drawBefore: 'forearmFront' }, // held in the near hand, under the fingers
-  offhand: { bone: 'forearmBack', drawAfter: 'forearmBack' }, // shield or lantern in the far hand
+  offhand: { bone: 'forearmBack', drawBefore: 'forearmBack' }, // staff or lantern in the far fist
   back: { bone: 'torso', drawFirst: true },            // cape, quiver, backpack: behind everything
   hip: { bone: 'torso', drawAfter: 'torso' },          // knife, satchel, pouch: over the hip
 });
@@ -217,7 +217,7 @@ export const GEAR_KINDS = Object.freeze(Object.keys(GEAR_ON));
  * each piece after looking at it; `ratio` is gear-sheet pixels to body-sheet pixels.
  * @param {Array<{ name: string, at: number[], pivot: number[], parent: string|null, size: number[] }>} parts  from assembleSideBiped
  * @param {Record<string, { image: { width: number, height: number, data: Uint8Array } }>} named  the body pieces
- * @param {Array<{ name: string, on: string, image: { width: number, height: number, data: Uint8Array }, offset?: number[], rotate?: number, grip?: number }>} gear
+ * @param {Array<{ name: string, on: string, image: { width: number, height: number, data: Uint8Array }, offset?: number[], rotate?: number, grip?: number, over?: boolean, front?: boolean }>} gear
  * @param {{ scale?: number, ratio?: number }} [options]
  */
 export function placeGear(parts, named, gear, { scale = 0.5, ratio = 1 } = {}) {
@@ -247,10 +247,15 @@ export function placeGear(parts, named, gear, { scale = 0.5, ratio = 1 } = {}) {
       pivot = [...bone.pivot];
     }
     const part = { name: g.name, at: centre, pivot, parent: on.bone, size: [w, h], rotation: g.rotate ?? 0, gear: true };
-    if (on.drawFirst) out.unshift(part);
+    // A held piece passes behind the fist; `over` puts it on top of the hand instead (a shield
+    // strapped to the forearm covers the hand that holds it); `front` draws it over the body and
+    // under the near arm (a shield raised in front of the chest by the far arm).
+    const after = on.drawAfter ?? (g.over ? on.drawBefore : undefined);
+    if (g.front) out.splice(out.findIndex(p => p.name === 'forearmFront' || p.parent === 'forearmFront'), 0, part);
+    else if (on.drawFirst) out.unshift(part);
     else {
-      const i = out.findIndex(p => p.name === (on.drawAfter ?? on.drawBefore));
-      out.splice(on.drawAfter ? i + 1 : i, 0, part);
+      const i = out.findIndex(p => p.name === (after ?? on.drawBefore));
+      out.splice(after ? i + 1 : i, 0, part);
     }
     byName.set(g.name, part);
   }

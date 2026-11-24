@@ -8,7 +8,8 @@
 //   node tools/raster-trial.js rig <out-folder> <name> <names.json> [--scale 0.5]
 //       names.json maps piece numbers to side-view part names ({ "1": "head", "2": "torso", ... }), or
 //       { "parts": {...}, "gear": { "<n>": { "name", "on": head|hand|offhand|back|hip, "offset"?, "rotate"? } },
-//       "gearHeadRef": "<n>" } with the gear sheet cut into <out>/gear (cut <gear.png> <out>/gear);
+//       "gearHeadRef": "<n>", "hands"?: { "<n>": "forearmFront"|"forearmBack" } } with the grip sheet cut
+//       into <out>/grip (gripping or relaxed forearms that replace the drawn ones), and the gear sheet cut into <out>/gear (cut <gear.png> <out>/gear);
 //       each gear piece is its own slot, worn in the setup pose
 //       writes <out>/<name>.json, .atlas and .png: a project the studio opens, ready for
 //       paint_weights, write_animation, check_skeleton and the exports
@@ -66,6 +67,8 @@ if (cmd === 'cut') {
   const images = {};
   const piece = (dir, n) => decodePng(fs.readFileSync(path.join(out, dir, 'pieces', `${n}.png`)));
   for (const [n, part] of Object.entries(names)) images[part] = piece('', n);
+  // Gripping or relaxed forearms from a grip sheet cut into <out>/grip: { "<n>": "forearmFront", ... }.
+  for (const [n, part] of Object.entries(spec.hands ?? {})) images[part] = piece('grip', n);
   const named = Object.fromEntries(Object.entries(images).map(([k, image]) => [k, { image }]));
   let parts = assembleSideBiped(named, { scale, joints: spec.joints ?? {} });
   if (spec.gear) {
