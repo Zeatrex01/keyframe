@@ -38,9 +38,9 @@ export function clean(dir) {
   for (const folder of ['.backup', '.keyframe']) fs.rmSync(path.join(dir, folder), { recursive: true, force: true });
 }
 
-/** Write one clip (replacing it) into <name>_v2.json. */
-export async function write(dir, name, animation, clip) {
-  const r = await tool(dir, 'write_animation', { animation, from: name + '.json', replace: true, clip });
+/** Write one clip (replacing it) into <name>_v2.json; `extra` adds write_animation arguments (plant). */
+export async function write(dir, name, animation, clip, extra = {}) {
+  const r = await tool(dir, 'write_animation', { animation, from: name + '.json', replace: true, clip, ...extra });
   return r;
 }
 

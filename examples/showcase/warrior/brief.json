@@ -1,0 +1,84 @@
+{
+  "name": "warrior",
+  "title": "Warrior",
+  "kind": "Character",
+  "principles": "character",
+  "subject": "A platformer hero in profile, dressed for a fight: plate armour (leather as the other look of every piece) and a weapon slot that holds a sword, a spear, a bow or an axe.",
+  "intent": "One dressable skeleton for a side-scroller: a guard stance and an attack for each weapon, a punch with no weapon, a run and a jump. The body drives every blow and the feet stay planted where they stand while the hips shift.",
+  "display": {
+    "width": 320,
+    "pixelsPerUnit": 1.2
+  },
+  "teaches": [
+    "weight shift with planted feet",
+    "a stance per weapon",
+    "anticipation and impact",
+    "a run with a moment in the air"
+  ],
+  "preview": {
+    "clip": "attack_sword",
+    "time": 0.3,
+    "viewport": {
+      "x": -170,
+      "y": -10,
+      "width": 400,
+      "height": 300
+    }
+  },
+  "clips": [
+    {
+      "name": "idle_sword",
+      "seconds": 1.6,
+      "loop": true,
+      "does": "guard stance, sword up and forward, breathing over planted feet"
+    },
+    {
+      "name": "attack_sword",
+      "seconds": 0.78,
+      "loop": false,
+      "does": "raise the sword overhead, cut down and forward driven by the hips, hold the hit, recover"
+    },
+    {
+      "name": "idle_spear",
+      "seconds": 1.6,
+      "loop": true,
+      "does": "spear level at the hip, both hands on it, breathing"
+    },
+    {
+      "name": "attack_spear",
+      "seconds": 0.82,
+      "loop": false,
+      "does": "draw back, thrust with the whole body, hold, recover"
+    },
+    {
+      "name": "idle_bow",
+      "seconds": 1.6,
+      "loop": true,
+      "does": "bow low in the near hand, relaxed"
+    },
+    {
+      "name": "shoot_bow",
+      "seconds": 1.1,
+      "loop": false,
+      "does": "raise the bow, draw to the cheek, hold, release with a recoil"
+    },
+    {
+      "name": "punch",
+      "seconds": 0.72,
+      "loop": false,
+      "does": "no weapon: guard, a short pull back, a straight punch from the hips, hold, recover"
+    },
+    {
+      "name": "run",
+      "seconds": 0.6,
+      "loop": true,
+      "does": "two strides with a moment in the air after each push-off, arms opposite the legs, sword in hand"
+    },
+    {
+      "name": "jump",
+      "seconds": 1,
+      "loop": false,
+      "does": "crouch with the feet planted, launch, tuck at the top, land into a planted crouch and stand"
+    }
+  ]
+}

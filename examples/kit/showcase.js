@@ -36,11 +36,12 @@ studio's own tools and passes \`check_skeleton\` and \`critique_animation\` with
 /**
  * @param {string} dir the example folder  @param {string} name base name
  * @param {object} brief  @param {Record<string, object>} clips animation JSON per clip name
+ * @param {{ viewport?: object, skin?: string, strip?: object, extra?: Record<string, object> }} [options] extra: more write_animation arguments per clip (plant)
  */
-export async function finish(dir, name, brief, clips, { viewport, skin, strip = {} } = {}) {
+export async function finish(dir, name, brief, clips, { viewport, skin, strip = {}, extra = {} } = {}) {
   for (const c of brief.clips) {
     if (!clips[c.name]) throw new Error(`${name}: the brief lists ${c.name} but no clip was written`);
-    await write(dir, name, c.name, clips[c.name]);
+    await write(dir, name, c.name, clips[c.name], extra[c.name]);
   }
   await prove(dir, name, brief);
   fs.writeFileSync(path.join(dir, 'brief.json'), JSON.stringify(brief, null, 2) + '\n');

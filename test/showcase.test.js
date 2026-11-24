@@ -11,8 +11,8 @@ const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const SHOWCASE = path.join(ROOT, 'examples', 'showcase');
 const names = fs.readdirSync(SHOWCASE, { withFileTypes: true }).filter(e => e.isDirectory()).map(e => e.name).sort();
 
-test('the showcase holds the five examples the Examples page lists', () => {
-  assert.deepEqual(names, ['chest', 'coin-burst', 'mika', 'pip', 'play-button']);
+test('the showcase holds the examples the Examples page lists', () => {
+  assert.deepEqual(names, ['chest', 'coin-burst', 'mika', 'pip', 'play-button', 'warrior']);
 });
 
 for (const name of names) {

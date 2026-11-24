@@ -1,0 +1,549 @@
+{
+ "skeleton": {
+  "hash": "kf-warrior",
+  "spine": "4.2.43",
+  "x": -107.58,
+  "y": -5.17,
+  "width": 270,
+  "height": 264.22,
+  "images": "./",
+  "audio": ""
+ },
+ "bones": [
+  {
+   "name": "root"
+  },
+  {
+   "name": "body",
+   "parent": "root",
+   "x": 0,
+   "y": 102
+  },
+  {
+   "name": "upperArmBack",
+   "parent": "body",
+   "x": 4.5,
+   "y": 59.55
+  },
+  {
+   "name": "forearmBack",
+   "parent": "upperArmBack",
+   "x": 0,
+   "y": -38.99
+  },
+  {
+   "name": "bracerBack",
+   "parent": "forearmBack",
+   "x": 0,
+   "y": -20.17
+  },
+  {
+   "name": "handBack",
+   "parent": "forearmBack",
+   "x": 0,
+   "y": -36.01
+  },
+  {
+   "name": "pauldronBack",
+   "parent": "upperArmBack",
+   "x": 1.05,
+   "y": -2.52
+  },
+  {
+   "name": "thighBack",
+   "parent": "body",
+   "x": 6,
+   "y": 0
+  },
+  {
+   "name": "shinBack",
+   "parent": "thighBack",
+   "x": 0,
+   "y": -44.99
+  },
+  {
+   "name": "greaveBack",
+   "parent": "shinBack",
+   "x": 0,
+   "y": -12.13
+  },
+  {
+   "name": "footBack",
+   "parent": "shinBack",
+   "x": 0,
+   "y": -43.28
+  },
+  {
+   "name": "cuirass",
+   "parent": "body",
+   "x": 0,
+   "y": 30.75
+  },
+  {
+   "name": "head",
+   "parent": "body",
+   "x": -3,
+   "y": 74.25
+  },
+  {
+   "name": "eye",
+   "parent": "head",
+   "x": 30.84,
+   "y": 34.2
+  },
+  {
+   "name": "helmet",
+   "parent": "head",
+   "x": 9,
+   "y": 37.8
+  },
+  {
+   "name": "thighFront",
+   "parent": "body",
+   "x": -3,
+   "y": 0
+  },
+  {
+   "name": "shinFront",
+   "parent": "thighFront",
+   "x": 0,
+   "y": -44.99
+  },
+  {
+   "name": "greaveFront",
+   "parent": "shinFront",
+   "x": 0,
+   "y": -12.13
+  },
+  {
+   "name": "footFront",
+   "parent": "shinFront",
+   "x": 0,
+   "y": -43.28
+  },
+  {
+   "name": "upperArmFront",
+   "parent": "body",
+   "x": -3,
+   "y": 59.55
+  },
+  {
+   "name": "forearmFront",
+   "parent": "upperArmFront",
+   "x": 0,
+   "y": -38.99
+  },
+  {
+   "name": "bracerFront",
+   "parent": "forearmFront",
+   "x": 0,
+   "y": -20.17
+  },
+  {
+   "name": "handFront",
+   "parent": "forearmFront",
+   "x": 0,
+   "y": -36.01
+  },
+  {
+   "name": "weapon",
+   "parent": "handFront",
+   "x": 0.42,
+   "y": -6.72
+  },
+  {
+   "name": "pauldronFront",
+   "parent": "upperArmFront",
+   "x": 1.05,
+   "y": -2.52
+  }
+ ],
+ "slots": [
+  {
+   "name": "upperArmBack",
+   "bone": "upperArmBack",
+   "attachment": "upperArmBack"
+  },
+  {
+   "name": "forearmBack",
+   "bone": "forearmBack",
+   "attachment": "forearmBack"
+  },
+  {
+   "name": "bracerBack",
+   "bone": "bracerBack",
+   "attachment": "bracerBack"
+  },
+  {
+   "name": "handBack",
+   "bone": "handBack",
+   "attachment": "handBack"
+  },
+  {
+   "name": "pauldronBack",
+   "bone": "pauldronBack",
+   "attachment": "pauldronBack"
+  },
+  {
+   "name": "thighBack",
+   "bone": "thighBack",
+   "attachment": "thighBack"
+  },
+  {
+   "name": "shinBack",
+   "bone": "shinBack",
+   "attachment": "shinBack"
+  },
+  {
+   "name": "greaveBack",
+   "bone": "greaveBack",
+   "attachment": "greaveBack"
+  },
+  {
+   "name": "footBack",
+   "bone": "footBack",
+   "attachment": "footBack"
+  },
+  {
+   "name": "body",
+   "bone": "body",
+   "attachment": "body"
+  },
+  {
+   "name": "cuirass",
+   "bone": "cuirass",
+   "attachment": "cuirass"
+  },
+  {
+   "name": "head",
+   "bone": "head",
+   "attachment": "head"
+  },
+  {
+   "name": "eye",
+   "bone": "eye",
+   "attachment": "eye"
+  },
+  {
+   "name": "helmet",
+   "bone": "helmet",
+   "attachment": "helmet"
+  },
+  {
+   "name": "thighFront",
+   "bone": "thighFront",
+   "attachment": "thighFront"
+  },
+  {
+   "name": "shinFront",
+   "bone": "shinFront",
+   "attachment": "shinFront"
+  },
+  {
+   "name": "greaveFront",
+   "bone": "greaveFront",
+   "attachment": "greaveFront"
+  },
+  {
+   "name": "footFront",
+   "bone": "footFront",
+   "attachment": "footFront"
+  },
+  {
+   "name": "upperArmFront",
+   "bone": "upperArmFront",
+   "attachment": "upperArmFront"
+  },
+  {
+   "name": "forearmFront",
+   "bone": "forearmFront",
+   "attachment": "forearmFront"
+  },
+  {
+   "name": "bracerFront",
+   "bone": "bracerFront",
+   "attachment": "bracerFront"
+  },
+  {
+   "name": "weapon",
+   "bone": "weapon",
+   "attachment": "weapon"
+  },
+  {
+   "name": "handFront",
+   "bone": "handFront",
+   "attachment": "handFront"
+  },
+  {
+   "name": "pauldronFront",
+   "bone": "pauldronFront",
+   "attachment": "pauldronFront"
+  }
+ ],
+ "skins": [
+  {
+   "name": "default",
+   "attachments": {
+    "upperArmBack": {
+     "upperArmBack": {
+      "x": 0,
+      "y": -18.71,
+      "width": 21,
+      "height": 58.43
+     }
+    },
+    "forearmBack": {
+     "forearmBack": {
+      "x": 0,
+      "y": -17.48,
+      "width": 17.22,
+      "height": 52.17
+     }
+    },
+    "bracerBack": {
+     "bracerBack": {
+      "x": 0,
+      "y": 0,
+      "width": 21.42,
+      "height": 22.32
+     },
+     "bracerBack_leather": {
+      "x": 0,
+      "y": 0,
+      "width": 21.42,
+      "height": 22.32
+     }
+    },
+    "handBack": {
+     "handBack": {
+      "x": 0,
+      "y": -6.3,
+      "width": 25.2,
+      "height": 25.2
+     }
+    },
+    "pauldronBack": {
+     "pauldronBack": {
+      "x": 0,
+      "y": 0,
+      "width": 37.8,
+      "height": 30.45
+     },
+     "pauldronBack_leather": {
+      "x": 0,
+      "y": 0,
+      "width": 37.8,
+      "height": 30.45
+     }
+    },
+    "thighBack": {
+     "thighBack": {
+      "x": 0,
+      "y": -21.54,
+      "width": 25.5,
+      "height": 68.59
+     }
+    },
+    "shinBack": {
+     "shinBack": {
+      "x": 0,
+      "y": -20.24,
+      "width": 20.91,
+      "height": 61.38
+     }
+    },
+    "greaveBack": {
+     "greaveBack": {
+      "x": 0,
+      "y": 0,
+      "width": 24.48,
+      "height": 44.64
+     },
+     "greaveBack_leather": {
+      "x": 0,
+      "y": 0,
+      "width": 24.48,
+      "height": 44.64
+     }
+    },
+    "footBack": {
+     "footBack": {
+      "x": 7.8,
+      "y": -3.04,
+      "width": 39,
+      "height": 21.38
+     }
+    },
+    "body": {
+     "body": {
+      "x": 0,
+      "y": 30.75,
+      "width": 57,
+      "height": 87
+     }
+    },
+    "cuirass": {
+     "cuirass": {
+      "x": 0,
+      "y": 0,
+      "width": 57,
+      "height": 87
+     },
+     "cuirass_leather": {
+      "x": 0,
+      "y": 0,
+      "width": 57,
+      "height": 87
+     }
+    },
+    "head": {
+     "head": {
+      "x": 9,
+      "y": 37.8,
+      "width": 84,
+      "height": 90
+     }
+    },
+    "eye": {
+     "eye": {
+      "x": 0,
+      "y": 0,
+      "width": 11.09,
+      "height": 14.78
+     }
+    },
+    "helmet": {
+     "helmet": {
+      "x": 0,
+      "y": 0,
+      "width": 84,
+      "height": 90
+     },
+     "helmet_leather": {
+      "x": 0,
+      "y": 0,
+      "width": 84,
+      "height": 90
+     }
+    },
+    "thighFront": {
+     "thighFront": {
+      "x": 0,
+      "y": -21.54,
+      "width": 25.5,
+      "height": 68.59
+     }
+    },
+    "shinFront": {
+     "shinFront": {
+      "x": 0,
+      "y": -20.24,
+      "width": 20.91,
+      "height": 61.38
+     }
+    },
+    "greaveFront": {
+     "greaveFront": {
+      "x": 0,
+      "y": 0,
+      "width": 24.48,
+      "height": 44.64
+     },
+     "greaveFront_leather": {
+      "x": 0,
+      "y": 0,
+      "width": 24.48,
+      "height": 44.64
+     }
+    },
+    "footFront": {
+     "footFront": {
+      "x": 7.8,
+      "y": -3.04,
+      "width": 39,
+      "height": 21.38
+     }
+    },
+    "upperArmFront": {
+     "upperArmFront": {
+      "x": 0,
+      "y": -18.71,
+      "width": 21,
+      "height": 58.43
+     }
+    },
+    "forearmFront": {
+     "forearmFront": {
+      "x": 0,
+      "y": -17.48,
+      "width": 17.22,
+      "height": 52.17
+     }
+    },
+    "bracerFront": {
+     "bracerFront": {
+      "x": 0,
+      "y": 0,
+      "width": 21.42,
+      "height": 22.32
+     },
+     "bracerFront_leather": {
+      "x": 0,
+      "y": 0,
+      "width": 21.42,
+      "height": 22.32
+     }
+    },
+    "weapon": {
+     "weapon": {
+      "x": 30,
+      "y": 0,
+      "width": 270,
+      "height": 170
+     },
+     "weapon_spear": {
+      "x": 30,
+      "y": 0,
+      "width": 270,
+      "height": 170
+     },
+     "weapon_bow": {
+      "x": 30,
+      "y": 0,
+      "width": 270,
+      "height": 170
+     },
+     "weapon_axe": {
+      "x": 30,
+      "y": 0,
+      "width": 270,
+      "height": 170
+     }
+    },
+    "handFront": {
+     "handFront": {
+      "x": 0,
+      "y": -6.3,
+      "width": 25.2,
+      "height": 25.2
+     }
+    },
+    "pauldronFront": {
+     "pauldronFront": {
+      "x": 0,
+      "y": 0,
+      "width": 37.8,
+      "height": 30.45
+     },
+     "pauldronFront_leather": {
+      "x": 0,
+      "y": 0,
+      "width": 37.8,
+      "height": 30.45
+     }
+    }
+   }
+  }
+ ],
+ "animations": {}
+}

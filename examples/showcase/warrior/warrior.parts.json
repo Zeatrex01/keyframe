@@ -1,0 +1,535 @@
+{
+ "format": "keyframe-parts",
+ "version": 1,
+ "name": "warrior",
+ "resolution": 2,
+ "parts": [
+  {
+   "name": "upperArmBack",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 21 58.43\" width=\"21\" height=\"58.43\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#7e66ce\"/><stop offset=\"1\" stop-color=\"#6a53b9\"/></linearGradient></defs><path d=\"M0.75 10.5 L2.33 49.5 A8.17 8.17 0 0 0 18.67 49.5 L20.25 10.5 A9.75 9.75 0 0 0 0.75 10.5 Z\" fill=\"url(#g1)\" stroke=\"#574498\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></svg>",
+   "at": [
+    4.5,
+    142.84
+   ],
+   "pivot": [
+    4.5,
+    161.55
+   ],
+   "size": [
+    21,
+    58.43
+   ],
+   "source": {
+    "of": "warrior"
+   },
+   "parent": "body"
+  },
+  {
+   "name": "forearmBack",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 17.22 52.17\" width=\"17.22\" height=\"52.17\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#cfae93\"/><stop offset=\"1\" stop-color=\"#ba9a7f\"/></linearGradient></defs><path d=\"M0.75 8.61 L1.8 44.61 A6.81 6.81 0 0 0 15.42 44.61 L16.47 8.61 A7.86 7.86 0 0 0 0.75 8.61 Z\" fill=\"url(#g1)\" stroke=\"#987e68\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></svg>",
+   "at": [
+    4.5,
+    105.08
+   ],
+   "pivot": [
+    4.5,
+    122.56
+   ],
+   "size": [
+    17.22,
+    52.17
+   ],
+   "source": {
+    "of": "warrior"
+   },
+   "parent": "upperArmBack"
+  },
+  {
+   "name": "bracerBack",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 21.42 22.32\" width=\"21.42\" height=\"22.32\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#a2a9b2\"/><stop offset=\"1\" stop-color=\"#8e959e\"/></linearGradient></defs><rect x=\"0\" y=\"0\" width=\"21.42\" height=\"22.32\" rx=\"6\" fill=\"url(#g1)\" stroke=\"#747a81\" stroke-width=\"1.5\" stroke-linejoin=\"round\"/><line x1=\"2.57\" y1=\"6.7\" x2=\"18.85\" y2=\"6.7\" fill=\"none\" stroke=\"#70767c\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><line x1=\"2.57\" y1=\"15.62\" x2=\"18.85\" y2=\"15.62\" fill=\"none\" stroke=\"#cd9634\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></svg>",
+   "at": [
+    4.5,
+    102.39
+   ],
+   "pivot": [
+    4.5,
+    102.39
+   ],
+   "size": [
+    21.42,
+    22.32
+   ],
+   "states": {
+    "leather": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 21.42 22.32\" width=\"21.42\" height=\"22.32\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#7e593f\"/><stop offset=\"1\" stop-color=\"#6a462d\"/></linearGradient></defs><rect x=\"0\" y=\"0\" width=\"21.42\" height=\"22.32\" rx=\"6\" fill=\"url(#g1)\" stroke=\"#573925\" stroke-width=\"1.5\" stroke-linejoin=\"round\"/><line x1=\"2.57\" y1=\"6.7\" x2=\"18.85\" y2=\"6.7\" fill=\"none\" stroke=\"#513522\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><line x1=\"2.57\" y1=\"15.62\" x2=\"18.85\" y2=\"15.62\" fill=\"none\" stroke=\"#513522\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></svg>"
+   },
+   "source": {
+    "of": "warrior"
+   },
+   "parent": "forearmBack"
+  },
+  {
+   "name": "handBack",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 25.2 25.2\" width=\"25.2\" height=\"25.2\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#cfae93\"/><stop offset=\"1\" stop-color=\"#ba9a7f\"/></linearGradient><linearGradient id=\"g2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#cfae93\"/><stop offset=\"1\" stop-color=\"#ba9a7f\"/></linearGradient></defs><circle cx=\"12.6\" cy=\"13.02\" r=\"9.75\" fill=\"url(#g1)\" stroke=\"#987e68\" stroke-width=\"1.5\" stroke-linejoin=\"round\"/><ellipse cx=\"18.06\" cy=\"9.66\" rx=\"3.15\" ry=\"4.2\" fill=\"url(#g2)\" stroke=\"#987e68\" stroke-width=\"1\" stroke-linejoin=\"round\"/></svg>",
+   "at": [
+    4.5,
+    80.25
+   ],
+   "pivot": [
+    4.5,
+    86.55
+   ],
+   "size": [
+    25.2,
+    25.2
+   ],
+   "source": {
+    "of": "warrior"
+   },
+   "parent": "forearmBack"
+  },
+  {
+   "name": "pauldronBack",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 37.8 30.45\" width=\"37.8\" height=\"30.45\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#a2a9b2\"/><stop offset=\"1\" stop-color=\"#8e959e\"/></linearGradient></defs><path d=\"M2.27 23.75 Q1.51 1.83 18.9 1.83 Q36.29 1.83 35.53 23.75 Q18.9 29.23 2.27 23.75 Z\" fill=\"url(#g1)\" stroke=\"#747a81\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><path d=\"M4.54 17.05 Q18.9 22.53 33.26 17.05\" fill=\"none\" stroke=\"#cd9634\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></svg>",
+   "at": [
+    5.55,
+    159.03
+   ],
+   "pivot": [
+    5.55,
+    159.03
+   ],
+   "size": [
+    37.8,
+    30.45
+   ],
+   "states": {
+    "leather": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 37.8 30.45\" width=\"37.8\" height=\"30.45\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#7e593f\"/><stop offset=\"1\" stop-color=\"#6a462d\"/></linearGradient></defs><path d=\"M2.27 23.75 Q1.51 1.83 18.9 1.83 Q36.29 1.83 35.53 23.75 Q18.9 29.23 2.27 23.75 Z\" fill=\"url(#g1)\" stroke=\"#573925\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><path d=\"M4.54 17.05 Q18.9 22.53 33.26 17.05\" fill=\"none\" stroke=\"#513522\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></svg>"
+   },
+   "source": {
+    "of": "warrior"
+   },
+   "parent": "upperArmBack"
+  },
+  {
+   "name": "thighBack",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 25.5 68.59\" width=\"25.5\" height=\"68.59\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#666871\"/><stop offset=\"1\" stop-color=\"#53555d\"/></linearGradient></defs><path d=\"M0.75 12.75 L2.66 57.75 A10.09 10.09 0 0 0 22.84 57.75 L24.75 12.75 A12 12 0 0 0 0.75 12.75 Z\" fill=\"url(#g1)\" stroke=\"#44464d\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></svg>",
+   "at": [
+    6,
+    80.46
+   ],
+   "pivot": [
+    6,
+    102
+   ],
+   "size": [
+    25.5,
+    68.59
+   ],
+   "source": {
+    "of": "warrior"
+   },
+   "parent": "body"
+  },
+  {
+   "name": "shinBack",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 20.91 61.38\" width=\"20.91\" height=\"61.38\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#666871\"/><stop offset=\"1\" stop-color=\"#53555d\"/></linearGradient></defs><path d=\"M0.75 10.46 L2.28 52.46 A8.17 8.17 0 0 0 18.63 52.46 L20.16 10.46 A9.71 9.71 0 0 0 0.75 10.46 Z\" fill=\"url(#g1)\" stroke=\"#44464d\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></svg>",
+   "at": [
+    6,
+    36.77
+   ],
+   "pivot": [
+    6,
+    57.01
+   ],
+   "size": [
+    20.91,
+    61.38
+   ],
+   "source": {
+    "of": "warrior"
+   },
+   "parent": "thighBack"
+  },
+  {
+   "name": "greaveBack",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24.48 44.64\" width=\"24.48\" height=\"44.64\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#a2a9b2\"/><stop offset=\"1\" stop-color=\"#8e959e\"/></linearGradient><linearGradient id=\"g2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#a2a9b2\"/><stop offset=\"1\" stop-color=\"#8e959e\"/></linearGradient></defs><rect x=\"1.96\" y=\"10.71\" width=\"20.56\" height=\"33.93\" rx=\"6\" fill=\"url(#g1)\" stroke=\"#747a81\" stroke-width=\"1.5\" stroke-linejoin=\"round\"/><ellipse cx=\"12.24\" cy=\"10.71\" rx=\"11.26\" ry=\"9.18\" fill=\"url(#g2)\" stroke=\"#747a81\" stroke-width=\"1.5\" stroke-linejoin=\"round\"/><line x1=\"12.24\" y1=\"22.95\" x2=\"12.24\" y2=\"40.18\" fill=\"none\" stroke=\"#70767c\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></svg>",
+   "at": [
+    6,
+    44.88
+   ],
+   "pivot": [
+    6,
+    44.88
+   ],
+   "size": [
+    24.48,
+    44.64
+   ],
+   "states": {
+    "leather": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24.48 44.64\" width=\"24.48\" height=\"44.64\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#7e593f\"/><stop offset=\"1\" stop-color=\"#6a462d\"/></linearGradient><linearGradient id=\"g2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#5d4331\"/><stop offset=\"1\" stop-color=\"#4a311f\"/></linearGradient></defs><rect x=\"1.96\" y=\"10.71\" width=\"20.56\" height=\"33.93\" rx=\"6\" fill=\"url(#g1)\" stroke=\"#573925\" stroke-width=\"1.5\" stroke-linejoin=\"round\"/><ellipse cx=\"12.24\" cy=\"10.71\" rx=\"11.26\" ry=\"9.18\" fill=\"url(#g2)\" stroke=\"#3d281a\" stroke-width=\"1.5\" stroke-linejoin=\"round\"/><line x1=\"12.24\" y1=\"22.95\" x2=\"12.24\" y2=\"40.18\" fill=\"none\" stroke=\"#513522\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></svg>"
+   },
+   "source": {
+    "of": "warrior"
+   },
+   "parent": "shinBack"
+  },
+  {
+   "name": "footBack",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 39 21.38\" width=\"39\" height=\"21.38\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#593f30\"/><stop offset=\"1\" stop-color=\"#462d1d\"/></linearGradient></defs><path d=\"M0.75 20.63 L0.75 6.41 Q0.75 0.75 10.69 0.75 L21.45 0.75 Q38.25 5.34 38.25 16.03 L38.25 20.63 Z\" fill=\"url(#g1)\" stroke=\"#392518\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></svg>",
+   "at": [
+    13.8,
+    10.69
+   ],
+   "pivot": [
+    6,
+    13.73
+   ],
+   "size": [
+    39,
+    21.38
+   ],
+   "source": {
+    "of": "warrior"
+   },
+   "parent": "shinBack"
+  },
+  {
+   "name": "body",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 57 87\" width=\"57\" height=\"87\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#9276f1\"/><stop offset=\"1\" stop-color=\"#7e63dc\"/></linearGradient></defs><path d=\"M7.59 0.75 L39.15 0.75 Q56.25 5.22 56.25 34.8 L53.97 86.25 L3.03 86.25 L0.75 21.75 Q0.75 0.75 7.59 0.75 Z\" fill=\"url(#g1)\" stroke=\"#6851b4\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><rect x=\"2.46\" y=\"66.12\" width=\"52.08\" height=\"20.13\" rx=\"6\" fill=\"#6c6f7a\" stroke=\"#51535c\" stroke-width=\"1.5\" stroke-linejoin=\"round\"/></svg>",
+   "at": [
+    0,
+    132.75
+   ],
+   "pivot": [
+    0,
+    102
+   ],
+   "size": [
+    57,
+    87
+   ],
+   "source": {
+    "component": {
+     "component": "figure",
+     "build": "side",
+     "h": 300,
+     "armor": "plate",
+     "weapons": [
+      "sword",
+      "spear",
+      "bow",
+      "axe"
+     ],
+     "shirt": "secondary",
+     "pants": "ink+35",
+     "shoes": "#5a3a26"
+    },
+    "of": "warrior",
+    "at": [
+     0,
+     0
+    ]
+   }
+  },
+  {
+   "name": "cuirass",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 57 87\" width=\"57\" height=\"87\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#bec6d1\"/><stop offset=\"1\" stop-color=\"#a9b2bc\"/></linearGradient></defs><path d=\"M9.12 5.22 L37.62 5.22 Q55.29 9.57 55.29 36.54 L53.58 69.6 L2.85 69.6 L1.71 24.36 Q1.71 5.22 9.12 5.22 Z\" fill=\"url(#g1)\" stroke=\"#8b929a\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><path d=\"M28.5 10.44 Q49.02 29.58 45.6 57.42\" fill=\"none\" stroke=\"#858c94\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><rect x=\"1.71\" y=\"62.64\" width=\"53.58\" height=\"10.44\" rx=\"5.22\" fill=\"#8a5a3a\" stroke=\"#68442c\" stroke-width=\"1.5\" stroke-linejoin=\"round\"/><rect x=\"42.18\" y=\"60.9\" width=\"7.98\" height=\"13.92\" rx=\"3.99\" fill=\"#f4b23e\" stroke=\"#b7862f\" stroke-width=\"1\" stroke-linejoin=\"round\"/></svg>",
+   "at": [
+    0,
+    132.75
+   ],
+   "pivot": [
+    0,
+    132.75
+   ],
+   "size": [
+    57,
+    87
+   ],
+   "states": {
+    "leather": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 57 87\" width=\"57\" height=\"87\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#926648\"/><stop offset=\"1\" stop-color=\"#7e5235\"/></linearGradient></defs><path d=\"M9.12 5.22 L37.62 5.22 Q55.29 9.57 55.29 36.54 L53.58 69.6 L2.85 69.6 L1.71 24.36 Q1.71 5.22 9.12 5.22 Z\" fill=\"url(#g1)\" stroke=\"#68442c\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><path d=\"M4.56 29.58 L54.15 29.58 M3.99 46.98 L54.15 46.98\" fill=\"none\" stroke=\"#613f29\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><rect x=\"1.71\" y=\"62.64\" width=\"53.58\" height=\"10.44\" rx=\"5.22\" fill=\"#6e482e\" stroke=\"#533623\" stroke-width=\"1.5\" stroke-linejoin=\"round\"/><rect x=\"42.18\" y=\"60.9\" width=\"7.98\" height=\"13.92\" rx=\"3.99\" fill=\"#68442c\" stroke=\"#4e3321\" stroke-width=\"1\" stroke-linejoin=\"round\"/></svg>"
+   },
+   "source": {
+    "of": "warrior"
+   },
+   "parent": "body"
+  },
+  {
+   "name": "head",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 84 90\" width=\"84\" height=\"90\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#f3ccac\"/><stop offset=\"1\" stop-color=\"#deb798\"/></linearGradient><linearGradient id=\"g2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#626571\"/><stop offset=\"1\" stop-color=\"#4f525d\"/></linearGradient><linearGradient id=\"g3\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#f3ccac\"/><stop offset=\"1\" stop-color=\"#deb798\"/></linearGradient></defs><path d=\"M10.08 45 Q6.72 3.6 43.68 3.6 Q73.92 4.5 75.6 36 L82.32 52.2 Q83.16 56.7 77.28 57.6 Q77.28 81 55.44 85.5 Q33.6 88.2 23.52 77.4 Q11.76 66.6 10.08 45 Z\" fill=\"url(#g1)\" stroke=\"#b6967d\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><path d=\"M8.4 55.8 Q1.68 1.8 46.2 1.8 Q75.6 3.6 75.6 27 Q60.48 21.6 50.4 28.8 Q42 36 35.28 32.4 Q25.2 43.2 20.16 63 Q11.76 64.8 8.4 55.8 Z\" fill=\"url(#g2)\" stroke=\"#41434d\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><ellipse cx=\"33.6\" cy=\"50.4\" rx=\"5.88\" ry=\"8.1\" fill=\"url(#g3)\" stroke=\"#b6967d\" stroke-width=\"1\" stroke-linejoin=\"round\"/><path d=\"M55.44 37.8 Q62.16 35.1 68.88 37.8\" fill=\"none\" stroke=\"#494c57\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><ellipse cx=\"58.8\" cy=\"66.6\" rx=\"5.88\" ry=\"3.15\" fill=\"#f6afaf\" opacity=\"0.5\"/><path d=\"M67.2 72 Q71.4 73.8 74.76 71.1\" fill=\"none\" stroke=\"#993e3e\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></svg>",
+   "at": [
+    6,
+    214.05
+   ],
+   "pivot": [
+    -3,
+    176.25
+   ],
+   "size": [
+    84,
+    90
+   ],
+   "source": {
+    "of": "warrior"
+   },
+   "parent": "body"
+  },
+  {
+   "name": "eye",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 11.09 14.78\" width=\"11.09\" height=\"14.78\"><ellipse cx=\"5.54\" cy=\"7.39\" rx=\"4.16\" ry=\"6.65\" fill=\"#343847\"/><circle cx=\"7.21\" cy=\"4.62\" r=\"1.48\" fill=\"#ffffff\"/></svg>",
+   "at": [
+    27.84,
+    210.45
+   ],
+   "pivot": [
+    27.84,
+    210.45
+   ],
+   "size": [
+    11.09,
+    14.78
+   ],
+   "source": {
+    "of": "warrior"
+   },
+   "parent": "head"
+  },
+  {
+   "name": "helmet",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 84 90\" width=\"84\" height=\"90\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#bec6d1\"/><stop offset=\"1\" stop-color=\"#a9b2bc\"/></linearGradient></defs><path d=\"M5.88 63 Q0 0 43.68 0 Q80.64 1.8 79.8 39.6 L37.8 39.6 Q28.56 41.4 25.2 63 Z\" fill=\"url(#g1)\" stroke=\"#8b929a\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><path d=\"M78.12 36 L36.96 36\" fill=\"none\" stroke=\"#f4b23e\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><path d=\"M42 1.8 Q58.8 14.4 57.12 34.2\" fill=\"none\" stroke=\"#858c94\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></svg>",
+   "at": [
+    6,
+    214.05
+   ],
+   "pivot": [
+    6,
+    214.05
+   ],
+   "size": [
+    84,
+    90
+   ],
+   "states": {
+    "leather": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 84 90\" width=\"84\" height=\"90\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#926648\"/><stop offset=\"1\" stop-color=\"#7e5235\"/></linearGradient></defs><path d=\"M5.88 63 Q0 0 43.68 0 Q80.64 1.8 79.8 39.6 L37.8 39.6 Q28.56 41.4 25.2 63 Z\" fill=\"url(#g1)\" stroke=\"#68442c\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><path d=\"M78.12 36 L36.96 36\" fill=\"none\" stroke=\"#613f29\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><path d=\"M42 1.8 Q58.8 14.4 57.12 34.2\" fill=\"none\" stroke=\"#613f29\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></svg>"
+   },
+   "source": {
+    "of": "warrior"
+   },
+   "parent": "head"
+  },
+  {
+   "name": "thighFront",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 25.5 68.59\" width=\"25.5\" height=\"68.59\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#767983\"/><stop offset=\"1\" stop-color=\"#636670\"/></linearGradient></defs><path d=\"M0.75 12.75 L2.66 57.75 A10.09 10.09 0 0 0 22.84 57.75 L24.75 12.75 A12 12 0 0 0 0.75 12.75 Z\" fill=\"url(#g1)\" stroke=\"#51535c\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></svg>",
+   "at": [
+    -3,
+    80.46
+   ],
+   "pivot": [
+    -3,
+    102
+   ],
+   "size": [
+    25.5,
+    68.59
+   ],
+   "source": {
+    "of": "warrior"
+   },
+   "parent": "body"
+  },
+  {
+   "name": "shinFront",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 20.91 61.38\" width=\"20.91\" height=\"61.38\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#767983\"/><stop offset=\"1\" stop-color=\"#636670\"/></linearGradient></defs><path d=\"M0.75 10.46 L2.28 52.46 A8.17 8.17 0 0 0 18.63 52.46 L20.16 10.46 A9.71 9.71 0 0 0 0.75 10.46 Z\" fill=\"url(#g1)\" stroke=\"#51535c\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></svg>",
+   "at": [
+    -3,
+    36.77
+   ],
+   "pivot": [
+    -3,
+    57.01
+   ],
+   "size": [
+    20.91,
+    61.38
+   ],
+   "source": {
+    "of": "warrior"
+   },
+   "parent": "thighFront"
+  },
+  {
+   "name": "greaveFront",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24.48 44.64\" width=\"24.48\" height=\"44.64\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#bec6d1\"/><stop offset=\"1\" stop-color=\"#a9b2bc\"/></linearGradient><linearGradient id=\"g2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#bec6d1\"/><stop offset=\"1\" stop-color=\"#a9b2bc\"/></linearGradient></defs><rect x=\"1.96\" y=\"10.71\" width=\"20.56\" height=\"33.93\" rx=\"6\" fill=\"url(#g1)\" stroke=\"#8b929a\" stroke-width=\"1.5\" stroke-linejoin=\"round\"/><ellipse cx=\"12.24\" cy=\"10.71\" rx=\"11.26\" ry=\"9.18\" fill=\"url(#g2)\" stroke=\"#8b929a\" stroke-width=\"1.5\" stroke-linejoin=\"round\"/><line x1=\"12.24\" y1=\"22.95\" x2=\"12.24\" y2=\"40.18\" fill=\"none\" stroke=\"#858c94\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></svg>",
+   "at": [
+    -3,
+    44.88
+   ],
+   "pivot": [
+    -3,
+    44.88
+   ],
+   "size": [
+    24.48,
+    44.64
+   ],
+   "states": {
+    "leather": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24.48 44.64\" width=\"24.48\" height=\"44.64\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#926648\"/><stop offset=\"1\" stop-color=\"#7e5235\"/></linearGradient><linearGradient id=\"g2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#6c4c38\"/><stop offset=\"1\" stop-color=\"#593a26\"/></linearGradient></defs><rect x=\"1.96\" y=\"10.71\" width=\"20.56\" height=\"33.93\" rx=\"6\" fill=\"url(#g1)\" stroke=\"#68442c\" stroke-width=\"1.5\" stroke-linejoin=\"round\"/><ellipse cx=\"12.24\" cy=\"10.71\" rx=\"11.26\" ry=\"9.18\" fill=\"url(#g2)\" stroke=\"#492f1f\" stroke-width=\"1.5\" stroke-linejoin=\"round\"/><line x1=\"12.24\" y1=\"22.95\" x2=\"12.24\" y2=\"40.18\" fill=\"none\" stroke=\"#613f29\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></svg>"
+   },
+   "source": {
+    "of": "warrior"
+   },
+   "parent": "shinFront"
+  },
+  {
+   "name": "footFront",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 39 21.38\" width=\"39\" height=\"21.38\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#664835\"/><stop offset=\"1\" stop-color=\"#523523\"/></linearGradient></defs><path d=\"M0.75 20.63 L0.75 6.41 Q0.75 0.75 10.69 0.75 L21.45 0.75 Q38.25 5.34 38.25 16.03 L38.25 20.63 Z\" fill=\"url(#g1)\" stroke=\"#442c1d\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></svg>",
+   "at": [
+    4.8,
+    10.69
+   ],
+   "pivot": [
+    -3,
+    13.73
+   ],
+   "size": [
+    39,
+    21.38
+   ],
+   "source": {
+    "of": "warrior"
+   },
+   "parent": "shinFront"
+  },
+  {
+   "name": "upperArmFront",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 21 58.43\" width=\"21\" height=\"58.43\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#9276f1\"/><stop offset=\"1\" stop-color=\"#7e63dc\"/></linearGradient></defs><path d=\"M0.75 10.5 L2.33 49.5 A8.17 8.17 0 0 0 18.67 49.5 L20.25 10.5 A9.75 9.75 0 0 0 0.75 10.5 Z\" fill=\"url(#g1)\" stroke=\"#6851b4\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></svg>",
+   "at": [
+    -3,
+    142.84
+   ],
+   "pivot": [
+    -3,
+    161.55
+   ],
+   "size": [
+    21,
+    58.43
+   ],
+   "source": {
+    "of": "warrior"
+   },
+   "parent": "body"
+  },
+  {
+   "name": "forearmFront",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 17.22 52.17\" width=\"17.22\" height=\"52.17\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#f3ccac\"/><stop offset=\"1\" stop-color=\"#deb798\"/></linearGradient></defs><path d=\"M0.75 8.61 L1.8 44.61 A6.81 6.81 0 0 0 15.42 44.61 L16.47 8.61 A7.86 7.86 0 0 0 0.75 8.61 Z\" fill=\"url(#g1)\" stroke=\"#b6967d\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></svg>",
+   "at": [
+    -3,
+    105.08
+   ],
+   "pivot": [
+    -3,
+    122.56
+   ],
+   "size": [
+    17.22,
+    52.17
+   ],
+   "source": {
+    "of": "warrior"
+   },
+   "parent": "upperArmFront"
+  },
+  {
+   "name": "bracerFront",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 21.42 22.32\" width=\"21.42\" height=\"22.32\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#bec6d1\"/><stop offset=\"1\" stop-color=\"#a9b2bc\"/></linearGradient></defs><rect x=\"0\" y=\"0\" width=\"21.42\" height=\"22.32\" rx=\"6\" fill=\"url(#g1)\" stroke=\"#8b929a\" stroke-width=\"1.5\" stroke-linejoin=\"round\"/><line x1=\"2.57\" y1=\"6.7\" x2=\"18.85\" y2=\"6.7\" fill=\"none\" stroke=\"#858c94\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><line x1=\"2.57\" y1=\"15.62\" x2=\"18.85\" y2=\"15.62\" fill=\"none\" stroke=\"#f4b23e\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></svg>",
+   "at": [
+    -3,
+    102.39
+   ],
+   "pivot": [
+    -3,
+    102.39
+   ],
+   "size": [
+    21.42,
+    22.32
+   ],
+   "states": {
+    "leather": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 21.42 22.32\" width=\"21.42\" height=\"22.32\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#926648\"/><stop offset=\"1\" stop-color=\"#7e5235\"/></linearGradient></defs><rect x=\"0\" y=\"0\" width=\"21.42\" height=\"22.32\" rx=\"6\" fill=\"url(#g1)\" stroke=\"#68442c\" stroke-width=\"1.5\" stroke-linejoin=\"round\"/><line x1=\"2.57\" y1=\"6.7\" x2=\"18.85\" y2=\"6.7\" fill=\"none\" stroke=\"#613f29\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><line x1=\"2.57\" y1=\"15.62\" x2=\"18.85\" y2=\"15.62\" fill=\"none\" stroke=\"#613f29\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></svg>"
+   },
+   "source": {
+    "of": "warrior"
+   },
+   "parent": "forearmFront"
+  },
+  {
+   "name": "weapon",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 270 170\" width=\"270\" height=\"170\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#e5eaef\"/><stop offset=\"1\" stop-color=\"#d0d5da\"/></linearGradient><linearGradient id=\"g2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#f5b74c\"/><stop offset=\"1\" stop-color=\"#e0a339\"/></linearGradient><linearGradient id=\"g3\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#f5b74c\"/><stop offset=\"1\" stop-color=\"#e0a339\"/></linearGradient></defs><rect x=\"94\" y=\"81.5\" width=\"22\" height=\"7\" rx=\"3.5\" fill=\"#8a5a3a\" stroke=\"#68442c\" stroke-width=\"1\" stroke-linejoin=\"round\"/><path d=\"M118 79.5 L201 81 L215 85 L201 89 L118 90.5 Z\" fill=\"url(#g1)\" stroke=\"#aaaeb3\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><line x1=\"123\" y1=\"85\" x2=\"197\" y2=\"85\" fill=\"none\" stroke=\"#babec3\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><rect x=\"114\" y=\"70\" width=\"5\" height=\"30\" rx=\"2.5\" fill=\"url(#g2)\" stroke=\"#b7862f\" stroke-width=\"1\" stroke-linejoin=\"round\"/><circle cx=\"91\" cy=\"85\" r=\"5\" fill=\"url(#g3)\" stroke=\"#b7862f\" stroke-width=\"1\" stroke-linejoin=\"round\"/></svg>",
+   "at": [
+    27.42,
+    79.83
+   ],
+   "pivot": [
+    -2.58,
+    79.83
+   ],
+   "size": [
+    270,
+    170
+   ],
+   "states": {
+    "spear": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 270 170\" width=\"270\" height=\"170\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#bec6d1\"/><stop offset=\"1\" stop-color=\"#a9b2bc\"/></linearGradient><linearGradient id=\"g2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#f5b74c\"/><stop offset=\"1\" stop-color=\"#e0a339\"/></linearGradient></defs><rect x=\"5\" y=\"82.4\" width=\"226\" height=\"5.2\" rx=\"2.6\" fill=\"#9a6a3e\" stroke=\"#74502f\" stroke-width=\"1\" stroke-linejoin=\"round\"/><path d=\"M229 79 Q245 78 267 85 Q245 92 229 91 Z\" fill=\"url(#g1)\" stroke=\"#8b929a\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><rect x=\"223\" y=\"81\" width=\"7\" height=\"8\" rx=\"3.5\" fill=\"url(#g2)\" stroke=\"#b7862f\" stroke-width=\"1\" stroke-linejoin=\"round\"/></svg>",
+    "bow": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 270 170\" width=\"270\" height=\"170\"><line x1=\"83\" y1=\"9\" x2=\"83\" y2=\"161\" fill=\"none\" stroke=\"#ccd1d6\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><path d=\"M83 9 Q127 85 83 161\" fill=\"none\" stroke=\"#9a6a3e\" stroke-width=\"6\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><rect x=\"102\" y=\"78\" width=\"7\" height=\"14\" rx=\"3.5\" fill=\"#8a5a3a\" stroke=\"#68442c\" stroke-width=\"1\" stroke-linejoin=\"round\"/></svg>",
+    "axe": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 270 170\" width=\"270\" height=\"170\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#bec6d1\"/><stop offset=\"1\" stop-color=\"#a9b2bc\"/></linearGradient></defs><rect x=\"91\" y=\"82\" width=\"84\" height=\"6\" rx=\"3\" fill=\"#9a6a3e\" stroke=\"#74502f\" stroke-width=\"1\" stroke-linejoin=\"round\"/><path d=\"M159 81 L159 67 Q175 61 179 73 L177 99 Q167 107 163 93 L159 89 Z\" fill=\"url(#g1)\" stroke=\"#8b929a\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></svg>"
+   },
+   "source": {
+    "of": "warrior"
+   },
+   "parent": "handFront"
+  },
+  {
+   "name": "handFront",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 25.2 25.2\" width=\"25.2\" height=\"25.2\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#f3ccac\"/><stop offset=\"1\" stop-color=\"#deb798\"/></linearGradient><linearGradient id=\"g2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#f3ccac\"/><stop offset=\"1\" stop-color=\"#deb798\"/></linearGradient></defs><circle cx=\"12.6\" cy=\"13.02\" r=\"9.75\" fill=\"url(#g1)\" stroke=\"#b6967d\" stroke-width=\"1.5\" stroke-linejoin=\"round\"/><ellipse cx=\"18.06\" cy=\"9.66\" rx=\"3.15\" ry=\"4.2\" fill=\"url(#g2)\" stroke=\"#b6967d\" stroke-width=\"1\" stroke-linejoin=\"round\"/></svg>",
+   "at": [
+    -3,
+    80.25
+   ],
+   "pivot": [
+    -3,
+    86.55
+   ],
+   "size": [
+    25.2,
+    25.2
+   ],
+   "source": {
+    "of": "warrior"
+   },
+   "parent": "forearmFront"
+  },
+  {
+   "name": "pauldronFront",
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 37.8 30.45\" width=\"37.8\" height=\"30.45\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#bec6d1\"/><stop offset=\"1\" stop-color=\"#a9b2bc\"/></linearGradient></defs><path d=\"M2.27 23.75 Q1.51 1.83 18.9 1.83 Q36.29 1.83 35.53 23.75 Q18.9 29.23 2.27 23.75 Z\" fill=\"url(#g1)\" stroke=\"#8b929a\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><path d=\"M4.54 17.05 Q18.9 22.53 33.26 17.05\" fill=\"none\" stroke=\"#f4b23e\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></svg>",
+   "at": [
+    -1.95,
+    159.03
+   ],
+   "pivot": [
+    -1.95,
+    159.03
+   ],
+   "size": [
+    37.8,
+    30.45
+   ],
+   "states": {
+    "leather": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 37.8 30.45\" width=\"37.8\" height=\"30.45\"><defs><linearGradient id=\"g1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#926648\"/><stop offset=\"1\" stop-color=\"#7e5235\"/></linearGradient></defs><path d=\"M2.27 23.75 Q1.51 1.83 18.9 1.83 Q36.29 1.83 35.53 23.75 Q18.9 29.23 2.27 23.75 Z\" fill=\"url(#g1)\" stroke=\"#68442c\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><path d=\"M4.54 17.05 Q18.9 22.53 33.26 17.05\" fill=\"none\" stroke=\"#613f29\" stroke-width=\"1.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></svg>"
+   },
+   "source": {
+    "of": "warrior"
+   },
+   "parent": "upperArmFront"
+  }
+ ]
+}

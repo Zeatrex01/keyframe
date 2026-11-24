@@ -7,7 +7,7 @@ import path from 'node:path';
 import { StudioError } from '../shared/errors.js';
 
 /** The page shows these first, in this order; any other showcase folder follows by name. */
-export const EXAMPLE_ORDER = Object.freeze(['mika', 'pip', 'chest', 'play-button', 'coin-burst']);
+export const EXAMPLE_ORDER = Object.freeze(['mika', 'pip', 'chest', 'play-button', 'coin-burst', 'warrior']);
 const NAME = /^[a-z0-9][a-z0-9-]{0,40}$/;
 const COPIED = /\.(json|atlas|png|webp|jpe?g)$/i;
 

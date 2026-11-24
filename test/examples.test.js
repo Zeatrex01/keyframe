@@ -117,6 +117,6 @@ test('a project\'s preview is served only for a folder in the list', async () =>
   } finally { await new Promise(done => studio.server.close(done)); fs.rmSync(root, { recursive: true, force: true }); }
 });
 
-test('the page\'s order names the five planned examples', () => {
-  assert.deepEqual([...EXAMPLE_ORDER], ['mika', 'pip', 'chest', 'play-button', 'coin-burst']);
+test('the page\'s order names the planned examples', () => {
+  assert.deepEqual([...EXAMPLE_ORDER], ['mika', 'pip', 'chest', 'play-button', 'coin-burst', 'warrior']);
 });
