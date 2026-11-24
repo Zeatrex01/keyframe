@@ -210,14 +210,14 @@ export const GEAR_KINDS = Object.freeze(Object.keys(GEAR_ON));
  * Gear (accessories) placed on an assembled side-view figure, each on the bone that carries it,
  * so it can be shown or hidden by skin.
  *   head    the gear's box is centred on the head's box and its top sits a little above the head's
- *   hand / offhand  the grip (middle of the gear's bottom eighth) goes in the hand (the forearm
+ *   hand / offhand  the grip (`grip`: how far down the piece, 0.94 by default; a bow's is its middle) goes in the hand (the forearm
  *           piece near its lower end); `rotate` turns it about the grip (0 = pointing up)
  *   back    the gear's box centre on the upper back of the torso; hip: on the front of the hip
  * `offset` ([dx, dy] in body-sheet pixels, y down) and `rotate` (degrees, counter-clockwise) fine-tune
  * each piece after looking at it; `ratio` is gear-sheet pixels to body-sheet pixels.
  * @param {Array<{ name: string, at: number[], pivot: number[], parent: string|null, size: number[] }>} parts  from assembleSideBiped
  * @param {Record<string, { image: { width: number, height: number, data: Uint8Array } }>} named  the body pieces
- * @param {Array<{ name: string, on: string, image: { width: number, height: number, data: Uint8Array }, offset?: number[], rotate?: number }>} gear
+ * @param {Array<{ name: string, on: string, image: { width: number, height: number, data: Uint8Array }, offset?: number[], rotate?: number, grip?: number }>} gear
  * @param {{ scale?: number, ratio?: number }} [options]
  */
 export function placeGear(parts, named, gear, { scale = 0.5, ratio = 1 } = {}) {
@@ -236,8 +236,8 @@ export function placeGear(parts, named, gear, { scale = 0.5, ratio = 1 } = {}) {
       // The hand: the middle of the forearm piece near its lower end, in rig units.
       const img = named[on.bone].image, palm = rowRun(img, 0.86);
       pivot = [bone.at[0] - bone.size[0] / 2 + palm.x * scale + off[0], bone.at[1] + bone.size[1] / 2 - img.height * 0.86 * scale + off[1]];
-      const grip = rowRun(g.image, 0.94);
-      const fromGrip = [(g.image.width / 2 - grip.x) * k, (0.94 - 0.5) * h];
+      const gy = g.grip ?? 0.94, grip = rowRun(g.image, gy);
+      const fromGrip = [(g.image.width / 2 - grip.x) * k, (gy - 0.5) * h];
       centre = [pivot[0] + fromGrip[0] * Math.cos(rot) - fromGrip[1] * Math.sin(rot), pivot[1] + fromGrip[0] * Math.sin(rot) + fromGrip[1] * Math.cos(rot)];
     } else {
       const [bw, bh] = bone.size;

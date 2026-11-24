@@ -67,7 +67,7 @@ if (cmd === 'cut') {
   const piece = (dir, n) => decodePng(fs.readFileSync(path.join(out, dir, 'pieces', `${n}.png`)));
   for (const [n, part] of Object.entries(names)) images[part] = piece('', n);
   const named = Object.fromEntries(Object.entries(images).map(([k, image]) => [k, { image }]));
-  let parts = assembleSideBiped(named, { scale });
+  let parts = assembleSideBiped(named, { scale, joints: spec.joints ?? {} });
   if (spec.gear) {
     // The gear sheet was cut into <out>/gear; its copy of the head sets its scale against the body's.
     const ratio = spec.gearHeadRef ? images.head.height / piece('gear', spec.gearHeadRef).height : Number(spec.gearRatio ?? 1);
