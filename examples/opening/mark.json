@@ -1,0 +1,122 @@
+{
+ "skeleton": {
+  "hash": "kf-mark",
+  "spine": "4.2.43",
+  "x": -150,
+  "y": -62.98,
+  "width": 300,
+  "height": 178.98,
+  "images": "./",
+  "audio": ""
+ },
+ "bones": [
+  {
+   "name": "root"
+  },
+  {
+   "name": "ghost1",
+   "parent": "root",
+   "x": -70,
+   "y": 60
+  },
+  {
+   "name": "ghost2",
+   "parent": "root",
+   "x": -24.5,
+   "y": 60
+  },
+  {
+   "name": "key",
+   "parent": "root",
+   "x": 42,
+   "y": 60
+  },
+  {
+   "name": "word_keyframe",
+   "parent": "root",
+   "x": -59.22,
+   "y": -40
+  },
+  {
+   "name": "word_studio",
+   "parent": "root",
+   "x": 91.93,
+   "y": -40
+  }
+ ],
+ "slots": [
+  {
+   "name": "ghost1",
+   "bone": "ghost1",
+   "attachment": "ghost1"
+  },
+  {
+   "name": "ghost2",
+   "bone": "ghost2",
+   "attachment": "ghost2"
+  },
+  {
+   "name": "key",
+   "bone": "key",
+   "attachment": "key"
+  },
+  {
+   "name": "word_keyframe",
+   "bone": "word_keyframe",
+   "attachment": "word_keyframe"
+  },
+  {
+   "name": "word_studio",
+   "bone": "word_studio",
+   "attachment": "word_studio"
+  }
+ ],
+ "skins": [
+  {
+   "name": "default",
+   "attachments": {
+    "ghost1": {
+     "ghost1": {
+      "x": 0,
+      "y": 0,
+      "width": 70,
+      "height": 70
+     }
+    },
+    "ghost2": {
+     "ghost2": {
+      "x": 0,
+      "y": 0,
+      "width": 84,
+      "height": 84
+     }
+    },
+    "key": {
+     "key": {
+      "x": 0,
+      "y": 0,
+      "width": 112,
+      "height": 112
+     }
+    },
+    "word_keyframe": {
+     "word_keyframe": {
+      "x": 0,
+      "y": 0,
+      "width": 181.55,
+      "height": 45.96
+     }
+    },
+    "word_studio": {
+     "word_studio": {
+      "x": 0,
+      "y": 0,
+      "width": 116.15,
+      "height": 45.96
+     }
+    }
+   }
+  }
+ ],
+ "animations": {}
+}

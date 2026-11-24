@@ -1,0 +1,57 @@
+{
+  "name": "keyframe-studio",
+  "version": "0.0.1-beta",
+  "private": true,
+  "description": "An agent-assisted 2D skeletal animation studio: describe the motion, the agent writes it, the studio shows it, proves it and delivers it (Spine 4.2 compatible, Godot 4 add-on).",
+  "license": "MIT",
+  "keywords": [
+    "spine",
+    "spine2d",
+    "animation",
+    "mcp",
+    "model-context-protocol",
+    "ai",
+    "2d-animation",
+    "skeletal-animation",
+    "godot"
+  ],
+  "homepage": "https://github.com/Zeatrex01/keyframe#readme",
+  "bugs": "https://github.com/Zeatrex01/keyframe/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Zeatrex01/keyframe.git"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "type": "module",
+  "scripts": {
+    "start": "node tools/studio.js --open",
+    "studio": "node tools/studio.js",
+    "dev": "node --watch tools/studio.js",
+    "mcp": "node tools/mcp-server.js",
+    "connect": "node tools/connect.js",
+    "spine-addon": "node tools/spine-addon.js",
+    "doctor": "node tools/doctor.js",
+    "test": "node --test --import ./test/helpers/setup.js",
+    "test:coverage": "node --test --import ./test/helpers/setup.js --experimental-test-coverage --test-coverage-exclude=\"test/**\" --test-coverage-exclude=\"e2e/**\" --test-coverage-exclude=\"src/runtime/spine.js\" --test-coverage-lines=97 --test-coverage-branches=88 --test-coverage-functions=95",
+    "test:e2e": "node e2e/smoke.e2e.js",
+    "lint": "eslint .",
+    "typecheck": "tsc -p .",
+    "check": "npm run lint && npm run typecheck && npm test",
+    "sync:github": "node tools/sync-github.js",
+    "player": "node tools/player.js",
+    "godot": "node tools/godot.js",
+    "examples": "node examples/kit/build.js",
+    "docs:tools": "node tools/docs-tools.js"
+  },
+  "bin": {
+    "keyframe-studio": "tools/mcp-server.js",
+    "keyframe-studio-cli": "tools/cli.js"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "eslint": "10.15.0",
+    "typescript": "6.0.3"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  // Type check only: the studio ships plain JavaScript and never compiles. JSDoc carries the types.
+  // `npm run typecheck`; CI fails on any error.
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["node"],
+    "strict": false,
+    "noImplicitAny": false,
+    "skipLibCheck": true,
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true,
+    // The page imports the shared layers by their served path.
+    "paths": { "/src/*": ["./src/*"] }
+  },
+  "include": ["src/**/*.js", "tools/**/*.js", "web/**/*.js", "e2e/**/*.js", "types/**/*.d.ts"],
+  // The service worker runs in a worker scope (a different lib).
+  "exclude": ["web/sw.js", "node_modules/**"]
+}

@@ -1,0 +1,34 @@
+{
+  "$comment": "Issue labels, applied by tools/sync-github.js (the repo-sync workflow). `from` renames an existing label instead of creating a second one. Labels not listed here are left alone.",
+  "labels": [
+    { "name": "bug", "color": "d73a4a", "description": "Something does not work as documented" },
+    { "name": "feature", "color": "a2eeef", "description": "A new capability or a change in behaviour", "from": ["enhancement", "idea"] },
+    { "name": "documentation", "color": "0075ca", "description": "Docs, guides and comments" },
+    { "name": "security", "color": "b60205", "description": "A vulnerability or a hardening change (see SECURITY.md)" },
+    { "name": "good first issue", "color": "7057ff", "description": "Small, well described, a good start for a new contributor" },
+    { "name": "help wanted", "color": "008672", "description": "The maintainer would welcome a pull request" },
+    { "name": "needs maintainer decision", "color": "fbca04", "description": "Blocked on a scope or product decision (docs/concept.md)" },
+    { "name": "question", "color": "d876e3", "description": "Further information is requested" },
+    { "name": "duplicate", "color": "cfd3d7", "description": "This issue or pull request already exists" },
+    { "name": "invalid", "color": "e4e669", "description": "Not a problem with the studio" },
+    { "name": "wontfix", "color": "ffffff", "description": "Out of scope or not planned" },
+    { "name": "dependencies", "color": "0366d6", "description": "Updates a dependency (Dependabot)" },
+    { "name": "github_actions", "color": "000000", "description": "Updates GitHub Actions (Dependabot)" },
+
+    { "name": "area/workflow", "color": "1d76db", "description": "Core animation workflow: write, check, see, deliver" },
+    { "name": "area/agent", "color": "1d76db", "description": "Agent integration: MCP server, tools, the conversation" },
+    { "name": "area/reference", "color": "1d76db", "description": "Asset and reference pipeline: art, video, measuring" },
+    { "name": "area/ux", "color": "1d76db", "description": "The page: UX and accessibility" },
+    { "name": "area/performance", "color": "1d76db", "description": "Speed and memory" },
+    { "name": "area/distribution", "color": "1d76db", "description": "Packaging, installers, releases, docs site" },
+    { "name": "area/infra", "color": "1d76db", "description": "CI, tests, developer tooling" },
+
+    { "name": "roadmap/now", "color": "0e8a16", "description": "On the roadmap: Now (docs/roadmap.md)" },
+    { "name": "roadmap/next", "color": "5ebd3e", "description": "On the roadmap: Next (docs/roadmap.md)" },
+    { "name": "roadmap/later", "color": "c2e0c6", "description": "On the roadmap: Later (docs/roadmap.md)" },
+
+    { "name": "size/S", "color": "ededed", "description": "About a day or less" },
+    { "name": "size/M", "color": "d4c5f9", "description": "A few days" },
+    { "name": "size/L", "color": "8a63d2", "description": "A week or more; split before starting" }
+  ]
+}

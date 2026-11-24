@@ -1,0 +1,33 @@
+Keyframe Studio
+Copyright (c) the Keyframe Studio contributors. Licensed under the MIT License (LICENSE).
+
+Spine is a trademark of Esoteric Software LLC. Keyframe Studio is not affiliated with or endorsed
+by Esoteric Software.
+
+Keyframe Studio contains no Spine runtime code. Its engine (src/engine) is written from the Spine
+4.2 JSON format's documented semantics and is checked against the official runtime by comparing
+outputs only.
+
+The optional Spine add-on downloads Esoteric Software's official spine-player package
+(@esotericsoftware/spine-player, pinned version and integrity in src/core/spine-addon.js) into
+the user's app data, and only after the user accepts the Spine Runtimes License
+(https://esotericsoftware.com/spine-runtimes-license), which requires each user to hold their own
+Spine Editor license. That runtime is Esoteric Software's and is not covered by Keyframe Studio's
+license.
+
+Asset library (assets/library): each pack records its license, author and source in its
+pack.json, and is taken only under CC0, MIT or CC BY. Packs whose license asks for credit:
+- assets/library/keyframe-basics: "Keyframe basics" by The Keyframe Studio contributors, MIT
+  (https://github.com/Zeatrex01/keyframe).
+
+Third-party licenses
+
+The page bundles three typefaces as woff2 files in web/fonts, each under the SIL Open Font
+License 1.1 (the full text is beside the files):
+
+- Bricolage Grotesque: Copyright 2022 The Bricolage Grotesque Project Authors
+  (https://github.com/ateliertriay/bricolage). web/fonts/OFL-BricolageGrotesque.txt
+- Instrument Sans: Copyright 2022 The Instrument Sans Project Authors
+  (https://github.com/Instrument/instrument-sans). web/fonts/OFL-InstrumentSans.txt
+- JetBrains Mono: Copyright 2020 The JetBrains Mono Project Authors
+  (https://github.com/JetBrains/JetBrainsMono). web/fonts/OFL-JetBrainsMono.txt

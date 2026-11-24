@@ -1,0 +1,15 @@
+# Line endings are decided by the repository, not by each machine's git config.
+# (The legacy repo saw 31 phantom changes when it moved between machines.)
+* text=auto eol=lf
+
+# Windows batch files are launched by cmd.exe and stay CRLF on disk.
+*.cmd text eol=crlf
+
+# Binary: never touch these bytes.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.webp  binary
+*.zip   binary
+*.spine binary
+*.skel  binary

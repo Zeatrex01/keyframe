@@ -1,0 +1,312 @@
+{
+ "skeleton": {
+  "hash": "template-head",
+  "spine": "4.2.43",
+  "x": -140,
+  "y": -140,
+  "width": 280,
+  "height": 280,
+  "images": "./images/",
+  "audio": ""
+ },
+ "bones": [
+  {
+   "name": "root"
+  },
+  {
+   "name": "body",
+   "parent": "root",
+   "x": 0,
+   "y": -104
+  },
+  {
+   "name": "shadow",
+   "parent": "root",
+   "x": 0,
+   "y": -112
+  },
+  {
+   "name": "head",
+   "parent": "body",
+   "x": 0,
+   "y": 4
+  },
+  {
+   "name": "earL",
+   "parent": "head",
+   "x": -58,
+   "y": 144
+  },
+  {
+   "name": "earR",
+   "parent": "head",
+   "x": 58,
+   "y": 144
+  },
+  {
+   "name": "whiskerL",
+   "parent": "head",
+   "x": -78,
+   "y": 38
+  },
+  {
+   "name": "whiskerR",
+   "parent": "head",
+   "x": 78,
+   "y": 38
+  },
+  {
+   "name": "blushL",
+   "parent": "head",
+   "x": -77,
+   "y": 47
+  },
+  {
+   "name": "blushR",
+   "parent": "head",
+   "x": 77,
+   "y": 47
+  },
+  {
+   "name": "eyeL",
+   "parent": "head",
+   "x": -46,
+   "y": 86
+  },
+  {
+   "name": "pupilL",
+   "parent": "eyeL",
+   "x": 0,
+   "y": 0
+  },
+  {
+   "name": "lidL",
+   "parent": "eyeL",
+   "x": 0,
+   "y": 0
+  },
+  {
+   "name": "eyeR",
+   "parent": "head",
+   "x": 46,
+   "y": 86
+  },
+  {
+   "name": "pupilR",
+   "parent": "eyeR",
+   "x": 0,
+   "y": 0
+  },
+  {
+   "name": "lidR",
+   "parent": "eyeR",
+   "x": 0,
+   "y": 0
+  },
+  {
+   "name": "muzzle",
+   "parent": "head",
+   "x": 0,
+   "y": 23
+  },
+  {
+   "name": "browL",
+   "parent": "head",
+   "x": -46,
+   "y": 128
+  },
+  {
+   "name": "browR",
+   "parent": "head",
+   "x": 46,
+   "y": 128
+  },
+  {
+   "name": "mouth",
+   "parent": "head",
+   "x": 0,
+   "y": 27
+  },
+  {
+   "name": "tearL",
+   "parent": "head",
+   "x": -52,
+   "y": 41
+  },
+  {
+   "name": "tearR",
+   "parent": "head",
+   "x": 52,
+   "y": 41
+  },
+  {
+   "name": "anger",
+   "parent": "head",
+   "x": 86,
+   "y": 149
+  },
+  {
+   "name": "heart",
+   "parent": "root",
+   "x": 76,
+   "y": 77
+  },
+  {
+   "name": "zzz",
+   "parent": "root",
+   "x": 86,
+   "y": 67
+  },
+  {
+   "name": "nose",
+   "parent": "head",
+   "x": 0,
+   "y": 54
+  },
+  {
+   "name": "sparkle1",
+   "parent": "root",
+   "x": -98,
+   "y": 70
+  },
+  {
+   "name": "sparkle2",
+   "parent": "root",
+   "x": 100,
+   "y": 30
+  },
+  {
+   "name": "badge",
+   "parent": "root",
+   "x": 92,
+   "y": 84
+  }
+ ],
+ "slots": [
+  {
+   "name": "shadow",
+   "bone": "shadow"
+  },
+  {
+   "name": "earL",
+   "bone": "earL"
+  },
+  {
+   "name": "earR",
+   "bone": "earR"
+  },
+  {
+   "name": "head",
+   "bone": "head"
+  },
+  {
+   "name": "whiskerL",
+   "bone": "whiskerL"
+  },
+  {
+   "name": "whiskerR",
+   "bone": "whiskerR"
+  },
+  {
+   "name": "blushL",
+   "bone": "blushL"
+  },
+  {
+   "name": "blushR",
+   "bone": "blushR"
+  },
+  {
+   "name": "eyeL",
+   "bone": "eyeL"
+  },
+  {
+   "name": "eyeClipL",
+   "bone": "eyeL"
+  },
+  {
+   "name": "pupilL",
+   "bone": "pupilL"
+  },
+  {
+   "name": "lidL",
+   "bone": "lidL"
+  },
+  {
+   "name": "eyeR",
+   "bone": "eyeR"
+  },
+  {
+   "name": "eyeClipR",
+   "bone": "eyeR"
+  },
+  {
+   "name": "pupilR",
+   "bone": "pupilR"
+  },
+  {
+   "name": "lidR",
+   "bone": "lidR"
+  },
+  {
+   "name": "muzzle",
+   "bone": "muzzle"
+  },
+  {
+   "name": "browL",
+   "bone": "browL"
+  },
+  {
+   "name": "browR",
+   "bone": "browR"
+  },
+  {
+   "name": "mouth",
+   "bone": "mouth"
+  },
+  {
+   "name": "tearL",
+   "bone": "tearL"
+  },
+  {
+   "name": "tearR",
+   "bone": "tearR"
+  },
+  {
+   "name": "anger",
+   "bone": "anger"
+  },
+  {
+   "name": "heart",
+   "bone": "heart"
+  },
+  {
+   "name": "zzz",
+   "bone": "zzz"
+  },
+  {
+   "name": "nose",
+   "bone": "nose"
+  },
+  {
+   "name": "sparkle1",
+   "bone": "sparkle1",
+   "blend": "additive"
+  },
+  {
+   "name": "sparkle2",
+   "bone": "sparkle2",
+   "blend": "additive"
+  },
+  {
+   "name": "badge",
+   "bone": "badge"
+  }
+ ],
+ "skins": [
+  {
+   "name": "default",
+   "attachments": {}
+  }
+ ],
+ "animations": {}
+}

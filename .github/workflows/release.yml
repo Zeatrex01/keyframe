@@ -1,0 +1,26 @@
+# A pushed tag vX.Y.Z runs the full matrix, then publishes a GitHub release whose notes are that
+# version's CHANGELOG section. docs/development.md (Releasing) has the steps.
+name: release
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    uses: ./.github/workflows/test.yml
+
+  release:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - name: Release notes from CHANGELOG.md
+        run: node tools/release-notes.js "${GITHUB_REF_NAME#v}" > release-notes.md
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file release-notes.md --verify-tag

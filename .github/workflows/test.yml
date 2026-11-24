@@ -1,0 +1,81 @@
+# CI is kept frugal (Actions minutes are limited):
+# - every pull request and push to main: one Linux job on Node 22 (lint, type check, every gate with
+#   coverage, the browser smoke test); docs-only changes skip it;
+# - the full matrix (Linux, Windows, macOS x Node 18-24, and e2e on Windows) runs only by hand
+#   (Actions -> test -> Run workflow) and on a release tag.
+name: test
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['**/*.md', 'docs/**', '.github/ISSUE_TEMPLATE/**', '.github/labels.json', '.github/milestones.json']
+  pull_request:
+    paths-ignore: ['**/*.md', 'docs/**', '.github/ISSUE_TEMPLATE/**', '.github/labels.json', '.github/milestones.json']
+  workflow_dispatch:
+    inputs:
+      full:
+        description: Also run every OS and Node version, and e2e on Windows
+        type: boolean
+        default: true
+  workflow_call:
+    inputs:
+      full:
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: lint, typecheck, tests, e2e (Linux, Node 22)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test:coverage
+      - run: npm run test:e2e
+        env:
+          KS_E2E_REQUIRED: '1'
+
+  # Every supported platform and Node.js version: by hand or for a release only.
+  matrix:
+    if: inputs.full == true
+    name: node ${{ matrix.node }} on ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node: [18, 20, 22, 24]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm test
+
+  e2e-windows:
+    if: inputs.full == true
+    name: e2e smoke (Windows)
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm run test:e2e
+        env:
+          KS_E2E_REQUIRED: '1'

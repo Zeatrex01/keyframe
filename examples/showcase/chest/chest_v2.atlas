@@ -1,0 +1,145 @@
+chest.png
+size: 2048,3675
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+glow
+  rotate: false
+  xy: 4, 1238
+  size: 1080, 1080
+  orig: 1080, 1080
+  offset: 0, 0
+  index: -1
+rays
+  rotate: false
+  xy: 4, 4
+  size: 1230, 1230
+  orig: 1230, 1230
+  offset: 0, 0
+  index: -1
+shadow
+  rotate: false
+  xy: 996, 3416
+  size: 570, 90
+  orig: 570, 90
+  offset: 0, 0
+  index: -1
+lid_open
+  rotate: false
+  xy: 4, 3416
+  size: 495, 255
+  orig: 495, 255
+  offset: 0, 0
+  index: -1
+beam
+  rotate: false
+  xy: 1088, 1238
+  size: 630, 780
+  orig: 630, 780
+  offset: 0, 0
+  index: -1
+card_back1
+  rotate: false
+  xy: 788, 2322
+  size: 225, 306
+  orig: 225, 306
+  offset: 0, 0
+  index: -1
+card_front1
+  rotate: false
+  xy: 1475, 2322
+  size: 225, 306
+  orig: 225, 306
+  offset: 0, 0
+  index: -1
+card_back2
+  rotate: false
+  xy: 1017, 2322
+  size: 225, 306
+  orig: 225, 306
+  offset: 0, 0
+  index: -1
+card_front2
+  rotate: false
+  xy: 1704, 2322
+  size: 225, 306
+  orig: 225, 306
+  offset: 0, 0
+  index: -1
+card_back3
+  rotate: false
+  xy: 1246, 2322
+  size: 225, 306
+  orig: 225, 306
+  offset: 0, 0
+  index: -1
+card_front3
+  rotate: false
+  xy: 4, 3106
+  size: 225, 306
+  orig: 225, 306
+  offset: 0, 0
+  index: -1
+box
+  rotate: false
+  xy: 233, 3106
+  size: 465, 300
+  orig: 465, 300
+  offset: 0, 0
+  index: -1
+lid_closed
+  rotate: false
+  xy: 503, 3416
+  size: 489, 195
+  orig: 489, 195
+  offset: 0, 0
+  index: -1
+flash
+  rotate: false
+  xy: 4, 2322
+  size: 780, 780
+  orig: 780, 780
+  offset: 0, 0
+  index: -1
+ring1
+  rotate: false
+  xy: 702, 3106
+  size: 285, 285
+  orig: 285, 285
+  offset: 0, 0
+  index: -1
+ring2
+  rotate: false
+  xy: 991, 3106
+  size: 285, 285
+  orig: 285, 285
+  offset: 0, 0
+  index: -1
+ring3
+  rotate: false
+  xy: 1280, 3106
+  size: 285, 285
+  orig: 285, 285
+  offset: 0, 0
+  index: -1
+sparkle1
+  rotate: false
+  xy: 1570, 3416
+  size: 81, 81
+  orig: 81, 81
+  offset: 0, 0
+  index: -1
+sparkle2
+  rotate: false
+  xy: 1655, 3416
+  size: 63, 63
+  orig: 63, 63
+  offset: 0, 0
+  index: -1
+sparkle3
+  rotate: false
+  xy: 1722, 3416
+  size: 54, 54
+  orig: 54, 54
+  offset: 0, 0
+  index: -1

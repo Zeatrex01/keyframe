@@ -1,0 +1,46 @@
+# Nothing personal or machine-local enters git: configs with absolute paths, agent client
+# settings, secrets, runtime state, logs, the owner's references and recordings.
+
+node_modules/
+*.log
+*.bak
+*.tmp
+*.lock
+
+# Machine-local configuration (absolute paths, per-PC clients, credentials).
+studio.config.json
+.mcp.json
+.codex/
+.claude/settings.local.json
+.env
+.env.*
+*.pem
+*.key
+
+# Runtime state written by the studio, never source.
+/state/
+/history/
+/dist/
+/logs/
+samples/
+# A project's working folders, also when an example folder is opened as a project.
+.keyframe/
+.backup/
+reference/
+references/
+
+# Recordings and renders (personal material; render them again from the scripts).
+*.mp4
+*.mov
+*.webm
+*.mkv
+examples/kit/pack/
+examples/kit/look/
+
+# Editor, OS and tool state.
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+.serena/
+.playwright-mcp/

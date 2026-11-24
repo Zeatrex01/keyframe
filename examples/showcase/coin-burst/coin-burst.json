@@ -1,0 +1,397 @@
+{
+ "skeleton": {
+  "hash": "coin-burst",
+  "spine": "4.2.43",
+  "x": -220,
+  "y": -175,
+  "width": 440,
+  "height": 330,
+  "images": "",
+  "audio": ""
+ },
+ "bones": [
+  {
+   "name": "root"
+  },
+  {
+   "name": "body",
+   "parent": "root"
+  },
+  {
+   "name": "burst",
+   "parent": "body",
+   "x": -70,
+   "y": -75
+  },
+  {
+   "name": "burstGlow",
+   "parent": "burst"
+  },
+  {
+   "name": "ring",
+   "parent": "burst"
+  },
+  {
+   "name": "sparks",
+   "parent": "burst"
+  },
+  {
+   "name": "counter",
+   "parent": "body",
+   "x": 118,
+   "y": 112
+  },
+  {
+   "name": "bar",
+   "parent": "counter",
+   "x": -29
+  },
+  {
+   "name": "counterCoin",
+   "parent": "counter",
+   "x": -50
+  },
+  {
+   "name": "counterFlash",
+   "parent": "counterCoin"
+  },
+  {
+   "name": "coin1",
+   "parent": "burst"
+  },
+  {
+   "name": "coin2",
+   "parent": "burst"
+  },
+  {
+   "name": "coin3",
+   "parent": "burst"
+  },
+  {
+   "name": "coin4",
+   "parent": "burst"
+  },
+  {
+   "name": "coin5",
+   "parent": "burst"
+  },
+  {
+   "name": "coin6",
+   "parent": "burst"
+  },
+  {
+   "name": "coin7",
+   "parent": "burst"
+  },
+  {
+   "name": "coin8",
+   "parent": "burst"
+  },
+  {
+   "name": "flash",
+   "parent": "burst"
+  },
+  {
+   "name": "sparkle1",
+   "parent": "counter",
+   "x": -30,
+   "y": 30
+  },
+  {
+   "name": "sparkle2",
+   "parent": "counter",
+   "x": 70,
+   "y": 34
+  },
+  {
+   "name": "sparkle3",
+   "parent": "counter",
+   "x": 44,
+   "y": -34
+  }
+ ],
+ "slots": [
+  {
+   "name": "burstGlow",
+   "bone": "burstGlow",
+   "attachment": "burstGlow",
+   "color": "ffffff00",
+   "blend": "additive"
+  },
+  {
+   "name": "ring",
+   "bone": "ring",
+   "attachment": "ring",
+   "color": "ffffff00",
+   "blend": "additive"
+  },
+  {
+   "name": "sparks",
+   "bone": "sparks",
+   "attachment": "sparks",
+   "color": "ffffff00",
+   "blend": "additive"
+  },
+  {
+   "name": "panel",
+   "bone": "counter",
+   "attachment": "panel"
+  },
+  {
+   "name": "bar",
+   "bone": "bar",
+   "attachment": "bar"
+  },
+  {
+   "name": "counterCoin",
+   "bone": "counterCoin",
+   "attachment": "counterCoin"
+  },
+  {
+   "name": "counterFlash",
+   "bone": "counterFlash",
+   "attachment": "counterFlash",
+   "color": "ffffff00",
+   "blend": "additive"
+  },
+  {
+   "name": "coin1",
+   "bone": "coin1",
+   "attachment": "coin1",
+   "color": "ffffff00"
+  },
+  {
+   "name": "coin2",
+   "bone": "coin2",
+   "attachment": "coin2",
+   "color": "ffffff00"
+  },
+  {
+   "name": "coin3",
+   "bone": "coin3",
+   "attachment": "coin3",
+   "color": "ffffff00"
+  },
+  {
+   "name": "coin4",
+   "bone": "coin4",
+   "attachment": "coin4",
+   "color": "ffffff00"
+  },
+  {
+   "name": "coin5",
+   "bone": "coin5",
+   "attachment": "coin5",
+   "color": "ffffff00"
+  },
+  {
+   "name": "coin6",
+   "bone": "coin6",
+   "attachment": "coin6",
+   "color": "ffffff00"
+  },
+  {
+   "name": "coin7",
+   "bone": "coin7",
+   "attachment": "coin7",
+   "color": "ffffff00"
+  },
+  {
+   "name": "coin8",
+   "bone": "coin8",
+   "attachment": "coin8",
+   "color": "ffffff00"
+  },
+  {
+   "name": "flash",
+   "bone": "flash",
+   "attachment": "flash",
+   "color": "ffffff00",
+   "blend": "additive"
+  },
+  {
+   "name": "sparkle1",
+   "bone": "sparkle1",
+   "attachment": "sparkle1",
+   "color": "ffffff00",
+   "blend": "additive"
+  },
+  {
+   "name": "sparkle2",
+   "bone": "sparkle2",
+   "attachment": "sparkle2",
+   "color": "ffffff00",
+   "blend": "additive"
+  },
+  {
+   "name": "sparkle3",
+   "bone": "sparkle3",
+   "attachment": "sparkle3",
+   "color": "ffffff00",
+   "blend": "additive"
+  }
+ ],
+ "skins": [
+  {
+   "name": "default",
+   "attachments": {
+    "burstGlow": {
+     "burstGlow": {
+      "x": 0,
+      "y": 0,
+      "width": 260,
+      "height": 260
+     }
+    },
+    "ring": {
+     "ring": {
+      "x": 0,
+      "y": 0,
+      "width": 120,
+      "height": 120
+     }
+    },
+    "sparks": {
+     "sparks": {
+      "x": 0,
+      "y": 0,
+      "width": 150,
+      "height": 150
+     }
+    },
+    "panel": {
+     "panel": {
+      "x": 0,
+      "y": 0,
+      "width": 150,
+      "height": 54
+     }
+    },
+    "bar": {
+     "bar": {
+      "x": 42,
+      "y": 0,
+      "width": 84,
+      "height": 12
+     }
+    },
+    "counterCoin": {
+     "counterCoin": {
+      "x": 0,
+      "y": 0,
+      "width": 44,
+      "height": 44
+     }
+    },
+    "counterFlash": {
+     "counterFlash": {
+      "x": 0,
+      "y": 0,
+      "width": 110,
+      "height": 110
+     }
+    },
+    "coin1": {
+     "coin1": {
+      "x": 0,
+      "y": 0,
+      "width": 48,
+      "height": 48
+     }
+    },
+    "coin2": {
+     "coin2": {
+      "x": 0,
+      "y": 0,
+      "width": 48,
+      "height": 48
+     }
+    },
+    "coin3": {
+     "coin3": {
+      "x": 0,
+      "y": 0,
+      "width": 48,
+      "height": 48
+     }
+    },
+    "coin4": {
+     "coin4": {
+      "x": 0,
+      "y": 0,
+      "width": 48,
+      "height": 48
+     }
+    },
+    "coin5": {
+     "coin5": {
+      "x": 0,
+      "y": 0,
+      "width": 48,
+      "height": 48
+     }
+    },
+    "coin6": {
+     "coin6": {
+      "x": 0,
+      "y": 0,
+      "width": 48,
+      "height": 48
+     }
+    },
+    "coin7": {
+     "coin7": {
+      "x": 0,
+      "y": 0,
+      "width": 48,
+      "height": 48
+     }
+    },
+    "coin8": {
+     "coin8": {
+      "x": 0,
+      "y": 0,
+      "width": 48,
+      "height": 48
+     }
+    },
+    "flash": {
+     "flash": {
+      "x": 0,
+      "y": 0,
+      "width": 200,
+      "height": 200
+     }
+    },
+    "sparkle1": {
+     "sparkle1": {
+      "x": 0,
+      "y": 0,
+      "width": 46,
+      "height": 46
+     }
+    },
+    "sparkle2": {
+     "sparkle2": {
+      "x": 0,
+      "y": 0,
+      "width": 34,
+      "height": 34
+     }
+    },
+    "sparkle3": {
+     "sparkle3": {
+      "x": 0,
+      "y": 0,
+      "width": 40,
+      "height": 40
+     }
+    }
+   }
+  }
+ ],
+ "events": {
+  "coin_land": {}
+ },
+ "animations": {}
+}

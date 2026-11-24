@@ -1,0 +1,73 @@
+{
+  "name": "play-button",
+  "title": "Play button",
+  "kind": "UI",
+  "principles": "ui",
+  "subject": "A game menu Play button with a notification badge, drawn in the kit's chunky outline style in the studio's amber.",
+  "intent": "Every state a button lives through as a clip, timed for UI: quick, small anticipation, an overshoot sized for a button, every move readable at 160 px wide. The badge plays on track 1 over the idling button on track 0.",
+  "display": {
+    "width": 160,
+    "pixelsPerUnit": 0.615
+  },
+  "teaches": [
+    "UI timing",
+    "overshoot",
+    "readable at real size",
+    "tracks"
+  ],
+  "preview": {
+    "clip": "badge_pulse",
+    "time": 0.3
+  },
+  "clips": [
+    {
+      "name": "idle",
+      "seconds": 2.4,
+      "loop": true,
+      "track": 0,
+      "does": "a 2% breath with a short hold at the top, the triangle nudges forward once"
+    },
+    {
+      "name": "hover_in",
+      "seconds": 0.15,
+      "loop": false,
+      "track": 0,
+      "does": "grows to 1.05 past a 1.07 peak, a shine sweeps the face, the glow comes up"
+    },
+    {
+      "name": "press",
+      "seconds": 0.1,
+      "loop": false,
+      "track": 0,
+      "does": "squashes to 0.9 as the face sinks into its rim"
+    },
+    {
+      "name": "release",
+      "seconds": 0.22,
+      "loop": false,
+      "track": 0,
+      "does": "springs to 1.08 and settles on 1.0, the face pops back up"
+    },
+    {
+      "name": "disabled",
+      "seconds": 0.2,
+      "loop": false,
+      "track": 0,
+      "does": "swaps to the grey art and dims the label; nothing moves"
+    },
+    {
+      "name": "badge_pop",
+      "seconds": 0.3,
+      "loop": false,
+      "track": 1,
+      "does": "the badge pops 0 to 1.15 to 1.0 with a wobble and a ring"
+    },
+    {
+      "name": "badge_pulse",
+      "seconds": 2,
+      "loop": true,
+      "track": 1,
+      "does": "a dip, a pulse to 1.14 and a ring, then a rest"
+    }
+  ]
+}

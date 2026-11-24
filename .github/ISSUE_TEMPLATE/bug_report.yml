@@ -1,0 +1,36 @@
+name: Bug report
+description: Something in the studio, the page or a tool does not work as described.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The smallest set of steps. Attach a skeleton JSON if the bug depends on one (only files you may share).
+  - type: input
+    id: version
+    attributes:
+      label: Studio version
+      description: The VERSION file, or Settings > About in the page.
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Operating system, Node.js version (node --version), and the agent you connect (Claude Code, Codex, other).
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Log
+      description: The console window's lines around the failure. Start the studio with KS_LOG_LEVEL=debug for more. Remove anything private.
+      render: text

@@ -1,0 +1,79 @@
+{
+  "name": "mika",
+  "title": "Mika",
+  "kind": "Character",
+  "principles": "character",
+  "subject": "An original anime girl cut at the waist, the portrait a mobile game shows in dialogue and menus: twin tails, sailor collar, a face rig with lids, brows and mouth shapes, and a right arm that can wave.",
+  "intent": "A dialogue portrait that is never frozen. She breathes and blinks, reacts with a short lead-in clip and a loop for each emotion, waves, and goes back to idle; the hair always arrives after the head that moves it.",
+  "display": {
+    "width": 320,
+    "pixelsPerUnit": 0.8
+  },
+  "teaches": [
+    "overlap and follow-through",
+    "secondary action",
+    "moving holds",
+    "no twinning"
+  ],
+  "preview": {
+    "clip": "wave",
+    "time": 0.5667,
+    "viewport": {
+      "x": -330,
+      "y": -300,
+      "width": 640,
+      "height": 480
+    }
+  },
+  "clips": [
+    {
+      "name": "idle",
+      "seconds": 2.4,
+      "loop": true,
+      "track": 0,
+      "does": "breath with a short top hold, a blink, the head drifts and the tails, locks and strand trail it"
+    },
+    {
+      "name": "happy_in",
+      "seconds": 0.6,
+      "loop": false,
+      "track": 0,
+      "does": "a blink and a dip, then a snap up past the pose into a smile; the tails follow two and three frames late"
+    },
+    {
+      "name": "happy",
+      "seconds": 2.4,
+      "loop": true,
+      "track": 0,
+      "does": "a light bounce with a held beat, the head rocks out of step, the tails swing behind"
+    },
+    {
+      "name": "surprised_in",
+      "seconds": 0.4,
+      "loop": false,
+      "track": 0,
+      "does": "a startled blink and a dip, then up with wide eyes, small pupils, raised brows and an open mouth"
+    },
+    {
+      "name": "surprised",
+      "seconds": 2,
+      "loop": true,
+      "track": 0,
+      "does": "the surprise held alive: the body rises and settles, the eyes stay wide, the hair keeps moving"
+    },
+    {
+      "name": "wave",
+      "seconds": 1.2,
+      "loop": false,
+      "track": 0,
+      "does": "a small backswing, the arm swings up with an overshoot, three waves with the hand flapping late, and down"
+    },
+    {
+      "name": "to_idle",
+      "seconds": 0.4,
+      "loop": false,
+      "track": 0,
+      "does": "a blink covers the change, everything settles back to the rest pose"
+    }
+  ]
+}

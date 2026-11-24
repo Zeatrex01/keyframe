@@ -1,0 +1,40 @@
+ident.png
+size: 1024,282
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+word
+  rotate: false
+  xy: 6, 6
+  size: 289, 74
+  orig: 289, 74
+  offset: 0, 0
+  index: -1
+games
+  rotate: false
+  xy: 301, 6
+  size: 111, 24
+  orig: 111, 24
+  offset: 0, 0
+  index: -1
+line
+  rotate: false
+  xy: 418, 6
+  size: 444, 4
+  orig: 444, 4
+  offset: 0, 0
+  index: -1
+bloom
+  rotate: false
+  xy: 6, 86
+  size: 484, 190
+  orig: 484, 190
+  offset: 0, 0
+  index: -1
+sweep
+  rotate: false
+  xy: 496, 86
+  size: 112, 150
+  orig: 112, 150
+  offset: 0, 0
+  index: -1

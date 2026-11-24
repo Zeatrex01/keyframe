@@ -1,0 +1,390 @@
+{
+ "skeleton": {
+  "hash": "chest",
+  "spine": "4.2.43",
+  "x": -430,
+  "y": -360,
+  "width": 860,
+  "height": 645,
+  "images": "",
+  "audio": ""
+ },
+ "bones": [
+  {
+   "name": "root"
+  },
+  {
+   "name": "body",
+   "parent": "root"
+  },
+  {
+   "name": "stage",
+   "parent": "body"
+  },
+  {
+   "name": "glow",
+   "parent": "stage",
+   "y": 20
+  },
+  {
+   "name": "rays",
+   "parent": "stage",
+   "y": 20
+  },
+  {
+   "name": "shadow",
+   "parent": "stage",
+   "y": -336
+  },
+  {
+   "name": "chest",
+   "parent": "stage",
+   "y": -330
+  },
+  {
+   "name": "lidBack",
+   "parent": "chest",
+   "y": 180
+  },
+  {
+   "name": "beam",
+   "parent": "chest",
+   "y": 180
+  },
+  {
+   "name": "box",
+   "parent": "chest"
+  },
+  {
+   "name": "lid",
+   "parent": "chest",
+   "y": 195
+  },
+  {
+   "name": "flash",
+   "parent": "chest",
+   "y": 180
+  },
+  {
+   "name": "ring1",
+   "parent": "stage",
+   "x": -205,
+   "y": 92
+  },
+  {
+   "name": "ring2",
+   "parent": "stage",
+   "y": 150
+  },
+  {
+   "name": "ring3",
+   "parent": "stage",
+   "x": 205,
+   "y": 92
+  },
+  {
+   "name": "sparkle1",
+   "parent": "stage",
+   "x": -250,
+   "y": 260
+  },
+  {
+   "name": "sparkle2",
+   "parent": "stage",
+   "x": 262,
+   "y": 230
+  },
+  {
+   "name": "sparkle3",
+   "parent": "stage",
+   "x": -40,
+   "y": 300
+  },
+  {
+   "name": "card1",
+   "parent": "stage",
+   "y": -150
+  },
+  {
+   "name": "card2",
+   "parent": "stage",
+   "y": -150
+  },
+  {
+   "name": "card3",
+   "parent": "stage",
+   "y": -150
+  }
+ ],
+ "slots": [
+  {
+   "name": "glow",
+   "bone": "glow",
+   "attachment": "glow",
+   "color": "ffffff00"
+  },
+  {
+   "name": "rays",
+   "bone": "rays",
+   "attachment": "rays",
+   "color": "ffffff00",
+   "blend": "additive"
+  },
+  {
+   "name": "shadow",
+   "bone": "shadow",
+   "attachment": "shadow"
+  },
+  {
+   "name": "lidBack",
+   "bone": "lidBack"
+  },
+  {
+   "name": "beam",
+   "bone": "beam",
+   "attachment": "beam",
+   "color": "ffffff00",
+   "blend": "additive"
+  },
+  {
+   "name": "cardArt1",
+   "bone": "card1"
+  },
+  {
+   "name": "cardArt2",
+   "bone": "card2"
+  },
+  {
+   "name": "cardArt3",
+   "bone": "card3"
+  },
+  {
+   "name": "box",
+   "bone": "box",
+   "attachment": "box"
+  },
+  {
+   "name": "lid",
+   "bone": "lid",
+   "attachment": "lid_closed"
+  },
+  {
+   "name": "flash",
+   "bone": "flash",
+   "attachment": "flash",
+   "color": "ffffff00",
+   "blend": "additive"
+  },
+  {
+   "name": "ring1",
+   "bone": "ring1",
+   "attachment": "ring1",
+   "color": "ffffff00",
+   "blend": "additive"
+  },
+  {
+   "name": "ring2",
+   "bone": "ring2",
+   "attachment": "ring2",
+   "color": "ffffff00",
+   "blend": "additive"
+  },
+  {
+   "name": "ring3",
+   "bone": "ring3",
+   "attachment": "ring3",
+   "color": "ffffff00",
+   "blend": "additive"
+  },
+  {
+   "name": "sparkle1",
+   "bone": "sparkle1",
+   "attachment": "sparkle1",
+   "color": "ffffff00",
+   "blend": "additive"
+  },
+  {
+   "name": "sparkle2",
+   "bone": "sparkle2",
+   "attachment": "sparkle2",
+   "color": "ffffff00",
+   "blend": "additive"
+  },
+  {
+   "name": "sparkle3",
+   "bone": "sparkle3",
+   "attachment": "sparkle3",
+   "color": "ffffff00",
+   "blend": "additive"
+  }
+ ],
+ "skins": [
+  {
+   "name": "default",
+   "attachments": {
+    "glow": {
+     "glow": {
+      "x": 0,
+      "y": 0,
+      "width": 720,
+      "height": 720
+     }
+    },
+    "rays": {
+     "rays": {
+      "x": 0,
+      "y": 0,
+      "width": 820,
+      "height": 820
+     }
+    },
+    "shadow": {
+     "shadow": {
+      "x": 0,
+      "y": 0,
+      "width": 380,
+      "height": 60
+     }
+    },
+    "lidBack": {
+     "lid_open": {
+      "x": 0,
+      "y": 80,
+      "width": 330,
+      "height": 170
+     }
+    },
+    "beam": {
+     "beam": {
+      "x": 0,
+      "y": 260,
+      "width": 420,
+      "height": 520
+     }
+    },
+    "cardArt1": {
+     "card_back1": {
+      "x": 0,
+      "y": 0,
+      "width": 150,
+      "height": 204
+     },
+     "card_front1": {
+      "x": 0,
+      "y": 0,
+      "width": 150,
+      "height": 204
+     }
+    },
+    "cardArt2": {
+     "card_back2": {
+      "x": 0,
+      "y": 0,
+      "width": 150,
+      "height": 204
+     },
+     "card_front2": {
+      "x": 0,
+      "y": 0,
+      "width": 150,
+      "height": 204
+     }
+    },
+    "cardArt3": {
+     "card_back3": {
+      "x": 0,
+      "y": 0,
+      "width": 150,
+      "height": 204
+     },
+     "card_front3": {
+      "x": 0,
+      "y": 0,
+      "width": 150,
+      "height": 204
+     }
+    },
+    "box": {
+     "box": {
+      "x": 0,
+      "y": 95,
+      "width": 310,
+      "height": 200
+     }
+    },
+    "lid": {
+     "lid_closed": {
+      "x": 0,
+      "y": 40,
+      "width": 326,
+      "height": 130
+     }
+    },
+    "flash": {
+     "flash": {
+      "x": 0,
+      "y": 0,
+      "width": 520,
+      "height": 520
+     }
+    },
+    "ring1": {
+     "ring1": {
+      "x": 0,
+      "y": 0,
+      "width": 190,
+      "height": 190
+     }
+    },
+    "ring2": {
+     "ring2": {
+      "x": 0,
+      "y": 0,
+      "width": 190,
+      "height": 190
+     }
+    },
+    "ring3": {
+     "ring3": {
+      "x": 0,
+      "y": 0,
+      "width": 190,
+      "height": 190
+     }
+    },
+    "sparkle1": {
+     "sparkle1": {
+      "x": 0,
+      "y": 0,
+      "width": 54,
+      "height": 54
+     }
+    },
+    "sparkle2": {
+     "sparkle2": {
+      "x": 0,
+      "y": 0,
+      "width": 42,
+      "height": 42
+     }
+    },
+    "sparkle3": {
+     "sparkle3": {
+      "x": 0,
+      "y": 0,
+      "width": 36,
+      "height": 36
+     }
+    }
+   }
+  }
+ ],
+ "events": {
+  "land": {},
+  "open": {},
+  "card_1": {},
+  "card_2": {},
+  "card_3": {}
+ },
+ "animations": {}
+}

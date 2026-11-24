@@ -1,0 +1,31 @@
+# Labels and milestones follow .github/labels.json and .github/milestones.json; an open issue that
+# carries a roadmap label is put in its milestone. tools/sync-github.js does the work and never deletes.
+# It runs when the files change on main, or by hand (Actions -> repo-sync -> Run workflow) after
+# labelling new issues; it does not run on every issue event, to save Actions minutes.
+name: repo-sync
+on:
+  push:
+    branches: [main]
+    paths: ['.github/labels.json', '.github/milestones.json', 'tools/sync-github.js']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: repo-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: node tools/sync-github.js --apply
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,51 @@
+{
+  "name": "coin-burst",
+  "title": "Coin burst",
+  "kind": "Effect",
+  "principles": "effect",
+  "subject": "A coin reward effect: a burst, eight coins and the coin counter they fly into, with sparkles.",
+  "intent": "The moment a player collects coins. Everything bigger than life (the flash and the ring overshoot), every coin on its own arc and its own frame, fast out of the burst and easing into the counter; the game hears each landing as an event.",
+  "display": {
+    "width": 240,
+    "pixelsPerUnit": 0.545
+  },
+  "teaches": [
+    "arcs",
+    "stagger",
+    "spacing",
+    "exaggeration",
+    "events on the contact frame"
+  ],
+  "preview": {
+    "clip": "burst",
+    "time": 0.3333
+  },
+  "events": {
+    "coin_land": [
+      0.4333,
+      0.5,
+      0.5667,
+      0.6667,
+      0.7333,
+      0.8,
+      0.8667,
+      0.9333
+    ]
+  },
+  "clips": [
+    {
+      "name": "burst",
+      "seconds": 1,
+      "loop": false,
+      "track": 0,
+      "does": "2 frames of white flash, the ring expands and fades, 8 coins pop 2 to 3 frames apart, spin, land in the counter with a squash, a flash and a coin_land event each; the bar fills"
+    },
+    {
+      "name": "sparkle",
+      "seconds": 1.5,
+      "loop": true,
+      "track": 1,
+      "does": "three sparkles twinkle in turn around the counter"
+    }
+  ]
+}

@@ -1,0 +1,82 @@
+play-button.png
+size: 981,960
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+glow
+  rotate: false
+  xy: 4, 4
+  size: 600, 340
+  orig: 600, 340
+  offset: 0, 0
+  index: -1
+shadow
+  rotate: false
+  xy: 4, 896
+  size: 440, 60
+  orig: 440, 60
+  offset: 0, 0
+  index: -1
+rim
+  rotate: false
+  xy: 4, 560
+  size: 464, 208
+  orig: 464, 208
+  offset: 0, 0
+  index: -1
+rim_off
+  rotate: false
+  xy: 472, 560
+  size: 464, 208
+  orig: 464, 208
+  offset: 0, 0
+  index: -1
+face
+  rotate: false
+  xy: 4, 348
+  size: 464, 208
+  orig: 464, 208
+  offset: 0, 0
+  index: -1
+face_off
+  rotate: false
+  xy: 472, 348
+  size: 464, 208
+  orig: 464, 208
+  offset: 0, 0
+  index: -1
+shine
+  rotate: false
+  xy: 608, 4
+  size: 88, 260
+  orig: 88, 260
+  offset: 0, 0
+  index: -1
+icon
+  rotate: false
+  xy: 392, 772
+  size: 88, 104
+  orig: 88, 104
+  offset: 0, 0
+  index: -1
+label
+  rotate: false
+  xy: 128, 772
+  size: 260, 120
+  orig: 260, 120
+  offset: 0, 0
+  index: -1
+badge
+  rotate: false
+  xy: 484, 772
+  size: 100, 100
+  orig: 100, 100
+  offset: 0, 0
+  index: -1
+badgeRing
+  rotate: false
+  xy: 4, 772
+  size: 120, 120
+  orig: 120, 120
+  offset: 0, 0
+  index: -1

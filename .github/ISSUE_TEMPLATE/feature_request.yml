@@ -1,0 +1,15 @@
+name: Idea
+description: Something the studio could do. Scope is set in docs/concept.md; new tools and pages are a maintainer decision.
+labels: [feature, needs maintainer decision]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What you are trying to do with your Spine animation, and where the studio stops you.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help

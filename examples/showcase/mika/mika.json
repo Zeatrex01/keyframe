@@ -1,0 +1,892 @@
+{
+ "skeleton": {
+  "hash": "mika",
+  "spine": "4.2.43",
+  "x": -280,
+  "y": -460,
+  "width": 600,
+  "height": 650,
+  "images": "",
+  "audio": ""
+ },
+ "bones": [
+  {
+   "name": "root"
+  },
+  {
+   "name": "body",
+   "parent": "root",
+   "x": 0,
+   "y": -436
+  },
+  {
+   "name": "torso",
+   "parent": "body",
+   "x": 0,
+   "y": 0,
+   "length": 300
+  },
+  {
+   "name": "head",
+   "parent": "torso",
+   "x": 0,
+   "y": 332,
+   "length": 180
+  },
+  {
+   "name": "hairBack",
+   "parent": "head",
+   "x": 0,
+   "y": 106,
+   "length": 100
+  },
+  {
+   "name": "tailL1",
+   "parent": "head",
+   "x": -92,
+   "y": 162,
+   "length": 300
+  },
+  {
+   "name": "tailL2",
+   "parent": "tailL1",
+   "x": -86,
+   "y": -218,
+   "length": 180
+  },
+  {
+   "name": "tailR1",
+   "parent": "head",
+   "x": 92,
+   "y": 162,
+   "length": 300
+  },
+  {
+   "name": "tailR2",
+   "parent": "tailR1",
+   "x": 86,
+   "y": -218,
+   "length": 180
+  },
+  {
+   "name": "armR",
+   "parent": "torso",
+   "x": 94,
+   "y": 275.33,
+   "rotation": -86.73,
+   "length": 186.97
+  },
+  {
+   "name": "forearmR",
+   "parent": "armR",
+   "x": 186.97,
+   "rotation": -6.71,
+   "length": 88.83
+  },
+  {
+   "name": "handR",
+   "parent": "forearmR",
+   "x": 88.83,
+   "length": 100
+  },
+  {
+   "name": "neck",
+   "parent": "torso",
+   "x": 0,
+   "y": 326
+  },
+  {
+   "name": "ribbon",
+   "parent": "torso",
+   "x": 0,
+   "y": 168,
+   "length": 60
+  },
+  {
+   "name": "tieL",
+   "parent": "head",
+   "x": -88,
+   "y": 164
+  },
+  {
+   "name": "tieR",
+   "parent": "head",
+   "x": 88,
+   "y": 164
+  },
+  {
+   "name": "blushL",
+   "parent": "head",
+   "x": -54,
+   "y": 36
+  },
+  {
+   "name": "blushR",
+   "parent": "head",
+   "x": 54,
+   "y": 36
+  },
+  {
+   "name": "eyeL",
+   "parent": "head",
+   "x": -47,
+   "y": 73
+  },
+  {
+   "name": "pupilL",
+   "parent": "eyeL",
+   "x": 0,
+   "y": 0
+  },
+  {
+   "name": "lidL",
+   "parent": "eyeL",
+   "x": 0,
+   "y": 0
+  },
+  {
+   "name": "eyeR",
+   "parent": "head",
+   "x": 47,
+   "y": 73
+  },
+  {
+   "name": "pupilR",
+   "parent": "eyeR",
+   "x": 0,
+   "y": 0
+  },
+  {
+   "name": "lidR",
+   "parent": "eyeR",
+   "x": 0,
+   "y": 0
+  },
+  {
+   "name": "earL",
+   "parent": "head",
+   "x": -84,
+   "y": 128,
+   "length": 110
+  },
+  {
+   "name": "earR",
+   "parent": "head",
+   "x": 84,
+   "y": 128,
+   "length": 110
+  },
+  {
+   "name": "fringe",
+   "parent": "head",
+   "x": 0,
+   "y": 164
+  },
+  {
+   "name": "browL",
+   "parent": "head",
+   "x": -47,
+   "y": 112
+  },
+  {
+   "name": "browR",
+   "parent": "head",
+   "x": 47,
+   "y": 112
+  },
+  {
+   "name": "mouth",
+   "parent": "head",
+   "x": 0,
+   "y": 24
+  },
+  {
+   "name": "tearL",
+   "parent": "head",
+   "x": -53,
+   "y": 31
+  },
+  {
+   "name": "tearR",
+   "parent": "head",
+   "x": 53,
+   "y": 31
+  },
+  {
+   "name": "anger",
+   "parent": "head",
+   "x": 87,
+   "y": 133
+  },
+  {
+   "name": "heart",
+   "parent": "root",
+   "x": 77,
+   "y": 57
+  },
+  {
+   "name": "zzz",
+   "parent": "root",
+   "x": 87,
+   "y": 47
+  },
+  {
+   "name": "nose",
+   "parent": "head",
+   "x": 0,
+   "y": 46
+  },
+  {
+   "name": "strand",
+   "parent": "head",
+   "x": 2,
+   "y": 198,
+   "length": 40
+  },
+  {
+   "name": "sparkle1",
+   "parent": "root",
+   "x": -86,
+   "y": 78
+  },
+  {
+   "name": "sparkle2",
+   "parent": "root",
+   "x": 92,
+   "y": 34
+  },
+  {
+   "name": "badge",
+   "parent": "root",
+   "x": 84,
+   "y": 88
+  }
+ ],
+ "slots": [
+  {
+   "name": "hairBack",
+   "bone": "hairBack",
+   "attachment": "hairBack"
+  },
+  {
+   "name": "tailL1",
+   "bone": "tailL1",
+   "attachment": "tailL1"
+  },
+  {
+   "name": "tailL2",
+   "bone": "tailL2",
+   "attachment": "tailL2"
+  },
+  {
+   "name": "tailR1",
+   "bone": "tailR1",
+   "attachment": "tailR1"
+  },
+  {
+   "name": "tailR2",
+   "bone": "tailR2",
+   "attachment": "tailR2"
+  },
+  {
+   "name": "torso",
+   "bone": "torso",
+   "attachment": "torso"
+  },
+  {
+   "name": "elbowR",
+   "bone": "forearmR",
+   "attachment": "elbowR"
+  },
+  {
+   "name": "forearmR",
+   "bone": "forearmR",
+   "attachment": "forearmR"
+  },
+  {
+   "name": "handR",
+   "bone": "handR"
+  },
+  {
+   "name": "armR",
+   "bone": "armR",
+   "attachment": "armR"
+  },
+  {
+   "name": "neck",
+   "bone": "neck",
+   "attachment": "neck"
+  },
+  {
+   "name": "ribbon",
+   "bone": "ribbon",
+   "attachment": "ribbon"
+  },
+  {
+   "name": "head",
+   "bone": "head",
+   "attachment": "head"
+  },
+  {
+   "name": "tieL",
+   "bone": "tieL",
+   "attachment": "tieL"
+  },
+  {
+   "name": "tieR",
+   "bone": "tieR",
+   "attachment": "tieR"
+  },
+  {
+   "name": "blushL",
+   "bone": "blushL",
+   "attachment": "blushL",
+   "color": "ffffff00"
+  },
+  {
+   "name": "blushR",
+   "bone": "blushR",
+   "attachment": "blushR",
+   "color": "ffffff00"
+  },
+  {
+   "name": "eyeL",
+   "bone": "eyeL",
+   "attachment": "eyeL"
+  },
+  {
+   "name": "pupilL",
+   "bone": "pupilL",
+   "attachment": "pupilL"
+  },
+  {
+   "name": "lashL",
+   "bone": "eyeL",
+   "attachment": "lashL"
+  },
+  {
+   "name": "lidL",
+   "bone": "lidL"
+  },
+  {
+   "name": "eyeR",
+   "bone": "eyeR",
+   "attachment": "eyeR"
+  },
+  {
+   "name": "pupilR",
+   "bone": "pupilR",
+   "attachment": "pupilR"
+  },
+  {
+   "name": "lashR",
+   "bone": "eyeR",
+   "attachment": "lashR"
+  },
+  {
+   "name": "lidR",
+   "bone": "lidR"
+  },
+  {
+   "name": "earL",
+   "bone": "earL",
+   "attachment": "earL"
+  },
+  {
+   "name": "earR",
+   "bone": "earR",
+   "attachment": "earR"
+  },
+  {
+   "name": "fringe",
+   "bone": "fringe",
+   "attachment": "fringe"
+  },
+  {
+   "name": "browL",
+   "bone": "browL",
+   "attachment": "browL"
+  },
+  {
+   "name": "browR",
+   "bone": "browR",
+   "attachment": "browR"
+  },
+  {
+   "name": "mouth",
+   "bone": "mouth",
+   "attachment": "mouth_neutral"
+  },
+  {
+   "name": "tearL",
+   "bone": "tearL",
+   "attachment": "tearL",
+   "color": "ffffff00"
+  },
+  {
+   "name": "tearR",
+   "bone": "tearR",
+   "attachment": "tearR",
+   "color": "ffffff00"
+  },
+  {
+   "name": "anger",
+   "bone": "anger",
+   "attachment": "anger",
+   "color": "ffffff00"
+  },
+  {
+   "name": "heart",
+   "bone": "heart",
+   "attachment": "heart",
+   "color": "ffffff00"
+  },
+  {
+   "name": "zzz",
+   "bone": "zzz",
+   "attachment": "zzz",
+   "color": "ffffff00"
+  },
+  {
+   "name": "nose",
+   "bone": "nose",
+   "attachment": "nose"
+  },
+  {
+   "name": "strand",
+   "bone": "strand",
+   "attachment": "strand"
+  },
+  {
+   "name": "sparkle1",
+   "bone": "sparkle1",
+   "attachment": "sparkle1",
+   "color": "ffffff00",
+   "blend": "additive"
+  },
+  {
+   "name": "sparkle2",
+   "bone": "sparkle2",
+   "attachment": "sparkle2",
+   "color": "ffffff00",
+   "blend": "additive"
+  },
+  {
+   "name": "badge",
+   "bone": "badge",
+   "attachment": "badge",
+   "color": "ffffff00"
+  }
+ ],
+ "skins": [
+  {
+   "name": "default",
+   "attachments": {
+    "hairBack": {
+     "hairBack": {
+      "x": 0,
+      "y": 0,
+      "width": 204,
+      "height": 204
+     }
+    },
+    "tailL1": {
+     "tailL1": {
+      "x": -56,
+      "y": -254,
+      "width": 180,
+      "height": 510
+     }
+    },
+    "tailL2": {
+     "tailL2": {
+      "x": 2,
+      "y": -90,
+      "width": 40,
+      "height": 190
+     }
+    },
+    "tailR1": {
+     "tailR1": {
+      "x": 56,
+      "y": -254,
+      "width": 180,
+      "height": 510
+     }
+    },
+    "tailR2": {
+     "tailR2": {
+      "x": -2,
+      "y": -90,
+      "width": 40,
+      "height": 190
+     }
+    },
+    "torso": {
+     "torso": {
+      "x": 0,
+      "y": 168,
+      "width": 336,
+      "height": 336
+     }
+    },
+    "neck": {
+     "neck": {
+      "x": 0,
+      "y": 0,
+      "width": 30,
+      "height": 34
+     }
+    },
+    "ribbon": {
+     "ribbon": {
+      "x": 0,
+      "y": -20,
+      "width": 84,
+      "height": 68
+     }
+    },
+    "head": {
+     "head": {
+      "x": 0,
+      "y": 96,
+      "width": 188,
+      "height": 200
+     }
+    },
+    "tieL": {
+     "tieL": {
+      "x": 0,
+      "y": 0,
+      "width": 30,
+      "height": 30
+     }
+    },
+    "tieR": {
+     "tieR": {
+      "x": 0,
+      "y": 0,
+      "width": 30,
+      "height": 30
+     }
+    },
+    "blushL": {
+     "blushL": {
+      "x": 0,
+      "y": 0,
+      "width": 44,
+      "height": 26
+     }
+    },
+    "blushR": {
+     "blushR": {
+      "x": 0,
+      "y": 0,
+      "width": 44,
+      "height": 26
+     }
+    },
+    "eyeL": {
+     "eyeL": {
+      "x": 0,
+      "y": 0,
+      "width": 58,
+      "height": 66
+     }
+    },
+    "pupilL": {
+     "pupilL": {
+      "x": 0,
+      "y": 0,
+      "width": 40,
+      "height": 49
+     }
+    },
+    "lashL": {
+     "lashL": {
+      "x": 0,
+      "y": 0,
+      "width": 70,
+      "height": 78
+     }
+    },
+    "lidL": {
+     "lid_half": {
+      "x": 0,
+      "y": 0,
+      "width": 70,
+      "height": 78
+     },
+     "lid_angry": {
+      "x": 0,
+      "y": 0,
+      "width": 70,
+      "height": 78
+     },
+     "lid_sad": {
+      "x": 0,
+      "y": 0,
+      "width": 70,
+      "height": 78
+     },
+     "lid_closed": {
+      "x": 0,
+      "y": 0,
+      "width": 70,
+      "height": 78
+     },
+     "lid_happy": {
+      "x": 0,
+      "y": 0,
+      "width": 70,
+      "height": 78
+     }
+    },
+    "eyeR": {
+     "eyeR": {
+      "x": 0,
+      "y": 0,
+      "width": 58,
+      "height": 66
+     }
+    },
+    "pupilR": {
+     "pupilR": {
+      "x": 0,
+      "y": 0,
+      "width": 40,
+      "height": 49
+     }
+    },
+    "lashR": {
+     "lashR": {
+      "x": 0,
+      "y": 0,
+      "width": 70,
+      "height": 78
+     }
+    },
+    "lidR": {
+     "lid_half": {
+      "x": 0,
+      "y": 0,
+      "width": 70,
+      "height": 78
+     },
+     "lid_angry": {
+      "x": 0,
+      "y": 0,
+      "width": 70,
+      "height": 78
+     },
+     "lid_sad": {
+      "x": 0,
+      "y": 0,
+      "width": 70,
+      "height": 78
+     },
+     "lid_closed": {
+      "x": 0,
+      "y": 0,
+      "width": 70,
+      "height": 78
+     },
+     "lid_happy": {
+      "x": 0,
+      "y": 0,
+      "width": 70,
+      "height": 78
+     }
+    },
+    "earL": {
+     "earL": {
+      "x": -4,
+      "y": -54,
+      "width": 34,
+      "height": 124
+     }
+    },
+    "earR": {
+     "earR": {
+      "x": 4,
+      "y": -54,
+      "width": 34,
+      "height": 124
+     }
+    },
+    "fringe": {
+     "fringe": {
+      "x": 0,
+      "y": -37,
+      "width": 212,
+      "height": 170
+     }
+    },
+    "browL": {
+     "browL": {
+      "x": 0,
+      "y": 0,
+      "width": 38,
+      "height": 13
+     }
+    },
+    "browR": {
+     "browR": {
+      "x": 0,
+      "y": 0,
+      "width": 38,
+      "height": 13
+     }
+    },
+    "mouth": {
+     "mouth_neutral": {
+      "x": 0,
+      "y": 0,
+      "width": 80,
+      "height": 58
+     },
+     "mouth_smile": {
+      "x": 0,
+      "y": 0,
+      "width": 80,
+      "height": 58
+     },
+     "mouth_o": {
+      "x": 0,
+      "y": 0,
+      "width": 80,
+      "height": 58
+     },
+     "mouth_frown": {
+      "x": 0,
+      "y": 0,
+      "width": 80,
+      "height": 58
+     },
+     "mouth_grr": {
+      "x": 0,
+      "y": 0,
+      "width": 80,
+      "height": 58
+     }
+    },
+    "tearL": {
+     "tearL": {
+      "x": 0,
+      "y": 0,
+      "width": 18,
+      "height": 26
+     }
+    },
+    "tearR": {
+     "tearR": {
+      "x": 0,
+      "y": 0,
+      "width": 18,
+      "height": 26
+     }
+    },
+    "anger": {
+     "anger": {
+      "x": 0,
+      "y": 0,
+      "width": 46,
+      "height": 46
+     }
+    },
+    "heart": {
+     "heart": {
+      "x": 0,
+      "y": 0,
+      "width": 44,
+      "height": 42
+     }
+    },
+    "zzz": {
+     "zzz": {
+      "x": 0,
+      "y": 0,
+      "width": 34,
+      "height": 34
+     }
+    },
+    "nose": {
+     "nose": {
+      "x": 0,
+      "y": 0,
+      "width": 6,
+      "height": 6
+     }
+    },
+    "strand": {
+     "strand": {
+      "x": 6,
+      "y": 16,
+      "width": 36,
+      "height": 40
+     }
+    },
+    "sparkle1": {
+     "sparkle1": {
+      "x": 0,
+      "y": 0,
+      "width": 46,
+      "height": 46
+     }
+    },
+    "sparkle2": {
+     "sparkle2": {
+      "x": 0,
+      "y": 0,
+      "width": 34,
+      "height": 34
+     }
+    },
+    "badge": {
+     "badge": {
+      "x": 0,
+      "y": 0,
+      "width": 60,
+      "height": 60
+     }
+    },
+    "armR": {
+     "armR": {
+      "x": 80.73,
+      "y": 16.42,
+      "rotation": 86.73,
+      "width": 106,
+      "height": 220.67
+     }
+    },
+    "forearmR": {
+     "forearmR": {
+      "x": 41.64,
+      "y": 12.86,
+      "rotation": 93.44,
+      "width": 106,
+      "height": 92.67
+     }
+    },
+    "elbowR": {
+     "elbowR": {
+      "x": 0,
+      "y": 0,
+      "width": 32,
+      "height": 32
+     }
+    },
+    "handR": {
+     "handR": {
+      "x": 55,
+      "y": 0,
+      "rotation": -90,
+      "width": 44,
+      "height": 118
+     }
+    }
+   }
+  }
+ ],
+ "animations": {}
+}

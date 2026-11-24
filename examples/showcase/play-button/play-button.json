@@ -1,0 +1,268 @@
+{
+ "skeleton": {
+  "hash": "play-button",
+  "spine": "4.2.43",
+  "x": -130,
+  "y": -70,
+  "width": 260,
+  "height": 150,
+  "images": "",
+  "audio": ""
+ },
+ "bones": [
+  {
+   "name": "root"
+  },
+  {
+   "name": "body",
+   "parent": "root"
+  },
+  {
+   "name": "glow",
+   "parent": "body",
+   "y": 2
+  },
+  {
+   "name": "shadow",
+   "parent": "body",
+   "y": -56
+  },
+  {
+   "name": "button",
+   "parent": "body"
+  },
+  {
+   "name": "rim",
+   "parent": "button"
+  },
+  {
+   "name": "face",
+   "parent": "button"
+  },
+  {
+   "name": "shine",
+   "parent": "face",
+   "x": -150,
+   "y": 4
+  },
+  {
+   "name": "icon",
+   "parent": "face",
+   "x": -70,
+   "y": 4
+  },
+  {
+   "name": "badge",
+   "parent": "button",
+   "x": 110,
+   "y": 50
+  },
+  {
+   "name": "badgeRing",
+   "parent": "badge"
+  }
+ ],
+ "slots": [
+  {
+   "name": "glow",
+   "bone": "glow",
+   "attachment": "glow",
+   "color": "ffffff00",
+   "blend": "additive"
+  },
+  {
+   "name": "shadow",
+   "bone": "shadow",
+   "attachment": "shadow"
+  },
+  {
+   "name": "rim",
+   "bone": "rim",
+   "attachment": "rim"
+  },
+  {
+   "name": "faceArt",
+   "bone": "face",
+   "attachment": "face"
+  },
+  {
+   "name": "faceClip",
+   "bone": "face",
+   "attachment": "faceClip"
+  },
+  {
+   "name": "shine",
+   "bone": "shine",
+   "attachment": "shine",
+   "blend": "additive"
+  },
+  {
+   "name": "icon",
+   "bone": "icon",
+   "attachment": "icon"
+  },
+  {
+   "name": "label",
+   "bone": "face",
+   "attachment": "label"
+  },
+  {
+   "name": "badge",
+   "bone": "badge",
+   "attachment": "badge",
+   "color": "ffffff00"
+  },
+  {
+   "name": "badgeRing",
+   "bone": "badgeRing",
+   "attachment": "badgeRing",
+   "color": "ffffff00",
+   "blend": "additive"
+  }
+ ],
+ "skins": [
+  {
+   "name": "default",
+   "attachments": {
+    "glow": {
+     "glow": {
+      "x": 0,
+      "y": 0,
+      "width": 300,
+      "height": 170
+     }
+    },
+    "shadow": {
+     "shadow": {
+      "x": 0,
+      "y": 0,
+      "width": 220,
+      "height": 30
+     }
+    },
+    "rim": {
+     "rim": {
+      "x": 0,
+      "y": -6,
+      "width": 232,
+      "height": 104
+     },
+     "rim_off": {
+      "x": 0,
+      "y": -6,
+      "width": 232,
+      "height": 104
+     }
+    },
+    "faceArt": {
+     "face": {
+      "x": 0,
+      "y": 4,
+      "width": 232,
+      "height": 104
+     },
+     "face_off": {
+      "x": 0,
+      "y": 4,
+      "width": 232,
+      "height": 104
+     }
+    },
+    "faceClip": {
+     "faceClip": {
+      "type": "clipping",
+      "end": "shine",
+      "vertexCount": 22,
+      "vertices": [
+       -64,
+       41,
+       -75.43,
+       39.19,
+       -85.75,
+       33.93,
+       -93.93,
+       25.75,
+       -99.19,
+       15.43,
+       -101,
+       4,
+       -99.19,
+       -7.43,
+       -93.93,
+       -17.75,
+       -85.75,
+       -25.93,
+       -75.43,
+       -31.19,
+       -64,
+       -33,
+       64,
+       -33,
+       75.43,
+       -31.19,
+       85.75,
+       -25.93,
+       93.93,
+       -17.75,
+       99.19,
+       -7.43,
+       101,
+       4,
+       99.19,
+       15.43,
+       93.93,
+       25.75,
+       85.75,
+       33.93,
+       75.43,
+       39.19,
+       64,
+       41
+      ]
+     }
+    },
+    "shine": {
+     "shine": {
+      "x": 0,
+      "y": 0,
+      "width": 44,
+      "height": 130
+     }
+    },
+    "icon": {
+     "icon": {
+      "x": 0,
+      "y": 0,
+      "width": 44,
+      "height": 52
+     }
+    },
+    "label": {
+     "label": {
+      "x": 27,
+      "y": 4,
+      "width": 130,
+      "height": 60
+     }
+    },
+    "badge": {
+     "badge": {
+      "x": 0,
+      "y": 0,
+      "width": 50,
+      "height": 50
+     }
+    },
+    "badgeRing": {
+     "badgeRing": {
+      "x": 0,
+      "y": 0,
+      "width": 60,
+      "height": 60
+     }
+    }
+   }
+  }
+ ],
+ "animations": {}
+}

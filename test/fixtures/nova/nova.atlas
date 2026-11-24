@@ -1,0 +1,33 @@
+nova.png
+size: 1024,99
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+title
+  rotate: false
+  xy: 6, 6
+  size: 198, 87
+  orig: 198, 87
+  offset: 0, 0
+  index: -1
+bar
+  rotate: false
+  xy: 210, 6
+  size: 150, 6
+  orig: 150, 6
+  offset: 0, 0
+  index: -1
+tag
+  rotate: false
+  xy: 366, 6
+  size: 190, 24
+  orig: 190, 24
+  offset: 0, 0
+  index: -1
+orb
+  rotate: false
+  xy: 562, 6
+  size: 26, 26
+  orig: 26, 26
+  offset: 0, 0
+  index: -1

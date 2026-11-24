@@ -1,0 +1,511 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<title>Keyframe Studio</title>
+<meta name="theme-color" content="#1B1826">
+<link rel="manifest" href="/web/manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="/web/icons/favicon.svg">
+<link rel="icon" type="image/png" sizes="192x192" href="/web/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/web/icons/icon-192.png">
+<script src="/web/boot.js"></script>
+<link rel="stylesheet" href="/web/tokens.css">
+<link rel="stylesheet" href="/web/components.css">
+<link rel="stylesheet" href="/web/app.css">
+<link rel="stylesheet" href="/web/views.css">
+</head>
+<body>
+
+<svg class="sprite" width="0" height="0" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="logo" viewBox="0 0 64 64">
+      <g fill="none" stroke-linejoin="round">
+        <path class="ghost-1" d="M12 24 L20 32 L12 40 L4 32 Z" stroke="var(--agent)" stroke-width="3" opacity=".42"/>
+        <path class="ghost-2" d="M25 22 L35 32 L25 42 L15 32 Z" stroke="var(--agent)" stroke-width="3" opacity=".78"/>
+        <path class="key" d="M44 18 L58 32 L44 46 L30 32 Z" fill="var(--accent)" stroke="var(--accent)" stroke-width="4"/>
+      </g>
+    </symbol>
+    <symbol id="i-play" viewBox="0 0 16 16"><path d="M5.5 3.2v9.6L13 8z" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 16 16"><rect x="4" y="3" width="3" height="10" rx=".8" fill="currentColor" stroke="none"/><rect x="9" y="3" width="3" height="10" rx=".8" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-loop" viewBox="0 0 16 16"><path d="M3 8a5 5 0 0 1 8.6-3.4L13 6M13 3v3h-3M13 8a5 5 0 0 1-8.6 3.4L3 10M3 13v-3h3"/></symbol>
+    <symbol id="i-undo" viewBox="0 0 16 16"><path d="M4 6h5.5a3 3 0 0 1 0 6H6M4 6l2.5-2.5M4 6l2.5 2.5"/></symbol>
+    <symbol id="i-check" viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-7"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 16 16"><path d="M8 2.5 14 13H2zM8 6.5v3.2M8 11.4v.1"/></symbol>
+    <symbol id="i-video" viewBox="0 0 16 16"><rect x="2" y="4" width="9" height="8" rx="1.5"/><path d="M11 7l3-1.5v5L11 9"/></symbol>
+    <symbol id="i-send" viewBox="0 0 16 16"><path d="M8 12.5v-9M4.5 7 8 3.5 11.5 7"/></symbol>
+    <symbol id="i-compare" viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M8 3v10"/></symbol>
+    <symbol id="i-mark" viewBox="0 0 16 16"><path d="M2.5 5.5v-3h3M10.5 2.5h3v3M13.5 10.5v3h-3M5.5 13.5h-3v-3"/><rect x="6" y="6" width="4" height="4" rx=".6"/></symbol>
+    <symbol id="i-close" viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8"/></symbol>
+    <symbol id="i-sync" viewBox="0 0 16 16"><path d="M5 5.5h6M5 10.5h6M3 3v10M13 3v10"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 16 16"><path d="M2 4.5a1 1 0 0 1 1-1h3.2l1.5 1.6H13a1 1 0 0 1 1 1v6.4a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1z"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 16 16"><circle cx="8" cy="8" r="2.2"/><path d="M8 1.8v1.8M8 12.4v1.8M1.8 8h1.8M12.4 8h1.8M3.6 3.6l1.3 1.3M11.1 11.1l1.3 1.3M3.6 12.4l1.3-1.3M11.1 4.9l1.3-1.3"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 16 16"><rect x="5.5" y="5.5" width="8" height="8" rx="1.3"/><path d="M10.5 5.5V3.8a1.3 1.3 0 0 0-1.3-1.3H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3h1.7"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 16 16"><circle cx="8" cy="8" r="2.8"/><path d="M8 1.5v1.5M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1 1M11.6 11.6l1 1M3.4 12.6l1-1M11.6 4.4l1-1"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 16 16"><path d="M13 9.5A5.5 5.5 0 0 1 6.5 3a5.5 5.5 0 1 0 6.5 6.5z"/></symbol>
+    <symbol id="i-sliders" viewBox="0 0 16 16"><path d="M2.5 4.5h6M11.5 4.5h2M2.5 11.5h2M7.5 11.5h6"/><circle cx="10" cy="4.5" r="1.6"/><circle cx="6" cy="11.5" r="1.6"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 16 16"><path d="M4.5 6.5 8 10l3.5-3.5"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 16 16"><path d="M8 1.8c.6 3.2 1.9 5 5.6 6.2-3.7 1.2-5 3-5.6 6.2-.6-3.2-1.9-5-5.6-6.2 3.7-1.2 5-3 5.6-6.2z" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-chat" viewBox="0 0 16 16"><path d="M3 3.5h10a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H7.5L4.5 14v-2.5H3a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1z"/></symbol>
+    <symbol id="i-timeline" viewBox="0 0 16 16"><path d="M2 4.5h12M2 8h12M2 11.5h12"/><path d="M5 3l1.5 1.5L5 6 3.5 4.5zM10 6.5l1.5 1.5L10 9.5 8.5 8zM7 10l1.5 1.5L7 13l-1.5-1.5z" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-film" viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M5 3v10M11 3v10M2 6h3M2 10h3M11 6h3M11 10h3"/></symbol>
+    <symbol id="i-history" viewBox="0 0 16 16"><path d="M2.5 8a5.5 5.5 0 1 0 1.6-3.9M2.5 2.5v2.6h2.6M8 5v3.2l2 1.3"/></symbol>
+    <symbol id="i-download" viewBox="0 0 16 16"><path d="M8 2.5v8M4.5 7 8 10.5 11.5 7M3 13.5h10"/></symbol>
+    <symbol id="i-box" viewBox="0 0 16 16"><path d="M2.5 5 8 2.5 13.5 5v6L8 13.5 2.5 11zM2.5 5 8 7.5 13.5 5M8 7.5v6"/></symbol>
+    <symbol id="i-puzzle" viewBox="0 0 16 16"><path d="M3 5h3a1.5 1.5 0 1 1 3 0h3v3a1.5 1.5 0 1 1 0 3v2H3v-3a1.5 1.5 0 1 0 0-3z"/></symbol>
+    <symbol id="i-info" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 7.2v3.6M8 5.2v.1"/></symbol>
+    <symbol id="i-link" viewBox="0 0 16 16"><path d="M7 9a2.5 2.5 0 0 0 3.5 0l2-2A2.5 2.5 0 0 0 9 3.5l-.7.7M9 7a2.5 2.5 0 0 0-3.5 0l-2 2A2.5 2.5 0 0 0 7 12.5l.7-.7"/></symbol>
+    <symbol id="i-terminal" viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M4.5 6.5 6.5 8l-2 1.5M8 10h3"/></symbol>
+    <symbol id="i-cursor" viewBox="0 0 16 16"><path d="M4 2.5l8 5.2-3.6.8 2 3.8-1.6.8-2-3.8L4 11.6z"/></symbol>
+    <symbol id="i-circle" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5"/></symbol>
+    <symbol id="i-square" viewBox="0 0 16 16"><rect x="3" y="3" width="10" height="10" rx="1.5"/></symbol>
+    <symbol id="i-pivot" viewBox="0 0 16 16"><circle cx="8" cy="8" r="2"/><path d="M8 2v3.2M8 10.8V14M2 8h3.2M10.8 8H14"/></symbol>
+    <symbol id="i-pen" viewBox="0 0 16 16"><path d="M3 13l1-3.5 6.8-6.8a1.4 1.4 0 0 1 2 2L6 11.5zM9.8 3.7l2.5 2.5"/></symbol>
+    <symbol id="i-wand" viewBox="0 0 16 16"><path d="M3 13 10.5 5.5M9 3v1.5M12.5 6.5H14M12 3.5l-1 1M4.5 2.5v2M3.5 3.5h2"/></symbol>
+    <symbol id="i-bone" viewBox="0 0 16 16"><circle cx="4" cy="12" r="1.8"/><path d="M5.3 10.7 11.5 4.5"/><circle cx="12" cy="4" r="1.8"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 16 16"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5"/></symbol>
+    <symbol id="i-up" viewBox="0 0 16 16"><path d="M4.5 9.5 8 6l3.5 3.5"/></symbol>
+    <symbol id="i-down" viewBox="0 0 16 16"><path d="M4.5 6.5 8 10l3.5-3.5"/></symbol>
+  </defs>
+</svg>
+
+<header class="bar" id="bar">
+  <button type="button" class="brand" id="navProjects" data-i18n-label="nav.home">
+    <svg aria-hidden="true"><use href="#logo"/></svg><b class="hide-phone">Keyframe <span>Studio</span></b>
+  </button>
+  <span class="sep hide-phone" id="barSep" hidden></span>
+  <button type="button" class="project-switch" id="projectSwitch" data-i18n-label="nav.switchProject" hidden>
+    <span class="thumb" id="projectThumb"><svg aria-hidden="true"><use href="#logo"/></svg></span><b id="projectName"></b><svg class="ic" aria-hidden="true"><use href="#i-chev"/></svg>
+  </button>
+  <span class="grow"></span>
+  <div class="seg mode" id="modeSwitch" role="tablist" data-i18n-label="mode.label" hidden>
+    <button type="button" role="tab" id="modeAnimate" aria-selected="true"><svg class="ic" aria-hidden="true"><use href="#i-play"/></svg><span class="hide-phone" data-i18n="mode.animate"></span></button>
+    <button type="button" role="tab" id="modeDraw" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-pen"/></svg><span class="hide-phone" data-i18n="mode.draw"></span></button>
+  </div>
+  <span class="grow"></span>
+  <span class="agent-pill" id="agentPill" role="status"><span class="dot" id="agentDot"></span><b id="agentName" hidden></b><span id="agentLabel"></span></span>
+  <button type="button" class="btn ghost icon" id="navSettings" data-i18n-label="nav.settings">
+    <svg class="ic" aria-hidden="true"><use href="#i-sliders"/></svg>
+  </button>
+</header>
+
+<main class="studio" id="app" data-tab="clips" data-phone="chat">
+
+  <section class="chat" id="chat" aria-labelledby="chatTitle">
+    <div class="chat-head"><h2 class="h-sec" id="chatTitle" data-i18n="chat.title"></h2></div>
+    <div class="thread" id="msgs" aria-live="polite">
+      <p class="quiet chat-empty" id="chatEmpty" data-i18n="chat.empty"></p>
+    </div>
+    <div class="msg ai live" id="live" role="status" aria-live="polite" hidden>
+      <div class="who"><span class="avatar"><svg class="ic" aria-hidden="true"><use href="#i-spark"/></svg></span><b class="name" id="liveName"></b>
+        <span class="phase" id="livePhase"></span><span class="secs" id="liveSecs"></span><span class="grow"></span>
+        <button type="button" class="btn ghost sm" id="stopAgent"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg><span data-i18n="chat.stop"></span></button></div>
+      <div class="body" id="liveText"></div>
+    </div>
+    <div class="steps" id="steps" role="status" hidden>
+      <span class="s" data-step="0"><span class="kd"></span><span></span></span><span class="bar-line"></span>
+      <span class="s" data-step="1"><span class="kd"></span><span></span></span><span class="bar-line"></span>
+      <span class="s" data-step="2"><span class="kd"></span><span></span></span>
+    </div>
+    <form class="composer" id="compose">
+      <div class="suggest" id="suggest" role="group" data-i18n-label="chat.suggestLabel"></div>
+      <div class="box">
+        <textarea id="text" rows="2" maxlength="4000" data-i18n-placeholder="chat.placeholder" data-i18n-label="chat.placeholder"></textarea>
+        <div class="row-actions">
+          <button type="button" class="btn ghost sm" id="attach">
+            <svg class="ic" aria-hidden="true"><use href="#i-video"/></svg><span data-i18n="chat.attach"></span>
+          </button>
+          <span class="grow"></span>
+          <span class="kbd hide-phone" aria-hidden="true">Enter</span>
+          <button type="submit" class="btn primary sm icon" id="send" data-i18n-label="chat.send" disabled>
+            <svg class="ic" aria-hidden="true"><use href="#i-send"/></svg>
+          </button>
+        </div>
+      </div>
+      <p class="hint" id="chatHint" role="status" hidden></p>
+    </form>
+  </section>
+
+  <section class="center" id="right" data-i18n-label="stage.region">
+    <div class="panes">
+      <div class="stage ref-pane" id="refPane" hidden>
+        <div class="media-slot" id="refPaneSlot"></div>
+        <div class="overlay tl"><span class="chip agent"><svg class="ic" aria-hidden="true"><use href="#i-video"/></svg><span id="refPaneName"></span></span></div>
+      </div>
+      <div class="stage" id="stage">
+        <div class="player" id="player"></div>
+        <div class="stage-note" id="stageNote" hidden>
+          <svg class="note-logo" aria-hidden="true"><use href="#logo"/></svg>
+          <p class="note-title" id="stageNoteTitle"></p>
+          <p class="note-body" id="stageNoteBody"></p>
+        </div>
+        <div class="overlay tl" id="stageFlipWrap" hidden>
+          <div class="flip" role="group" id="stageFlip" data-i18n-label="stage.which">
+            <button type="button" id="flipSource" aria-pressed="false" data-i18n="stage.original"></button>
+            <button type="button" id="flipResult" aria-pressed="false" data-i18n="stage.result"></button>
+            <select class="file" id="stageFile" data-i18n-label="stage.file"></select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="transport" id="transport">
+      <button type="button" class="btn primary icon" id="play" data-i18n-label="stage.play" disabled>
+        <svg class="ic" aria-hidden="true"><use id="playIcon" href="#i-play"/></svg>
+      </button>
+      <select class="clip-pick" id="clip" data-i18n-label="stage.clip" disabled></select>
+      <span class="timecode" id="time"><b>0.00</b> / 0.00 s</span>
+      <span class="grow"></span>
+      <button type="button" class="btn ghost sm hide-phone" id="loop" aria-pressed="true">
+        <svg class="ic" aria-hidden="true"><use href="#i-loop"/></svg><span data-i18n="stage.loop"></span>
+      </button>
+      <div class="seg hide-phone" id="speed" role="group" data-i18n-label="stage.speed">
+        <button type="button" data-speed="0.25" aria-pressed="false">¼×</button>
+        <button type="button" data-speed="0.5" aria-pressed="false">½×</button>
+        <button type="button" data-speed="1" aria-pressed="true">1×</button>
+      </div>
+    </div>
+
+    <section class="dock" id="keysPanel" role="tabpanel" aria-labelledby="tabKeys">
+      <div class="timeline" id="timeline" role="group" data-i18n-label="keys.title" hidden>
+        <div class="corner"><svg class="ic" aria-hidden="true"><use href="#i-timeline"/></svg><span data-i18n="keys.bones"></span></div>
+        <div class="ruler" id="ruler" role="slider" tabindex="0" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" data-i18n-label="stage.scrub"></div>
+        <div class="labels" id="laneLabels"></div>
+        <div class="lanes" id="lanes"><span class="range" id="laneRange" hidden></span><span class="playhead" id="playhead"></span></div>
+      </div>
+      <p class="quiet keys-empty" id="keysEmpty" data-i18n="keys.empty"></p>
+    </section>
+  </section>
+
+  <aside class="inspector" id="inspector" data-i18n-label="inspector.title">
+    <div class="tabs" role="tablist" id="inspectorTabs" data-i18n-label="inspector.title">
+      <button type="button" role="tab" id="tabKeys" class="hide-wide" data-tab="keys" aria-controls="keysPanel" aria-selected="false" tabindex="-1"><span data-i18n="keys.tab"></span></button>
+      <button type="button" role="tab" id="tabClips" data-tab="clips" aria-controls="clipsPanel" aria-selected="true"><span data-i18n="clips.tab"></span><span class="count" id="clipCount" hidden></span></button>
+      <button type="button" role="tab" id="tabReference" data-tab="reference" aria-controls="refCard" aria-selected="false" tabindex="-1"><span data-i18n="ref.title"></span><span class="count" id="refCount" hidden></span></button>
+      <button type="button" role="tab" id="tabVersions" data-tab="versions" aria-controls="versionsPanel" aria-selected="false" tabindex="-1"><span data-i18n="versions.tab"></span></button>
+    </div>
+    <div class="ins-body">
+
+      <section class="ins-panel" id="clipsPanel" role="tabpanel" aria-labelledby="tabClips">
+        <ul class="clip-list" id="clipList"></ul>
+        <p class="quiet" id="clipsEmpty" data-i18n="clips.empty"></p>
+        <div class="delivery" id="deliveryCard">
+          <p class="quiet" id="deliveryEmpty" data-i18n="delivery.none"></p>
+          <div class="file" id="deliveryTop" hidden>
+            <svg class="ic" aria-hidden="true"><use href="#i-box"/></svg><b id="deliveryFile"></b><span class="grow"></span>
+            <span class="chip" id="deliveryCheck" role="status"></span>
+          </div>
+          <p class="t-caption" id="deliveryNote" hidden></p>
+          <div class="acts" id="deliveryActs" hidden>
+            <button type="button" class="btn sm" id="deliveryFlip"><svg class="ic" aria-hidden="true"><use href="#i-compare"/></svg><span></span></button>
+            <button type="button" class="btn ghost sm" id="deliveryVersions"><svg class="ic" aria-hidden="true"><use href="#i-history"/></svg><span data-i18n="versions.tab"></span></button>
+          </div>
+        </div>
+      </section>
+
+      <section class="ins-panel" id="refCard" role="tabpanel" aria-labelledby="tabReference">
+        <div class="ref" id="refBody">
+          <div class="media-slot thumb" id="refThumb" hidden></div>
+          <div class="ref-meta">
+            <p class="quiet" id="refEmpty" data-i18n="ref.empty"></p>
+            <b class="file-name" id="refName" hidden></b>
+            <div class="acts">
+              <button type="button" class="btn sm" id="refSync" aria-pressed="true" hidden>
+                <svg class="ic" aria-hidden="true"><use href="#i-sync"/></svg><span data-i18n="ref.sync"></span>
+              </button>
+              <button type="button" class="btn sm" id="refCompare" aria-pressed="false" hidden>
+                <svg class="ic" aria-hidden="true"><use href="#i-compare"/></svg><span data-i18n="ref.compare"></span>
+              </button>
+            </div>
+            <div class="ref-list" id="refList" hidden></div>
+          </div>
+        </div>
+        <div class="mark-tools" id="markTools" hidden>
+          <div class="mark-head">
+            <button type="button" class="btn sm" id="markToggle" aria-pressed="false">
+              <svg class="ic" aria-hidden="true"><use href="#i-mark"/></svg><span data-i18n="mark.toggle"></span>
+            </button>
+            <span class="grow"></span>
+            <span class="timecode" id="markRange" hidden></span>
+            <button type="button" class="btn ghost sm icon" id="markClear" data-i18n-label="mark.clear" hidden>
+              <svg class="ic" aria-hidden="true"><use href="#i-close"/></svg>
+            </button>
+          </div>
+          <div class="acts">
+            <button type="button" class="btn sm" id="markStart" data-i18n="mark.start"></button>
+            <button type="button" class="btn sm" id="markEnd" data-i18n="mark.end"></button>
+          </div>
+          <button type="button" class="btn agent-btn" id="markLearn" disabled><svg class="ic" aria-hidden="true"><use href="#i-spark"/></svg><span data-i18n="mark.learn"></span></button>
+          <p class="quiet" id="markHint" role="status"></p>
+        </div>
+        <div class="library">
+          <h3 class="h-sec" data-i18n="library.title"></h3>
+          <p class="quiet" id="libraryEmpty" data-i18n="library.empty"></p>
+          <ul class="moves" id="moves"></ul>
+        </div>
+        <button type="button" class="btn" id="refAdd">
+          <svg class="ic" aria-hidden="true"><use href="#i-video"/></svg><span data-i18n="ref.add"></span>
+        </button>
+        <form class="ref-link" id="refLinkForm" hidden>
+          <label class="field-label" for="refLink" data-i18n="ref.linkLabel"></label>
+          <div class="input-row">
+            <input class="input mono" id="refLink" type="text" inputmode="url" spellcheck="false" autocomplete="off" data-i18n-placeholder="ref.linkPlaceholder">
+            <button type="submit" class="btn icon" id="refLinkGo" data-i18n-label="ref.linkGo"><svg class="ic" aria-hidden="true"><use href="#i-download"/></svg></button>
+          </div>
+          <div class="input-row ref-range">
+            <label class="field-label" for="refFrom" data-i18n="ref.linkFrom"></label>
+            <input class="input mono" id="refFrom" type="text" inputmode="decimal" spellcheck="false" autocomplete="off" placeholder="0:00">
+            <label class="field-label" for="refTo" data-i18n="ref.linkTo"></label>
+            <input class="input mono" id="refTo" type="text" inputmode="decimal" spellcheck="false" autocomplete="off" data-i18n-placeholder="ref.linkToPlaceholder">
+          </div>
+          <p class="quiet" id="refLinkHint"></p>
+        </form>
+        <p class="status" id="refStatus" role="status"></p>
+        <input type="file" id="refFile" class="sr-only" tabindex="-1" accept=".mp4,.webm,.mov,.gif,.png,.jpg,.jpeg,.webp">
+      </section>
+
+      <section class="ins-panel" id="versionsPanel" role="tabpanel" aria-labelledby="tabVersions">
+        <p class="quiet" id="versionsEmpty" data-i18n="delivery.none"></p>
+        <ul class="versions" id="versions"></ul>
+        <p class="t-caption" id="versionsNote" hidden></p>
+        <p class="status" id="deliveryStatus" role="status"></p>
+      </section>
+
+    </div>
+  </aside>
+</main>
+
+<nav class="tabbar" id="tabbar" role="tablist" data-i18n-label="inspector.panels">
+  <button type="button" role="tab" data-phone="chat" aria-controls="chat" aria-selected="true"><svg class="ic" aria-hidden="true"><use href="#i-chat"/></svg><span data-i18n="tabbar.chat"></span></button>
+  <button type="button" role="tab" data-phone="keys" aria-controls="keysPanel" aria-selected="false" tabindex="-1"><svg class="ic" aria-hidden="true"><use href="#i-timeline"/></svg><span data-i18n="keys.tab"></span></button>
+  <button type="button" role="tab" data-phone="reference" aria-controls="refCard" aria-selected="false" tabindex="-1"><svg class="ic" aria-hidden="true"><use href="#i-film"/></svg><span data-i18n="ref.title"></span></button>
+  <button type="button" role="tab" data-phone="clips" aria-controls="clipsPanel" aria-selected="false" tabindex="-1"><svg class="ic" aria-hidden="true"><use href="#i-box"/></svg><span data-i18n="clips.tab"></span></button>
+</nav>
+
+<section class="view draw" id="draw" data-i18n-label="draw.region" hidden>
+  <div class="tools" id="drawTools" role="toolbar" aria-orientation="vertical" data-i18n-label="draw.tools">
+    <button type="button" class="btn ghost icon" data-tool="select" aria-pressed="true" data-i18n-label="draw.toolSelect"><svg class="ic" aria-hidden="true"><use href="#i-cursor"/></svg></button>
+    <button type="button" class="btn ghost icon" data-tool="ellipse" aria-pressed="false" data-i18n-label="draw.toolEllipse"><svg class="ic" aria-hidden="true"><use href="#i-circle"/></svg></button>
+    <button type="button" class="btn ghost icon" data-tool="rect" aria-pressed="false" data-i18n-label="draw.toolRect"><svg class="ic" aria-hidden="true"><use href="#i-square"/></svg></button>
+    <button type="button" class="btn ghost icon" data-tool="pivot" aria-pressed="false" data-i18n-label="draw.toolPivot"><svg class="ic" aria-hidden="true"><use href="#i-pivot"/></svg></button>
+    <span class="grow"></span>
+    <button type="button" class="btn ghost icon" id="drawAsk" data-i18n-label="draw.ask"><svg class="ic" aria-hidden="true"><use href="#i-wand"/></svg></button>
+  </div>
+  <aside class="parts panel-flat" data-i18n-label="draw.parts">
+    <div class="phead"><select class="select" id="drawPick" data-i18n-label="draw.pick"></select></div>
+    <div class="phead"><b class="t-section" data-i18n="draw.parts"></b><span class="grow"></span><span class="t-caption" id="drawCount"></span></div>
+    <ul class="list plist2" id="drawParts"></ul>
+    <div class="notice agent"><svg class="ic" aria-hidden="true"><use href="#i-spark"/></svg><span data-i18n="draw.placeholderNote"></span></div>
+  </aside>
+  <section class="canvas" data-i18n-label="draw.canvas">
+    <div class="stage dstage" id="drawStage">
+      <svg class="dart" id="drawSvg" role="img" data-i18n-label="draw.canvas"></svg>
+      <p class="draw-empty" id="drawEmpty" data-i18n="draw.empty"></p>
+      <div class="overlay tl"><button type="button" class="btn sm" id="drawBones" aria-pressed="true"><svg class="ic" aria-hidden="true"><use href="#i-bone"/></svg><span data-i18n="draw.showBones"></span></button></div>
+      <div class="overlay br"><button type="button" class="chip" id="drawZoom" data-i18n-label="draw.fit"></button></div>
+    </div>
+    <div class="dbar">
+      <input class="input mono" id="drawName" spellcheck="false" autocomplete="off" data-i18n-label="draw.name">
+      <span class="t-caption" id="drawSummary"></span><span class="grow"></span>
+      <button type="button" class="btn" id="drawUndo"><svg class="ic" aria-hidden="true"><use href="#i-undo"/></svg><span data-i18n="draw.undo"></span></button>
+      <button type="button" class="btn primary" id="drawSave"><svg class="ic" aria-hidden="true"><use href="#i-box"/></svg><span data-i18n="draw.save"></span></button>
+    </div>
+    <p class="status" id="drawStatus" role="status"></p>
+  </section>
+  <aside class="props panel-flat" data-i18n-label="draw.settings">
+    <div class="phead"><b class="t-section" id="drawPartTitle"></b><span class="grow"></span><span class="chip" id="drawPartKind" hidden></span></div>
+    <div class="pbody" id="drawProps"></div>
+  </aside>
+</section>
+
+<section class="view first" id="first" aria-labelledby="firstTitle" hidden>
+  <div class="first-inner">
+    <section class="hero">
+      <svg class="hero-mark kf-mark-anim" viewBox="0 0 64 64" aria-hidden="true">
+        <g fill="none" stroke-linejoin="round">
+          <path class="g1" d="M12 24 L20 32 L12 40 L4 32 Z" stroke="var(--agent)" stroke-width="3" opacity=".42"/>
+          <path class="g2" d="M25 22 L35 32 L25 42 L15 32 Z" stroke="var(--agent)" stroke-width="3" opacity=".78"/>
+          <path class="k" d="M44 18 L58 32 L44 46 L30 32 Z" fill="var(--accent)" stroke="var(--accent)" stroke-width="4"/>
+        </g>
+      </svg>
+      <h1 class="t-display" id="firstTitle" data-i18n="first.title"></h1>
+      <p class="t-body lead" data-i18n="first.lead"></p>
+    </section>
+    <ol class="start">
+      <li class="step now" id="firstConnect">
+        <span class="num" aria-hidden="true">1</span>
+        <div class="sbody">
+          <h2 class="t-section" data-i18n="first.connect"></h2>
+          <p class="t-caption" data-i18n="first.directorLead"></p>
+          <p class="t-caption" id="firstDirector"></p>
+          <button type="button" class="btn" id="firstDirectorGo"><svg class="ic" aria-hidden="true"><use href="#i-gear"/></svg><span data-i18n="first.directorGo"></span></button>
+          <details class="first-mcp">
+            <summary data-i18n="first.mcp"></summary>
+            <p class="t-caption" data-i18n="first.connectLead"></p>
+            <div class="seg" id="firstClient" role="group" data-i18n-label="first.client">
+              <button type="button" data-client="claudeCommand" aria-pressed="true">Claude Code</button>
+              <button type="button" data-client="codexToml" aria-pressed="false">Codex</button>
+              <button type="button" data-client="claudeJson" aria-pressed="false" data-i18n="first.other"></button>
+            </div>
+            <div class="code"><pre id="firstCode"></pre><button type="button" class="btn sm copy" id="firstCopy"><svg class="ic" aria-hidden="true"><use href="#i-copy"/></svg><span data-i18n="settings.copy"></span></button></div>
+          </details>
+          <p class="waiting" id="firstStatus" role="status"><span class="dot" id="firstDot"></span><span id="firstStatusText"></span></p>
+        </div>
+      </li>
+      <li class="step" id="firstOpen">
+        <span class="num" aria-hidden="true">2</span>
+        <div class="sbody">
+          <h2 class="t-section" data-i18n="first.open"></h2>
+          <div class="minis" id="firstExamples"></div>
+          <button type="button" class="btn" id="firstFolder"><svg class="ic" aria-hidden="true"><use href="#i-folder"/></svg><span data-i18n="hub.openTitle"></span></button>
+        </div>
+      </li>
+      <li class="step">
+        <span class="num" aria-hidden="true">3</span>
+        <div class="sbody">
+          <h2 class="t-section" data-i18n="first.describe"></h2>
+          <p class="t-caption" data-i18n="first.describeLead"></p>
+        </div>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<section class="view" id="hub" aria-labelledby="hubTitle" hidden>
+  <div class="view-inner">
+    <div class="view-head">
+      <div class="grow"><h1 class="t-view" id="hubTitle" data-i18n="hub.title"></h1><p class="t-body" data-i18n="hub.lead"></p></div>
+      <button type="button" class="btn" id="hubNew" aria-expanded="false" aria-controls="createForm"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg><span data-i18n="hub.createTitle"></span></button>
+      <button type="button" class="btn primary" id="hubOpen" aria-expanded="false" aria-controls="openForm"><svg class="ic" aria-hidden="true"><use href="#i-folder"/></svg><span data-i18n="hub.openTitle"></span></button>
+    </div>
+    <form class="panel hub-form" id="openForm" hidden>
+      <h2 class="t-section" data-i18n="hub.openTitle"></h2>
+      <label class="field-label" for="openPath" data-i18n="hub.openLabel"></label>
+      <div class="row-input">
+        <input id="openPath" type="text" spellcheck="false" autocomplete="off" data-i18n-placeholder="hub.openPlaceholder">
+        <button type="submit" class="btn primary" data-i18n="hub.open"></button>
+      </div>
+    </form>
+    <form class="panel hub-form" id="createForm" hidden>
+      <h2 class="t-section" data-i18n="hub.createTitle"></h2>
+      <label class="field-label" for="createParent" data-i18n="hub.createParent"></label>
+      <input id="createParent" type="text" spellcheck="false" autocomplete="off" data-i18n-placeholder="hub.openPlaceholder">
+      <label class="field-label" for="createName" data-i18n="hub.createName"></label>
+      <div class="row-input">
+        <input id="createName" type="text" spellcheck="false" autocomplete="off" maxlength="80">
+        <button type="submit" class="btn primary"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg><span data-i18n="hub.create"></span></button>
+      </div>
+    </form>
+    <p class="status" id="hubStatus" role="status"></p>
+    <section class="hub-sec" aria-labelledby="examplesTitle">
+      <div class="sec-head"><h2 class="t-title" id="examplesTitle" data-i18n="hub.sampleTitle"></h2><span class="t-caption" data-i18n="hub.sampleLead"></span></div>
+      <div class="ex-grid" id="exampleList"></div>
+    </section>
+    <section class="hub-sec" aria-labelledby="recentTitle">
+      <div class="sec-head"><h2 class="t-title" id="recentTitle" data-i18n="hub.recent"></h2><span class="grow"></span>
+        <input type="search" class="input find" id="projectFilter" autocomplete="off" data-i18n-placeholder="hub.find" data-i18n-label="hub.find"></div>
+      <p class="t-caption" id="hubEmpty" hidden></p>
+      <ul class="plist" id="projectList"></ul>
+    </section>
+  </div>
+</section>
+
+<section class="view" id="settings" aria-labelledby="settingsTitle" hidden>
+  <div class="view-inner settings-layout">
+    <nav class="snav" id="settingsNav" data-i18n-label="settings.sections">
+      <h1 class="t-view" id="settingsTitle" data-i18n="settings.title"></h1>
+      <button type="button" data-section="setAi" aria-current="true"><svg class="ic" aria-hidden="true"><use href="#i-spark"/></svg><span data-i18n="settings.agentTitle"></span></button>
+      <button type="button" data-section="setAddons"><svg class="ic" aria-hidden="true"><use href="#i-puzzle"/></svg><span data-i18n="settings.addonsTitle"></span></button>
+      <button type="button" data-section="setLook"><svg class="ic" aria-hidden="true"><use href="#i-sun"/></svg><span data-i18n="settings.appearanceTitle"></span></button>
+      <button type="button" data-section="setAbout"><svg class="ic" aria-hidden="true"><use href="#i-info"/></svg><span data-i18n="settings.aboutTitle"></span></button>
+    </nav>
+    <div class="sections">
+      <section class="panel sec" id="setAi" aria-labelledby="setAiTitle" tabindex="-1">
+        <div class="sec-head"><div><h2 class="t-title" id="setAiTitle" data-i18n="settings.agentTitle"></h2><p class="t-caption" data-i18n="settings.agentLead"></p></div></div>
+        <div class="slots" id="agentSlots" hidden>
+          <ul class="slot-list" id="slotList"></ul>
+          <div class="slot-add" id="slotAdd"></div>
+          <p class="status" id="slotStatus" role="status"></p>
+        </div>
+        <h3 class="t-section" id="externalTitle" data-i18n="settings.externalTitle" hidden></h3>
+        <div class="status-row" id="agentCheck">
+          <span class="dot" id="checkDot"></span>
+          <div class="grow"><b id="checkText" role="status"></b></div>
+          <button type="button" class="btn sm" id="checkButton" data-i18n="settings.verify"></button>
+        </div>
+        <div class="seg" id="settingsClient" role="group" data-i18n-label="first.client">
+          <button type="button" data-client="claudeCommand" aria-pressed="true">Claude Code</button>
+          <button type="button" data-client="codexToml" aria-pressed="false">Codex</button>
+          <button type="button" data-client="claudeJson" aria-pressed="false" data-i18n="settings.otherClient"></button>
+        </div>
+        <p class="t-caption" id="clientWhere"></p>
+        <div class="code block"><pre id="clientCode"></pre><button type="button" class="btn sm copy"><svg class="ic" aria-hidden="true"><use href="#i-copy"/></svg><span data-i18n="settings.copy"></span></button></div>
+        <details class="more" id="clientMore">
+          <summary data-i18n="settings.jsonInstead"></summary>
+          <div class="code block"><pre id="clientJson"></pre><button type="button" class="btn sm copy"><svg class="ic" aria-hidden="true"><use href="#i-copy"/></svg><span data-i18n="settings.copy"></span></button></div>
+        </details>
+        <p class="t-caption" data-i18n="settings.agentHow"></p>
+      </section>
+      <section class="panel sec" id="setAddons" aria-labelledby="setAddonsTitle" tabindex="-1">
+        <div class="sec-head"><div><h2 class="t-title" id="setAddonsTitle" data-i18n="settings.addonsTitle"></h2><p class="t-caption" data-i18n="settings.addonsLead"></p></div></div>
+        <ul class="addons" id="addonList"></ul>
+        <div class="spine-addon" id="spineAddon" hidden>
+          <div class="addon-row"><span class="aic"><svg class="ic" aria-hidden="true"><use href="#i-play"/></svg></span>
+            <div class="grow"><div class="addon-head"><b data-i18n="settings.spineTitle"></b><span class="chip" id="spineState"></span></div><p class="t-caption" data-i18n="settings.spineLead"></p></div></div>
+          <p class="t-caption" data-i18n="settings.spineLicense"></p>
+          <p class="t-caption"><a id="spineLicense" target="_blank" rel="noopener" data-i18n="settings.spineLicenseLink"></a></p>
+          <label class="check"><input type="checkbox" id="spineAccept"> <span data-i18n="settings.spineAccept"></span></label>
+          <div class="row"><button type="button" class="btn" id="spineToggle"></button><span class="status" id="spineStatus" role="status"></span></div>
+        </div>
+      </section>
+      <section class="panel sec" id="setLook" aria-labelledby="setLookTitle" tabindex="-1">
+        <div class="sec-head"><div><h2 class="t-title" id="setLookTitle" data-i18n="settings.appearanceTitle"></h2></div></div>
+        <div class="srow">
+          <div class="grow"><b data-i18n="settings.theme"></b><p class="t-caption" data-i18n="settings.themeLead"></p></div>
+          <div class="seg" id="settingsTheme" role="group" data-i18n-label="settings.theme">
+            <button type="button" data-theme-choice="system" aria-pressed="true"><svg class="ic" aria-hidden="true"><use href="#i-sliders"/></svg><span data-i18n="settings.themeSystem"></span></button>
+            <button type="button" data-theme-choice="dark" aria-pressed="false"><svg class="ic" aria-hidden="true"><use href="#i-moon"/></svg><span data-i18n="settings.themeDark"></span></button>
+            <button type="button" data-theme-choice="light" aria-pressed="false"><svg class="ic" aria-hidden="true"><use href="#i-sun"/></svg><span data-i18n="settings.themeLight"></span></button>
+          </div>
+        </div>
+        <div class="srow">
+          <div class="grow"><b data-i18n="settings.languageTitle"></b><p class="t-caption" data-i18n="settings.languageLead"></p></div>
+          <div class="seg" id="settingsLang" role="group" data-i18n-label="nav.language">
+            <button type="button" data-lang="en" aria-pressed="false" data-i18n="settings.langEn"></button>
+            <button type="button" data-lang="tr" aria-pressed="false" data-i18n="settings.langTr"></button>
+          </div>
+        </div>
+      </section>
+      <section class="panel sec" id="setAbout" aria-labelledby="aboutTitle" tabindex="-1">
+        <div class="sec-head about-head">
+          <svg class="about-mark" aria-hidden="true"><use href="#logo"/></svg>
+          <div><h2 class="t-title" id="aboutTitle"></h2><p class="t-caption" data-i18n="settings.aboutLead"></p></div>
+        </div>
+        <dl class="facts">
+          <dt data-i18n="settings.folder"></dt><dd id="aboutFolder" class="mono"></dd>
+          <dt data-i18n="settings.data"></dt><dd id="aboutData" class="mono"></dd>
+        </dl>
+        <p class="t-caption" data-i18n="settings.packageLead"></p>
+        <a class="btn" id="packageLink" href="/api/package" download><svg class="ic" aria-hidden="true"><use href="#i-download"/></svg><span data-i18n="settings.package"></span></a>
+      </section>
+    </div>
+  </div>
+</section>
+
+<!-- The opening is on screen from the first paint, before any script: the mark draws itself in
+     CSS, the live intro takes over when the runtime is ready, and if anything stops the page
+     from starting, the reason is written here instead of leaving an empty window. -->
+<div class="splash" id="splash" data-ground="dark">
+  <div class="splash-still" id="splashStill">
+    <svg class="splash-mark" aria-hidden="true"><use href="#logo"/></svg>
+    <b class="splash-name">Keyframe <span>Studio</span></b>
+  </div>
+  <div class="splash-player" id="splashPlayer"></div>
+  <p class="splash-status" id="splashStatus" role="status"></p>
+  <button type="button" class="btn ghost splash-skip" id="splashSkip" data-i18n="splash.skip">Skip</button>
+</div>
+<script type="module" src="/web/app.js"></script>
+</body>
+</html>

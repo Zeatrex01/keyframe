@@ -1,0 +1,8 @@
+{
+  "$comment": "Milestones, applied by tools/sync-github.js. An open issue with a milestone's `label` and no milestone is put in that milestone. They mirror docs/roadmap.md.",
+  "milestones": [
+    { "title": "v0.3 (Now)", "label": "roadmap/now", "description": "Now on docs/roadmap.md: the foundation a stranger needs before anything else." },
+    { "title": "v1.0 (Next): public release", "label": "roadmap/next", "description": "Next on docs/roadmap.md. Closing it, with v0.3 done, is the v1.0 public release (see the release criteria in docs/roadmap.md)." },
+    { "title": "Later", "label": "roadmap/later", "description": "After v1.0. Ideas wait in docs/ideas.md until a maintainer picks them." }
+  ]
+}

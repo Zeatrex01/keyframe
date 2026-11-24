@@ -1,0 +1,3 @@
+{"type":"system","subtype":"init","cwd":"/work/ident","session_id":"5b0c51d2-8d2e-4f7a-9d61-0c3f1f0a6e11","tools":["mcp__keyframe-studio__help"],"mcp_servers":[{"name":"keyframe-studio","status":"connected"}],"model":"claude-sonnet-4-5","permissionMode":"default","apiKeySource":"none"}
+{"type":"assistant","message":{"id":"msg_01","type":"message","role":"assistant","model":"<synthetic>","content":[{"type":"text","text":"Not logged in · Please run /login"}]},"parent_tool_use_id":null,"session_id":"5b0c51d2-8d2e-4f7a-9d61-0c3f1f0a6e11"}
+{"type":"result","subtype":"success","is_error":true,"duration_ms":212,"duration_api_ms":0,"num_turns":1,"result":"Not logged in · Please run /login","session_id":"5b0c51d2-8d2e-4f7a-9d61-0c3f1f0a6e11","total_cost_usd":0}

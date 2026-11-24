@@ -1,0 +1,18 @@
+{
+ "id": "keyframe-basics",
+ "title": "Keyframe basics",
+ "description": "Small props and effect sprites in the studio's outline style: reward coins and stars, sparks for bursts, hearts, gems, clouds, leaves and drops.",
+ "license": "MIT",
+ "author": "The Keyframe Studio contributors",
+ "source": "https://github.com/Zeatrex01/keyframe",
+ "items": [
+  { "id": "coin", "file": "coin.svg", "tags": ["reward", "prop", "burst"] },
+  { "id": "star", "file": "star.svg", "tags": ["reward", "prop", "burst"] },
+  { "id": "spark", "file": "spark.svg", "tags": ["vfx", "burst", "flash"] },
+  { "id": "heart", "file": "heart.svg", "tags": ["ui", "reward", "reaction"] },
+  { "id": "gem", "file": "gem.svg", "tags": ["reward", "prop"] },
+  { "id": "cloud", "file": "cloud.svg", "tags": ["scene", "background"] },
+  { "id": "leaf", "file": "leaf.svg", "tags": ["scene", "nature", "trail"] },
+  { "id": "drop", "file": "drop.svg", "tags": ["vfx", "nature", "reaction"] }
+ ]
+}

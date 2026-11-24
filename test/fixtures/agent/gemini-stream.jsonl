@@ -1,0 +1,8 @@
+{"type":"init","timestamp":"2026-11-24T10:00:00.000Z","session_id":"c25acda3-b51d-4c3c-8e2a-2a4d1f4bb7a1","model":"gemini-2.5-pro"}
+{"type":"message","timestamp":"2026-11-24T10:00:00.100Z","role":"user","content":"How many skeletons are there?"}
+{"type":"tool_use","timestamp":"2026-11-24T10:00:01.000Z","tool_name":"start_here","tool_id":"start_here-1","parameters":{}}
+{"type":"tool_result","timestamp":"2026-11-24T10:00:01.400Z","tool_id":"start_here-1","status":"success","output":"{\"skeletons\":1}"}
+{"type":"message","timestamp":"2026-11-24T10:00:02.000Z","role":"assistant","content":"There is one skeleton, ","delta":true}
+{"type":"message","timestamp":"2026-11-24T10:00:02.100Z","role":"assistant","content":"ident.json.","delta":true}
+{"type":"error","timestamp":"2026-11-24T10:00:02.200Z","severity":"warning","message":"Loop detection is off."}
+{"type":"result","timestamp":"2026-11-24T10:00:02.300Z","status":"success","stats":{"total_tokens":1200,"input_tokens":1000,"output_tokens":200,"duration_ms":2300,"tool_calls":1}}

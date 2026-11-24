@@ -1,0 +1,55 @@
+{
+  "name": "chest",
+  "title": "Reward chest",
+  "kind": "Prop",
+  "principles": "prop",
+  "subject": "A treasure chest on a reward screen, with three reward cards inside.",
+  "intent": "The reward moment, staged one idea at a time: the chest falls in and lands, rattles twice (the second bigger, so the payoff is earned), bursts open with a flash and a beam, and the cards fly out one after another and flip. A long wind-up, a fast payoff, then a glow that can loop while the player looks.",
+  "display": {
+    "width": 360,
+    "pixelsPerUnit": 0.545
+  },
+  "teaches": [
+    "staging",
+    "timing",
+    "overshoot and settle",
+    "events on the contact frame"
+  ],
+  "preview": {
+    "clip": "glow",
+    "time": 0.5
+  },
+  "events": {
+    "land": [
+      0.3333
+    ],
+    "open": [
+      1.8667
+    ],
+    "card_1": [
+      2.4
+    ],
+    "card_2": [
+      2.5
+    ],
+    "card_3": [
+      2.6
+    ]
+  },
+  "clips": [
+    {
+      "name": "appear",
+      "seconds": 2.8,
+      "loop": false,
+      "track": 0,
+      "does": "drop, land squash (land), two rattles growing, the lid bursts with a flash (open), a beam, three cards fly out 3 frames apart on arcs, flip and land (card_1..3)"
+    },
+    {
+      "name": "glow",
+      "seconds": 2,
+      "loop": true,
+      "track": 0,
+      "does": "the open chest after the reveal: rays sway, the beam breathes, the cards float out of phase, sparkles twinkle"
+    }
+  ]
+}

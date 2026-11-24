@@ -1,0 +1,19 @@
+# The studio itself has no npm dependencies by design. Dependabot keeps the workflow's actions and
+# the pinned developer tools (devDependencies: ESLint, TypeScript, @types/node) current.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+    # @types/node follows the oldest supported Node major, not the newest.
+    ignore:
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+    groups:
+      dev-tools:
+        dependency-type: development

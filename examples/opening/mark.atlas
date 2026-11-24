@@ -1,0 +1,14 @@
+mark.png
+size:1024,512
+filter:Linear,Linear
+pma:false
+ghost1
+bounds:594,2,210,210
+ghost2
+bounds:340,2,252,252
+key
+bounds:2,2,336,336
+word_keyframe
+bounds:2,340,545,138
+word_studio
+bounds:549,340,348,138

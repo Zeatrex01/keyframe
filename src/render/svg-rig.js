@@ -1,0 +1,140 @@
+// Placeholder art to a rig: one SVG per part, placed and pivoted, becomes an atlas page, a
+// Spine 4.2 skeleton whose setup pose is the finished picture, and the parts document that the
+// drawing board edits and rebuilds from (roadmap Phase 4, issue #24).
+//
+// A part: { name, svg, at: [x, y], pivot?: [x, y], parent?, size?: [w, h], blend?, hidden? }
+//   svg     one SVG document; its viewBox is the part's own drawing space
+//   at      where the centre of the art sits in the rig (y up, units)
+//   pivot   where its bone sits in the rig: it turns and scales there (default `at`)
+//   parent  the part whose bone carries this one (default the root)
+//   size    the art's size in the rig (default the viewBox size)
+// Parts are listed back to front: the first is drawn first. A parent may come later in the list
+// (an arm drawn behind the body it hangs from). Pure, no I/O: the caller writes the files.
+
+import { StudioError } from '../shared/errors.js';
+import { rasterizeSvg, svgSize } from '../engine/svg.js';
+import { encodePng } from './png.js';
+
+export const PARTS_FORMAT = 'keyframe-parts';
+const NAME = /^[A-Za-z0-9_][A-Za-z0-9_ .-]{0,63}$/;
+const PAD = 2, MAX_PAGE = 4096;
+const round = v => Math.round(v * 100) / 100;
+const pair = (v, label) => {
+  if (!Array.isArray(v) || v.length !== 2 || !v.every(Number.isFinite)) throw new StudioError('bad-argument', `${label} is [x, y] in rig units.`, { value: v });
+  return v;
+};
+
+/** Check a parts document; returns the cleaned parts or throws with every problem. */
+export function validateParts(parts) {
+  if (!Array.isArray(parts) || !parts.length) throw new StudioError('bad-argument', 'A drawing has at least one part.', {});
+  if (parts.length > 64) throw new StudioError('bad-argument', 'A drawing has at most 64 parts.', { parts: parts.length });
+  const seen = new Set(['root']), problems = [];
+  const out = parts.map((p, i) => {
+    const where = `parts[${i}]`;
+    if (!p || typeof p !== 'object') { problems.push(`${where} is not an object.`); return null; }
+    if (typeof p.name !== 'string' || !NAME.test(p.name)) problems.push(`${where}.name must be 1-64 letters, digits, spaces, _ . - (not starting with a space).`);
+    else if (seen.has(p.name)) problems.push(`${where}.name "${p.name}" is used twice (or is "root").`);
+    if (typeof p.svg !== 'string' || p.svg.length > 200000) problems.push(`${where}.svg must be one SVG document (at most 200 kB).`);
+    if (p.name) seen.add(p.name);
+    try {
+      const size = p.svg ? svgSize(p.svg) : null;
+      return {
+        name: p.name, svg: p.svg, at: pair(p.at ?? [0, 0], `${where}.at`).map(Number),
+        pivot: pair(p.pivot ?? p.at ?? [0, 0], `${where}.pivot`).map(Number),
+        parent: p.parent && p.parent !== 'root' ? p.parent : null,
+        size: p.size ? pair(p.size, `${where}.size`).map(Number) : size ? [size.width, size.height] : [0, 0],
+        ...(p.blend === 'additive' || p.blend === 'multiply' || p.blend === 'screen' ? { blend: p.blend } : {}),
+        ...(p.hidden ? { hidden: true } : {}),
+      };
+    } catch (err) {
+      problems.push(`${where}: ${err.message}`);
+      return null;
+    }
+  });
+  for (const p of out) if (p && !(p.size[0] > 0 && p.size[1] > 0)) problems.push(`${p.name}: size must be positive.`);
+  const names = new Set(out.filter(Boolean).map(p => p.name));
+  for (const p of out) {
+    if (!p?.parent) continue;
+    if (!names.has(p.parent)) { problems.push(`${p.name}.parent "${p.parent}" is not a part.`); continue; }
+    const byName = new Map(out.filter(Boolean).map(q => [q.name, q]));
+    let q = p, guard = 0;
+    while (q?.parent && guard++ <= out.length) q = byName.get(q.parent);
+    if (guard > out.length) problems.push(`${p.name}: its parents form a loop.`);
+  }
+  if (problems.length) throw new StudioError('bad-parts', `The drawing has problems: ${problems.join(' ')}`, { problems });
+  return /** @type {any[]} */ (out);
+}
+
+/** Shelf-pack images (largest first) into one page; returns positions and the page size. */
+function pack(images) {
+  const order = images.map((img, i) => i).sort((a, b) => images[b].height - images[a].height || images[b].width - images[a].width);
+  const area = images.reduce((s, img) => s + (img.width + PAD) * (img.height + PAD), 0);
+  let width = 64;
+  while (width < MAX_PAGE && (width * width < area || images.some(img => img.width + 2 * PAD > width))) width *= 2;
+  const at = new Array(images.length);
+  let x = PAD, y = PAD, row = 0;
+  for (const i of order) {
+    const img = images[i];
+    if (x + img.width + PAD > width) { x = PAD; y += row + PAD; row = 0; }
+    at[i] = [x, y];
+    x += img.width + PAD; row = Math.max(row, img.height);
+  }
+  let height = 64;
+  while (height < y + row + PAD) height *= 2;
+  if (height > MAX_PAGE) throw new StudioError('bad-parts', 'The parts do not fit one 4096 px atlas page: lower `resolution` or make them smaller.', { width, height });
+  return { at, width, height };
+}
+
+/**
+ * Build a rig from parts.
+ * @param {{ name: string, parts: any[], resolution?: number }} input  resolution: atlas pixels per rig unit (default 2)
+ * @returns {{ skeleton: object, atlasText: string, png: Uint8Array, page: string, document: object, skipped: string[] }}
+ */
+export function buildSvgRig({ name, parts, resolution = 2 }) {
+  if (typeof name !== 'string' || !/^[A-Za-z0-9_-]{1,64}$/.test(name)) throw new StudioError('bad-argument', 'The rig name is 1-64 letters, digits, _ or -.', { name });
+  const res = Math.max(0.25, Math.min(8, Number(resolution) || 2));
+  const clean = validateParts(parts);
+  const skipped = [];
+  const images = clean.map(p => {
+    const img = rasterizeSvg(p.svg, { width: Math.max(1, Math.round(p.size[0] * res)), height: Math.max(1, Math.round(p.size[1] * res)) });
+    for (const s of img.skipped) skipped.push(`${p.name}: ${s}`);
+    return img;
+  });
+  const { at, width, height } = pack(images);
+  const data = new Uint8Array(width * height * 4);
+  images.forEach((img, i) => {
+    const [ox, oy] = at[i];
+    for (let y = 0; y < img.height; y++) data.set(img.data.subarray(y * img.width * 4, (y + 1) * img.width * 4), ((oy + y) * width + ox) * 4);
+  });
+  const page = `${name}.png`;
+  let atlasText = `${page}\nsize:${width},${height}\nfilter:Linear,Linear\npma:false\n`;
+  clean.forEach((p, i) => { atlasText += `${p.name}\nbounds:${at[i][0]},${at[i][1]},${images[i].width},${images[i].height}\n`; });
+
+  // Bones parents first; slots keep the drawing order.
+  const pivotOf = new Map([['root', [0, 0]]]);
+  const bones = [{ name: 'root' }];
+  const ordered = [], placed = new Set();
+  const place = p => { if (placed.has(p.name)) return; if (p.parent) place(clean.find(q => q.name === p.parent)); placed.add(p.name); ordered.push(p); };
+  clean.forEach(place);
+  for (const p of ordered) {
+    const parent = p.parent ?? 'root', pp = pivotOf.get(parent);
+    bones.push({ name: p.name, parent, x: round(p.pivot[0] - pp[0]), y: round(p.pivot[1] - pp[1]) });
+    pivotOf.set(p.name, p.pivot);
+  }
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const p of clean) {
+    minX = Math.min(minX, p.at[0] - p.size[0] / 2); maxX = Math.max(maxX, p.at[0] + p.size[0] / 2);
+    minY = Math.min(minY, p.at[1] - p.size[1] / 2); maxY = Math.max(maxY, p.at[1] + p.size[1] / 2);
+  }
+  const skeleton = {
+    skeleton: { hash: `kf-${name}`, spine: '4.2.43', x: round(minX), y: round(minY), width: round(maxX - minX), height: round(maxY - minY), images: './', audio: '' },
+    bones,
+    slots: clean.map(p => ({ name: p.name, bone: p.name, ...(p.hidden ? {} : { attachment: p.name }), ...(p.blend ? { blend: p.blend } : {}) })),
+    skins: [{ name: 'default', attachments: Object.fromEntries(clean.map(p => [p.name, { [p.name]: {
+      x: round(p.at[0] - p.pivot[0]), y: round(p.at[1] - p.pivot[1]), width: round(p.size[0]), height: round(p.size[1]),
+    } }])) }],
+    animations: {},
+  };
+  const document = { format: PARTS_FORMAT, version: 1, name, resolution: res, parts: clean.map(({ parent, ...p }) => (parent ? { ...p, parent } : p)) };
+  return { skeleton, atlasText, png: encodePng({ width, height, data }), page, document, skipped };
+}
