@@ -14,7 +14,7 @@ import { readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createStudioServer } from '../src/server/http.js';
-import { openAppWindow, studioAnswers } from '../src/core/launch.js';
+import { openAppWindow, listenNear } from '../src/core/launch.js';
 import { createLogger } from '../src/core/log.js';
 
 const argv = process.argv.slice(2);
@@ -42,17 +42,23 @@ const show = address => {
 
 const studio = createStudioServer({ projectDir, version, log });
 let port;
-try { port = await studio.listen(wanted); }
-catch (err) {
-  // Started a second time: the studio is already running, so just bring up its window.
-  // A folder dropped on the launcher is opened in the running studio.
-  if (err.code === 'EADDRINUSE' && portOption === undefined && await studioAnswers(wanted)) {
-    console.log(`Keyframe Studio is already running at http://127.0.0.1:${wanted}/`);
-    if (projectDir) await fetch(`http://127.0.0.1:${wanted}/api/projects/open`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ dir: projectDir }) }).catch(() => {});
-    show(`http://127.0.0.1:${wanted}/`);
-    process.exit(0);
-  }
-  console.error(err.code === 'EADDRINUSE' ? 'That port is in use; pass --port <number>.' : String(err.message));
+try {
+  if (portOption === undefined) {
+    // The usual port, or the next free one when another program holds it.
+    const found = await listenNear(p => studio.listen(p), wanted);
+    if (found.running) {
+      // Started a second time: the studio is already running, so just bring up its window.
+      // A folder dropped on the launcher is opened in the running studio.
+      console.log(`Keyframe Studio is already running at http://127.0.0.1:${found.port}/`);
+      if (projectDir) await fetch(`http://127.0.0.1:${found.port}/api/projects/open`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ dir: projectDir }) }).catch(() => {});
+      show(`http://127.0.0.1:${found.port}/`);
+      process.exit(0);
+    }
+    port = found.port;
+    if (port !== wanted) console.log(`  (port ${wanted} is taken by another program: using ${port})`);
+  } else port = await studio.listen(wanted);
+} catch (err) {
+  console.error(err.code === 'EADDRINUSE' ? (portOption === undefined ? `Ports ${wanted} to ${wanted + 9} are all in use; pass --port <number>.` : `Port ${wanted} is in use; pass another --port, or leave it out to let the studio pick a free one.`) : String(err.message));
   process.exit(1);
 }
 const address = `http://127.0.0.1:${port}/`;

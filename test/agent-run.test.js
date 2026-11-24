@@ -181,14 +181,16 @@ test('messages queued while the director works go in one next run', async () => 
 });
 
 test('a failing CLI is said in the conversation and marks the slot as error', async () => {
-  for (const [request, pattern] of [['#fail', /Not logged in/], ['#crash', /boom: the fake CLI crashed/]]) {
+  // Signed out, the CLI's own terminal words ("Please run /login") become what to do from the studio.
+  for (const [request, pattern, code] of [['#fail', /not signed in\. Open a terminal, run `claude`, sign in/, 'agent-signed-out'], ['#crash', /boom: the fake CLI crashed/, 'agent-failed']]) {
     const s = setup();
     try {
       s.say(request);
       await s.hub.idle();
       const last = readMessages(s.dir).at(-1);
       assert.equal(last.from, 'agent');
-      assert.equal(last.error, 'agent-failed');
+      assert.equal(last.error, code);
+      assert.doesNotMatch(last.text, /\/login/);
       assert.match(last.text, pattern);
       assert.equal(director(s.hub).status, 'error');
       assert.match(director(s.hub).message, pattern);
@@ -276,7 +278,7 @@ test('the slots are seen per project: the error and activity of another project 
     await s.hub.idle();
     const there = s.hub.summary(s.dir).slots.find(x => x.id === 'director');
     assert.equal(there.status, 'error');
-    assert.match(there.message, /Not logged in/);
+    assert.match(there.message, /not signed in/);
     assert.ok(there.activity.length > 0 && there.activity.every(a => a.dir === s.dir));
     // Another project open: the Director is ready to work there, with nothing from the other one.
     const elsewhere = s.hub.summary(path.join(s.dir, '..', 'other')).slots.find(x => x.id === 'director');

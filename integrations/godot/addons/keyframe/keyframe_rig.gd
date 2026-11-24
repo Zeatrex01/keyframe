@@ -81,9 +81,10 @@ func set_look(new_look: String) -> void:
 		if slot_name == WEAPON_SLOT:
 			continue
 		var names := get_attachments(slot_name)
-		var drawn = _slot_map[slot_name].get_meta("keyframe_default", null)
-		if drawn == null:
+		# A rig imported by an older add-on may lack the meta: ask before reading, so Godot logs nothing.
+		if not _slot_map[slot_name].has_meta("keyframe_default"):
 			continue
+		var drawn: String = _slot_map[slot_name].get_meta("keyframe_default")
 		var has_looks := false
 		for n in names:
 			has_looks = has_looks or n.begins_with("%s_" % slot_name)

@@ -42,3 +42,24 @@ export async function studioAnswers(port, fetchImpl = globalThis.fetch) {
     return typeof body?.version === 'string' && !!body?.connection?.server;
   } catch { return false; }
 }
+
+/**
+ * Listen on `wanted`, or on the next free port above it when another program holds it. A port where
+ * a Keyframe Studio already answers is not skipped: the caller opens that one instead of starting twice.
+ * @param {(port: number) => Promise<number>} listen
+ * @param {number} wanted
+ * @param {{ tries?: number, answers?: (port: number) => Promise<boolean> }} [options]
+ * @returns {Promise<{ port: number, running: boolean }>} running: a studio already answers on `port`
+ */
+export async function listenNear(listen, wanted, { tries = 10, answers = studioAnswers } = {}) {
+  let last;
+  for (let port = wanted; port < Math.min(wanted + tries, 65536); port++) {
+    try { return { port: await listen(port), running: false }; }
+    catch (err) {
+      if (/** @type {any} */ (err).code !== 'EADDRINUSE') throw err;
+      if (await answers(port)) return { port, running: true };
+      last = err;
+    }
+  }
+  throw last;
+}

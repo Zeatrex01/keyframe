@@ -264,7 +264,10 @@ test('the dressable warrior reaches Godot with every look and weapon, each stanc
   for (const api of ['func set_attachment(slot_name: String, attachment: String) -> bool', 'func set_look(new_look: String) -> void', 'func get_attachments(slot_name: String) -> PackedStringArray']) assert.ok(rig.includes(api), api);
   const builder = fs.readFileSync(path.join(ROOT, 'integrations/godot/addons/keyframe/keyframe_builder.gd'), 'utf8');
   assert.match(builder, /set_meta\("keyframe_slot", String\(slot\.name\)\)/);
-  assert.match(builder, /set_meta\("keyframe_default", slot\.attachment\)/);
+  // A slot drawn empty (the arrow) stores "", since Godot keeps no meta for null, and the rig asks before it reads.
+  assert.match(builder, /set_meta\("keyframe_default", String\(slot\.attachment\) if slot\.attachment != null else ""\)/);
+  assert.match(rig, /if not _slot_map\[slot_name\]\.has_meta\("keyframe_default"\):\n\t\t\tcontinue/);
+  assert.ok(!/get_meta\("keyframe_default", null\)/.test(rig), 'no null default: Godot 4 logs an error for it');
   for (const prop of ['@export var look: String', '@export var weapon: String']) assert.ok(rig.includes(prop), `${prop}: set in the Inspector`);
   // Putting the weapon away through the property works, and set_look reaches pieces that were taken off.
   assert.match(rig, /weapon = value\n\t\tif is_node_ready\(\):\n\t\t\tset_attachment\(WEAPON_SLOT, value\)/);

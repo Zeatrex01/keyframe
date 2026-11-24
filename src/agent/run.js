@@ -20,7 +20,7 @@ const KILL_GRACE_MS = 3000;
  * @property {string|null} session the CLI session id, when it said one
  * @property {string[]} tools every tool the run started, in order
  * @property {string[]} texts every text block the agent wrote, in order
- * @property {'agent-failed'|'agent-timeout'|'agent-stopped'|'agent-start-failed'} [code]
+ * @property {'agent-failed'|'agent-timeout'|'agent-stopped'|'agent-start-failed'|'agent-signed-out'} [code]
  * @property {string} [message]
  */
 
@@ -35,6 +35,10 @@ export function killTree(child, platform = process.platform) {
   signal('SIGTERM');
   setTimeout(() => { if (child.exitCode === null && child.signalCode === null) signal('SIGKILL'); }, KILL_GRACE_MS).unref();
 }
+
+const SIGNED_OUT = /not logged in|please run \/login|invalid api key|please (log|sign) ?in|not authenticated|unauthenticated/i;
+/** What the owner does when the agent's CLI is installed but not signed in. */
+export const signedOutMessage = adapter => `${adapter.name} is installed but not signed in. Open a terminal, run \`${adapter.bin}\`, sign in, then send your message again.`;
 
 /**
  * @param {object} options
@@ -98,6 +102,12 @@ export function startRun({ adapter, cli, plan, prompt, env = process.env, timeou
     timer.unref?.();
     const settle = (/** @type {Partial<RunResult>} */ extra) => {
       if (finished) return;
+      // A CLI that is installed but not signed in answers in its own terminal words ("Please run
+      // /login"): say what to do from the studio instead.
+      const said = extra.ok ? (result.tools.length || (extra.text ?? '').length > 200 ? '' : extra.text) : `${extra.message ?? ''} ${extra.text ?? ''}`;
+      if (extra.code !== 'agent-stopped' && extra.code !== 'agent-timeout' && SIGNED_OUT.test(said ?? '')) {
+        extra = { ok: false, text: '', code: 'agent-signed-out', message: signedOutMessage(adapter) };
+      }
       finished = true;
       clearTimeout(timer);
       resolve({ ...result, ...extra });

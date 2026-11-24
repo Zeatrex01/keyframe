@@ -178,3 +178,25 @@ test('the launcher finds an app-capable browser for each platform and reuses a r
     assert.equal(await studioAnswers(port), false);
   } finally { fs.rmSync(root, { recursive: true, force: true }); }
 });
+
+test('the launcher moves to the next free port when another program holds the usual one, and reuses a running studio there', async () => {
+  const { listenNear } = await import('../src/core/launch.js');
+  const net = await import('node:net');
+  const other = net.createServer();
+  await new Promise(done => other.listen(0, '127.0.0.1', done));
+  const held = /** @type {any} */ (other.address()).port;
+  const root = temp('kf-port-'), studio = createStudioServer({ version: 'test', configFile: path.join(root, 'config.json') });
+  try {
+    const found = await listenNear(p => studio.listen(p), held, { tries: 5, answers: async () => false });
+    assert.equal(found.running, false);
+    assert.ok(found.port > held && found.port < held + 5, `moved to ${found.port}`);
+    assert.equal((await request(found.port, 'GET', '/api/settings')).status, 200);
+    // A studio already on the port: not skipped, reported as running.
+    const again = await listenNear(() => Promise.reject(Object.assign(new Error('busy'), { code: 'EADDRINUSE' })), found.port, { tries: 3, answers: async p => p === found.port });
+    assert.deepEqual(again, { port: found.port, running: true });
+    await assert.rejects(listenNear(() => Promise.reject(Object.assign(new Error('busy'), { code: 'EADDRINUSE' })), held, { tries: 2, answers: async () => false }), /busy/);
+  } finally {
+    await new Promise(done => studio.server.close(done)); await new Promise(done => other.close(done));
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});

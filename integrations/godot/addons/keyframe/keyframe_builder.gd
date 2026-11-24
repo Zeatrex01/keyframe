@@ -62,7 +62,8 @@ static func build(data: Dictionary, base_dir: String) -> Node2D:
 		node.modulate = _color(slot.color)
 		# What the rig's set_attachment and set_look find the slot by.
 		node.set_meta("keyframe_slot", String(slot.name))
-		node.set_meta("keyframe_default", slot.attachment)
+		# "" for a slot drawn empty: Godot stores no meta for a null value.
+		node.set_meta("keyframe_default", String(slot.attachment) if slot.attachment != null else "")
 		# A skinned mesh is drawn in skeleton space, so its slot sits beside the skeleton.
 		_adopt(root, root if skinned else bone_nodes[slot.bone], node)
 		slot_paths[slot.name] = String(root.get_path_to(node))

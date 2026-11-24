@@ -180,7 +180,7 @@ install it.
 
 ## Troubleshooting
 
-- **"That port is in use"**: start with `--port 8800` (or `KS_PORT=8800`).
+- **Another program uses port 8731**: the studio moves to the next free port by itself and prints the address. With `--port` (or `KS_PORT`) it uses exactly that port.
 - **The page says no AI is connected**: the AI's MCP server must point at this checkout's
   `tools/mcp-server.js`. Settings shows the exact line and a connection check.
 - **The Director does not start**: install Claude Code and run `claude` once in a terminal to sign
