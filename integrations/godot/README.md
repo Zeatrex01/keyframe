@@ -87,7 +87,8 @@ $warrior.play_layer("punch_cross_upper")       # the next press: the cross
 
 `play_layer` plays the clip on a second AnimationPlayer it adds beside the first, so the layer's
 tracks win while it plays. When the layer ends, the arms go back to the clip underneath.
-The layer copies the AnimationPlayer's process mode and speed when it starts: if your game runs
+The layer copies the AnimationPlayer's process mode when it starts, not its speed (a run sped up
+to the character's pace does not speed up the punch): if your game runs
 the AnimationPlayer in manual mode and calls `advance()` itself, advance `$warrior/LayerPlayer`
 the same way.
 
