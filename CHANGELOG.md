@@ -5,9 +5,30 @@ All notable changes to this project. The format follows
 
 ## Unreleased
 
+## 0.0.1-beta - 2026-11-24
+
+The first public release: an open-source, AI-assisted 2D skeletal animation studio. You describe
+the motion; your AI (the built-in Director, or any MCP client) writes it as animation JSON
+compatible with Spine 4.2; the studio plays it on its own engine, checks it, critiques it against
+the animation principles and saves it beside your file, which is never changed.
+
+### Highlights
+- Thirty self-describing MCP tools any model can use, with the animation principles built in as rules with numbers.
+- Two equal sides: draw like an art director (a style guide per project, parts drawn from components and shapes, an art critique with a contact sheet, exports as PNGs, sprite sheets, clean SVG and a web player) and animate like a senior 2D animator (clips measured against the minimums of their action, planted feet, follow-through, effects).
+- The studio's own engine: no Spine code and no Spine license needed. The official Spine runtime is an opt-in add-on that states its license.
+- The built-in Director and its team: the studio drives your installed Claude Code (Codex and Gemini best effort) from its chat panel, isolated from your other work; an Art Director, a Senior Animator and a Researcher can work under it, each with its own agent, model and tools.
+- The subject comes first: the studio proposes what a skeleton is (character, prop, UI, effect) and what each clip is for, and judges the motion by it.
+- Dressable characters: a side-view game character with swappable armour and weapons, a stance and an attack per weapon, and upper-body clips to layer over a run.
+- Keyframe for Godot: a Godot 4 add-on that imports the animation as Godot's own nodes and tracks, with a runtime API for looks, weapons and upper-body layers; a standalone HTML player.
+- One result file per rig, updated in place, with the last 20 versions a click away; your own file is never changed.
+- Learning from a reference video: measure one element's motion and put it on a bone.
+- A new brand and app: Projects, the first run, the studio with key lanes, Draw mode and Settings, in dark and light, English and Turkish.
+- Six showcase examples: Mika, Pip, the reward chest, the play button, the coin burst and the Warrior.
+- The opening: the brand mark's intro, drawn and animated with the studio's own tools.
+
 ### Added
 - `export_godot` is served by default (thirty tools): Godot is the first engine target.
-- Each bundled example ships the brief its clips were proven by (`.keyframe/brief.json`), so an example opened as a project is judged by the studio exactly as the build judged it: every clip "good", no warnings.
+- An example opened from Projects carries the brief its clips were proven by, so the studio judges the copy exactly as the build did: every clip "good", no warnings.
 - The opening has a longer clip for the README and the launch, `reveal`: the amber key hops in and leaves an onion skin of itself on each spot it leaves, the mark's two ghosts, then lands in the lockup with a squash and a flash. The opening is now built through the studio by `examples/kit/opening.js`.
 
 - Versions are stated plainly (`docs/concept.md`): a base has one result file (`<name>_v2.json`) that every change updates, so a game keeps loading one name; the last 20 states are kept as versions to go back to. The delivery card says so.
@@ -54,48 +75,6 @@ All notable changes to this project. The format follows
 - The Draw settings edit the words and colours of a part the AI drew from a component or shapes (a title, a label, a body line, a fill, by palette role or a custom colour); the part is drawn again in the style guide and keeps where the owner put it.
 - `export_art` sheets keep clear pixels around every sprite and clip frame (`padding`, default 2), so nothing bleeds when an engine filters the texture.
 - Parts reach the page as safe trees (`src/render/svg-safe.js`): only shapes, groups and gradients survive, so nothing in a drawing can run.
-
-### Fixed
-- A project that holds only a studio result (`hero_v2.json` without `hero.json`) can be written: the result is updated in place with a backup, the answer says the base is missing, and `start_here` points at the result instead of suggesting a new drawing.
-- A clip with a field from another format (`duration`, `loop`, `fps`, `name`) is refused with the reason and what to do instead.
-- What the embedded Director (or a helper) says through `reply` carries its slot in the conversation, like its final answer.
-- An effect added with `add_effect` (its bones and slots) is kept when a later `write_animation` rebuilds the delivery from the base; before, the next write was refused because a clip keyed the effect's slot.
-- Draw: a new part hangs from the root instead of the part that happened to be selected.
-- Godot: a slot drawn empty (the arrow) no longer logs a missing-meta error when the look changes.
-- Planted limbs turn the short way between baked keys: a solved angle crossing ±180 no longer spins a limb a full turn.
-- Calling an advanced tool (such as `export_godot`) without `--all` now says so and how to turn it on, instead of "Unknown tool".
-- One-shot clips play once: a clip named for a jump, an attack, a hit or a reveal no longer loops in the Godot addon or in a sprite sheet's map just because it lands back in its first pose, and a cycle whose length is not on the fps grid (a 0.6 s run at 12 fps) is still found to loop and is cut into frames that cycle exactly.
-- The web player no longer grows a canvas that has no CSS size on every frame at a display scale above 1; it keeps the canvas at its laid-out size.
-- A text shape takes its `fill` as its colour (it was saved and not drawn), and on the Draw board a popup's title tab or action button edits its own colour instead of the whole panel's.
-- Text is set to fit the shape it sits on and centred on its ink; a popup's title ribbon is measured from its title, so "YOU WON 250" is no longer clipped.
-- The Draw board never loses the AI's drawing: Undo back to the saved drawing is no longer an unsaved change, a drawing the AI changes while the board holds edits shows a notice (load the AI's version, or keep yours as a copy), and the board's save is refused if the AI drew on the file since it was opened.
-- Labels and popup text pick the readable text colour for their fill in every style.
-- Pip's jump rises a quarter of the body's height (it read as a hop); Mika's wave clears her head.
-- The privacy gate no longer reads image file names such as `ui@3x.json` as e-mail addresses.
-- The Draw board shows parts whose SVG has no `xmlns`.
-- A drawing the AI makes shows on an open Draw board at once, and the board fits it again once it becomes visible.
-- The Draw settings panel has a readable label; every key the page's markup names is now checked against the English catalog.
-
-## 0.0.1-beta - 2026-11-24
-
-The first public release: an open-source, AI-assisted 2D skeletal animation studio. You describe
-the motion; your AI (the built-in Director, or any MCP client) writes it as animation JSON
-compatible with Spine 4.2; the studio plays it on its own engine, checks it, critiques it against
-the animation principles and saves it beside your file, which is never changed.
-
-### Highlights
-- Twenty-six self-describing MCP tools any model can use, with the animation principles built in as rules with numbers.
-- The studio's own engine: no Spine code and no Spine license needed. The official Spine runtime is an opt-in add-on that states its license.
-- The built-in Director: the studio drives your installed Claude Code (Codex and Gemini best effort) from its chat panel, isolated from your other work.
-- The subject comes first: the studio proposes what a skeleton is (character, prop, UI, effect) and what each clip is for, and judges the motion by it.
-- Drawing and effects: Draw mode and `draw_rig` for placeholder art, an asset library, and `add_effect` for bursts, trails, flashes, glows and shakes.
-- Learning from a reference video: measure one element's motion and put it on a bone.
-- Keyframe for Godot: a Godot 4 add-on that imports the animation as Godot's own nodes and tracks; a standalone HTML player.
-- A new brand and app: Projects, the first run, the studio with key lanes, Draw mode and Settings, in dark and light, English and Turkish.
-- Five showcase examples: Mika, Pip, the reward chest, the play button and the coin burst.
-- The opening: the brand mark's intro, drawn and animated with the studio's own tools, plays at every start and opens this README.
-
-### Added
 - The opening (`examples/opening`) is the brand mark's intro, made with the studio's own tools: `draw_rig` drew the ghosts, the key and the outlined name; `write_animation` and `add_effect` wrote `intro` (1.2 s: the key flies in and leaves its onion skins, lands with a ~10% overshoot and a soft flash, the name rises under it). The splash is always on the dark ground. `docs/brand/intro.gif` and `intro.html` (the standalone player) carry it into the README; `docs/brand/social-preview.png` is the repository's 1280 x 640 card. A gate (`test/opening.test.js`) holds it to the brand.
 - Draw mode in the page (the drawing board): a tools rail (select, ellipse, rectangle, pivot, ask the AI), the parts list, a canvas with the bones and the selected part's pivot, and part settings (name, fill, outline, size, position, pivot, what it moves with, order). "Use in the project" builds the rig through `draw_rig`, and the stage shows it.
 - The built-in Director shows what it is doing: a live row with its phase (thinking, reading, writing, checking, answering) and tool, the seconds, its answer as it streams, and a Stop button. A stopped turn is marked, and the next turn is told the stopped request is cancelled. The steps bar follows what the run really does.
@@ -171,6 +150,25 @@ the animation principles and saves it beside your file, which is never changed.
 - CI runs on Linux, Windows and macOS with Node.js 18, 20, 22 and 24.
 
 ### Fixed
+- A project that holds only a studio result (`hero_v2.json` without `hero.json`) can be written: the result is updated in place with a backup, the answer says the base is missing, and `start_here` points at the result instead of suggesting a new drawing.
+- A clip with a field from another format (`duration`, `loop`, `fps`, `name`) is refused with the reason and what to do instead.
+- What the embedded Director (or a helper) says through `reply` carries its slot in the conversation, like its final answer.
+- An effect added with `add_effect` (its bones and slots) is kept when a later `write_animation` rebuilds the delivery from the base; before, the next write was refused because a clip keyed the effect's slot.
+- Draw: a new part hangs from the root instead of the part that happened to be selected.
+- Godot: a slot drawn empty (the arrow) no longer logs a missing-meta error when the look changes.
+- Planted limbs turn the short way between baked keys: a solved angle crossing ±180 no longer spins a limb a full turn.
+- Calling an advanced tool (such as `export_godot`) without `--all` now says so and how to turn it on, instead of "Unknown tool".
+- One-shot clips play once: a clip named for a jump, an attack, a hit or a reveal no longer loops in the Godot addon or in a sprite sheet's map just because it lands back in its first pose, and a cycle whose length is not on the fps grid (a 0.6 s run at 12 fps) is still found to loop and is cut into frames that cycle exactly.
+- The web player no longer grows a canvas that has no CSS size on every frame at a display scale above 1; it keeps the canvas at its laid-out size.
+- A text shape takes its `fill` as its colour (it was saved and not drawn), and on the Draw board a popup's title tab or action button edits its own colour instead of the whole panel's.
+- Text is set to fit the shape it sits on and centred on its ink; a popup's title ribbon is measured from its title, so "YOU WON 250" is no longer clipped.
+- The Draw board never loses the AI's drawing: Undo back to the saved drawing is no longer an unsaved change, a drawing the AI changes while the board holds edits shows a notice (load the AI's version, or keep yours as a copy), and the board's save is refused if the AI drew on the file since it was opened.
+- Labels and popup text pick the readable text colour for their fill in every style.
+- Pip's jump rises a quarter of the body's height (it read as a hop); Mika's wave clears her head.
+- The privacy gate no longer reads image file names such as `ui@3x.json` as e-mail addresses.
+- The Draw board shows parts whose SVG has no `xmlns`.
+- A drawing the AI makes shows on an open Draw board at once, and the board fits it again once it becomes visible.
+- The Draw settings panel has a readable label; every key the page's markup names is now checked against the English catalog.
 - After a project switch the stage and the delivery card no longer keep the last project's file; a stage menu lists every skeleton of the project, so a rig drawn in Draw mode can be put on the stage in a project that already has one.
 - The chat no longer says "No AI is connected" while the built-in Director is ready, and Settings counts the Director as connected; the slots show only the open project's activity and errors, and a Stop is not shown as an error.
 - The first run leads with the built-in Director (with whether Claude Code is installed, and a button to Settings); the MCP lines for other clients come second, folded.

@@ -5,6 +5,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { StudioError } from '../shared/errors.js';
+import { writeBrief } from '../core/brief.js';
+import { validateBrief } from '../understand/subject.js';
 
 /** The page shows these first, in this order; any other showcase folder follows by name. */
 export const EXAMPLE_ORDER = Object.freeze(['mika', 'pip', 'chest', 'play-button', 'coin-burst', 'warrior']);
@@ -49,6 +51,21 @@ export function copyExample(example, samplesDir) {
   if (!has) {
     fs.mkdirSync(target, { recursive: true });
     fs.cpSync(example.dir, target, { recursive: true, filter: from => fs.statSync(from).isDirectory() || COPIED.test(from) });
+    seedBrief(example.name, target);
   }
   return target;
+}
+
+// The example's own brief.json names the subject and the clips its build proved them by; stored
+// as the studio's brief in the copy, critique_animation judges the copy the way the build did.
+const SUBJECT = { effect: 'vfx' };
+function seedBrief(name, dir) {
+  try {
+    const kit = JSON.parse(fs.readFileSync(path.join(dir, 'brief.json'), 'utf8'));
+    const file = `${name}_v2.json`;
+    const sk = JSON.parse(fs.readFileSync(path.join(dir, file), 'utf8'));
+    const { brief } = validateBrief({ subject: SUBJECT[kit.principles] ?? kit.principles, note: kit.intent,
+      display: { pixelsPerUnit: kit.display?.pixelsPerUnit }, clips: (kit.clips ?? []).map(c => ({ name: c.name, seconds: c.seconds, loop: !!c.loop })) }, sk);
+    if (brief) writeBrief(dir, file, brief);
+  } catch { /* an example without a brief is judged by the studio's own proposal */ }
 }

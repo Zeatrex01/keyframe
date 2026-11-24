@@ -53,3 +53,21 @@ A dressable rig (the side figure with `armor` and `weapons`, as in `examples/sho
 arrives with every look of every piece. Swap them at run time with the rig's `set_look(look)`,
 `set_attachment(slot, attachment)` and `get_attachments(slot)`; the add-on's README shows the calls.
 
+
+## Upper-body layers
+
+Clips whose names end in `_upper` (the Warrior's `punch_upper` and `punch_cross_upper`) key only
+the arms and the head. `rig.play_layer("punch_upper")` plays one on a second AnimationPlayer over
+the clip that is running, so the character punches while its legs keep running; when the layer
+ends, the arms go back to the clip underneath. The layer copies the AnimationPlayer's process mode
+(a game that advances it by hand advances `LayerPlayer` the same way), not its speed.
+
+## The runtime API in one place
+
+| On the rig's root | Does |
+|---|---|
+| `look` (Inspector or code) | dresses every piece that has that look; `""` is the look it was drawn in |
+| `weapon` | what the `weapon` slot shows; `""` puts it away |
+| `set_look(look)`, `set_attachment(slot, attachment)`, `get_attachments(slot)` | the same, piece by piece |
+| `play_layer(clip)` | plays an upper-body clip over the running one; `false` for an unknown clip |
+| `keyframe_event` (signal) | the clip's events, with their int, float and string values |

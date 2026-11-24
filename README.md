@@ -41,8 +41,13 @@ those things for whichever AI you use:
 - **Your file is never touched.** The result is one file beside yours (`hero_v2.json` beside
   `hero.json`) that every later change updates, so your game keeps loading the same name; every
   earlier version is kept and one click goes back to it.
-- **Draw when there is no art yet.** Draw mode builds placeholder parts, pivots and bones in the
-  page, or the AI draws them as SVG; either way you get a rig the studio can animate at once.
+- **Draw like an art director.** A style guide per project, parts drawn from components (buttons,
+  panels, icons, a waist-up or side-view figure) and shapes, an art critique that looks at the
+  drawing the way an art director would, and exports for any engine: trimmed PNGs, sprite sheets
+  with a map, clean SVG and an embeddable web player. Draw mode does the same by hand in the page.
+- **Dressable game characters.** The side-view figure takes swappable armour and weapons in one
+  skeleton, a stance and an attack per weapon, feet that stay planted, and upper-body clips that
+  play over a run.
 - **Effects.** Bursts, trails, flashes, glows and shakes, written as ordinary bones and keys so
   every engine plays them.
 - **Learn from a reference video.** Mark one element in a screen recording; the studio measures its
@@ -53,9 +58,9 @@ those things for whichever AI you use:
   AnimationPlayer, and a single HTML file plays it with no studio at all.
 
 The opening above was made the same way: the studio drew the mark as parts, wrote the motion,
-checked and critiqued it, and exported it as one HTML file (its build is `examples/kit/opening.js`)
+checked and critiqued it, and exported it as one HTML file
 ([`docs/brand/intro.html`](docs/brand/intro.html), download and double-click). Its source is in
-[`examples/opening`](examples/opening).
+[`examples/opening`](examples/opening), built by `examples/kit/opening.js`.
 
 <table>
   <tr>
@@ -91,6 +96,9 @@ signed in, open **Settings → AI connection** and choose it for the Director. Y
 the studio's own chat panel: it streams what it is doing, shows each step, and has a Stop button.
 It runs with only the studio's tools, in the project folder, and never sees your personal
 instruction files, hooks or memory. Codex CLI and Gemini CLI work the same way (best effort).
+Each slot picks its model (Claude Code runs Sonnet unless you choose another). The Director can
+have a team: add an **Art Director**, a **Senior Animator** or a **Researcher** with their own
+agent, and the Director hands each the part it does best, checks the work and answers you.
 Details: [`docs/agents.md`](docs/agents.md).
 
 **Any MCP client.** Claude Code, Codex, Gemini CLI, Cursor, VS Code, Windsurf, Claude Desktop or any
@@ -107,12 +115,16 @@ The first session, step by step: [`docs/getting-started.md`](docs/getting-starte
 
 ## Examples
 
-Five examples open as copies, so you can ask for changes freely.
+Six examples open as copies, so you can ask for changes freely.
 
-| | | | | |
-|:-:|:-:|:-:|:-:|:-:|
-| <img src="examples/showcase/mika/preview.png" width="150" alt="Mika"> | <img src="examples/showcase/pip/preview.png" width="150" alt="Pip"> | <img src="examples/showcase/chest/preview.png" width="150" alt="Reward chest"> | <img src="examples/showcase/play-button/preview.png" width="150" alt="Play button"> | <img src="examples/showcase/coin-burst/preview.png" width="150" alt="Coin burst"> |
-| **Mika**<br>character | **Pip**<br>character on IK | **Reward chest**<br>prop | **Play button**<br>UI | **Coin burst**<br>effect |
+| | | |
+|:-:|:-:|:-:|
+| <img src="examples/showcase/mika/preview.png" width="200" alt="Mika"> | <img src="examples/showcase/pip/preview.png" width="200" alt="Pip"> | <img src="examples/showcase/warrior/preview.png" width="200" alt="Warrior"> |
+| **Mika**<br>waist-up character | **Pip**<br>character on IK | **Warrior**<br>dressable side-view fighter |
+| <img src="examples/showcase/chest/preview.png" width="200" alt="Reward chest"> | <img src="examples/showcase/play-button/preview.png" width="200" alt="Play button"> | <img src="examples/showcase/coin-burst/preview.png" width="200" alt="Coin burst"> |
+| **Reward chest**<br>prop | **Play button**<br>UI | **Coin burst**<br>effect |
+
+The Warrior comes with sprite sheets for every clip and a Godot scene (`godot/warrior.kfscene`).
 
 ## Bring your own rig
 
@@ -126,7 +138,9 @@ straight away. No art yet? Use Draw mode, or ask the AI to draw placeholder part
 [`integrations/godot`](integrations/godot) is a Godot 4 add-on. `npm run godot -- <skeleton.json>`
 (or the `export_godot` tool) writes a `.kfscene`; the add-on imports it as Skeleton2D, Bone2D,
 Polygon2D and an AnimationPlayer with Godot's own tracks, so you keep editing it in Godot's
-animator. A demo project is included. See [`docs/godot.md`](docs/godot.md).
+animator. At run time the rig swaps looks and weapons (`look`, `weapon`, `set_attachment`) and
+plays upper-body clips over the running one (`play_layer`). A demo project is included. See
+[`docs/godot.md`](docs/godot.md).
 
 ## Spine
 
@@ -193,8 +207,14 @@ install it.
 ## Roadmap
 
 The studio grows in phases: tools any AI can use, its own engine, understanding the subject,
-drawing and effects, and the app itself. All five are in this beta. What comes next (a web-only
-studio, open 2D asset packs, an editor panel inside Godot) is in [`docs/roadmap.md`](docs/roadmap.md).
+drawing and effects, and the app itself. All five are in this beta.
+
+**In 0.0.1-beta:** everything above: the tools, the engine, the Director and its team, drawing and
+art export, effects, reference learning, Godot import and runtime API, the HTML player, versions,
+six examples.
+**Later:** an editor panel inside Godot with the embedded agent, a studio that runs fully in the
+browser, open 2D asset packs, Codex and Gemini proven as the Director. The plan:
+[`docs/roadmap.md`](docs/roadmap.md).
 
 ## Contributing
 

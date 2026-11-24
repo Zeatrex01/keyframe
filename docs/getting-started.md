@@ -13,7 +13,7 @@ npm start
 ```
 
 On Windows you can double-click `Start Studio.cmd` instead. The studio opens as an app window. The
-first run offers five examples: pick one (Mika is a good start) to get a copy to play with, or open
+first run offers six examples: pick one (Mika is a good start) to get a copy to play with, or open
 a folder of your own that holds a skeleton. A folder with no art yet is fine too: use **Draw** in
 the top bar, or ask the AI to draw placeholder parts.
 

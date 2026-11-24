@@ -8,7 +8,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { tool, fresh, clean } from './studio.js';
+import { tool, fresh } from './studio.js';
 import { finish } from './showcase.js';
 import { godotScene } from '../../src/engine/godot.js';
 
@@ -213,7 +213,7 @@ export async function build() {
   const scene = godotScene(JSON.parse(fs.readFileSync(path.join(DIR, `${NAME}_v2.json`), 'utf8')), { atlasText: fs.readFileSync(path.join(DIR, `${NAME}_v2.atlas`), 'utf8'), name: NAME });
   fs.writeFileSync(path.join(godot, `${NAME}.kfscene`), JSON.stringify(scene) + '\n');
   for (const page of scene.pages) fs.copyFileSync(path.join(DIR, page.name), path.join(godot, page.name));
-  clean(DIR);
+  for (const folder of ['.backup', '.keyframe']) fs.rmSync(path.join(DIR, folder), { recursive: true, force: true });
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await build();

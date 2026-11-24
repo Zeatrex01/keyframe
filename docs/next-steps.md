@@ -28,12 +28,13 @@ rigs and animates it. Code-drawn art stays as examples and test material only.
 3. **Bring real art.** Follow `docs/character-template.md`: layers named like the slots, parts that
    bend drawn as one picture with a bone chain, export Spine 4.2 JSON with its atlas. Then in the
    studio: `paint_weights` for bending parts, the face clips, `follow` for hair and cloth.
-4. **Redo the showcase on that art.** Since 2026-11-24 the showcase is five examples in
+4. **Redo the showcase on that art.** Since 2026-11-24 the showcase is six examples in
    `examples/showcase`, each with a brief, a preview and its own gate, rebuilt by
    `npm run examples`: Mika (anime girl: emotions and a wave), Pip (full-body kid on IK: idle,
    jump, walk, cheer), the reward chest (drop, rattle, open, three cards, glow loop), the PLAY
-   button (UI states and a badge on track 1) and the coin burst (eight coins into a counter, an
-   event per landing). The cat, dog, bunny, panda and kid heads, the menu icons and the victory
+   button (UI states and a badge on track 1), the coin burst (eight coins into a counter, an
+   event per landing) and the Warrior (a dressable side-view fighter: a stance and an attack per
+   weapon, punches with upper-body layers, a run and a jump, sprite sheets and a Godot scene). The cat, dog, bunny, panda and kid heads, the menu icons and the victory
    sequence were retired; their checks run on fixtures in `test/fixtures` (`face`, `body`,
    `banner`).
 5. **Video material.** `examples/kit/look/` holds the filmstrips `npm run examples` renders (not

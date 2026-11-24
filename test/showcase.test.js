@@ -33,8 +33,7 @@ for (const name of names) {
     const preview = decodePng(fs.readFileSync(path.join(dir, 'preview.png')));
     assert.deepEqual([preview.width, preview.height], [480, 360]);
     assert.ok(fs.existsSync(path.join(ROOT, 'test', `example-${name}.test.js`)), `test/example-${name}.test.js is missing`);
-    assert.ok(!fs.existsSync(path.join(dir, '.backup')), `${name}/.backup is a working folder the build should have removed`);
-    assert.deepEqual(fs.readdirSync(path.join(dir, '.keyframe')), ['brief.json'], `${name}/.keyframe keeps only the confirmed brief`);
+    for (const left of fs.readdirSync(dir)) assert.ok(!['.backup', '.keyframe'].includes(left), `${name}/${left} is a working folder the build should have removed`);
   });
 
   test(`showcase ${name}: opened as a project, the studio judges every clip as the build did (no warning, none mechanical)`, async (t) => {

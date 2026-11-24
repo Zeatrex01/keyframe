@@ -4,10 +4,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { write, prove, preview, filmstripOf, clean, tool } from './studio.js';
-
-// The kit's principle names as the studio's subjects (src/understand/subject.js).
-const SUBJECT = { effect: 'vfx' };
+import { write, prove, preview, filmstripOf, clean } from './studio.js';
 
 export const LOOK = fileURLToPath(new URL('./look/', import.meta.url));
 
@@ -58,9 +55,6 @@ export async function finish(dir, name, brief, clips, { viewport, skin, strip = 
     strips.push(await filmstripOf(dir, name + '_v2.json', c.name, times, path.join(LOOK, `${name}_${c.name}.png`),
       { width: size, height: Math.round(size / (strip.aspect ?? (viewport ? viewport.width / viewport.height : 1))), columns: Math.min(n, strip.columns ?? 6), viewport, skin }));
   }
-  // The brief the clips were proven by, stored the studio's way, so the studio judges a copy alike.
-  await tool(dir, 'brief', { file: name + '_v2.json', brief: { subject: SUBJECT[brief.principles] ?? brief.principles, note: brief.intent,
-    display: { pixelsPerUnit: brief.display.pixelsPerUnit }, clips: brief.clips.map(c => ({ name: c.name, seconds: c.seconds, loop: !!c.loop })) } });
   clean(dir);
   console.log(`${name}: ${brief.clips.length} clips proven; filmstrips in ${LOOK}`);
   return strips;
