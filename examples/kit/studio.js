@@ -33,9 +33,13 @@ export function fresh(dir, name) {
   for (const file of [name + '_v2.json', name + '_v2.atlas']) fs.rmSync(path.join(dir, file), { force: true });
   clean(dir);
 }
-/** Remove what the studio keeps beside a project (backups, chat), so the example folder stays clean. */
+/** Remove what the studio keeps beside a project (backups, chat, proof), so the example folder stays clean; the
+ * confirmed brief stays (.keyframe/brief.json), so critique_animation in a copy judges the clips as the build did. */
 export function clean(dir) {
-  for (const folder of ['.backup', '.keyframe']) fs.rmSync(path.join(dir, folder), { recursive: true, force: true });
+  fs.rmSync(path.join(dir, '.backup'), { recursive: true, force: true });
+  const work = path.join(dir, '.keyframe');
+  for (const entry of fs.existsSync(work) ? fs.readdirSync(work) : []) if (entry !== 'brief.json') fs.rmSync(path.join(work, entry), { recursive: true, force: true });
+  if (fs.existsSync(work) && !fs.readdirSync(work).length) fs.rmSync(work, { recursive: true, force: true });
 }
 
 /** Write one clip (replacing it) into <name>_v2.json; `extra` adds write_animation arguments (plant). */

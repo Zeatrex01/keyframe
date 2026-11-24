@@ -20,7 +20,7 @@ function project() {
 test('list shows the default set, and the shelf only with --all', () => {
   const plain = run('list');
   assert.equal(plain.status, 0);
-  assert.equal(plain.stdout.trim().split('\n').length, 29);
+  assert.equal(plain.stdout.trim().split('\n').length, 30);
   assert.ok(plain.stdout.includes('bake_animation') && !plain.stdout.includes('export_binary'));
   assert.ok(run('list', '--all').stdout.includes('export_binary'));
 });
@@ -60,9 +60,9 @@ test('a long answer arrives whole through a pipe', () => {
 test('a tool off the default set is refused with how to turn it on', () => {
   const dir = project();
   try {
-    const r = run('export_godot', '--project', dir, '--args', JSON.stringify({ file: 'ident.json' }));
+    const r = run('export_player', '--project', dir, '--args', JSON.stringify({ file: 'ident.json' }));
     assert.equal(r.status, 1);
     assert.match(r.stdout + r.stderr, /advanced tool.*--all/);
-    assert.equal(run('export_godot', '--project', dir, '--all', '--args', JSON.stringify({ file: 'ident.json' })).status, 0);
+    assert.equal(run('export_player', '--project', dir, '--all', '--args', JSON.stringify({ file: 'ident.json' })).status, 0);
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });

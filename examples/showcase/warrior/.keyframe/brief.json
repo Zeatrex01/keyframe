@@ -1,0 +1,122 @@
+{
+  "warrior_v2.json": {
+    "subject": "character",
+    "note": "One dressable skeleton for a side-scroller: a guard stance and an attack for each weapon, a punch with no weapon, a run and a jump. The body drives every blow and the feet stay planted where they stand while the hips shift.",
+    "display": {
+      "height": 360,
+      "pixelsPerUnit": 1.2
+    },
+    "clips": [
+      {
+        "name": "idle_sword",
+        "intent": "idle",
+        "seconds": 1.6,
+        "loop": true,
+        "planned": false
+      },
+      {
+        "name": "attack_sword",
+        "intent": "action",
+        "seconds": 0.78,
+        "loop": false,
+        "planned": false
+      },
+      {
+        "name": "idle_spear",
+        "intent": "idle",
+        "seconds": 1.6,
+        "loop": true,
+        "planned": false
+      },
+      {
+        "name": "attack_spear",
+        "intent": "action",
+        "seconds": 0.82,
+        "loop": false,
+        "planned": false
+      },
+      {
+        "name": "idle_bow",
+        "intent": "idle",
+        "seconds": 1.6,
+        "loop": true,
+        "planned": false
+      },
+      {
+        "name": "shoot_bow",
+        "intent": "action",
+        "seconds": 1.1,
+        "loop": false,
+        "planned": false
+      },
+      {
+        "name": "idle_axe",
+        "intent": "idle",
+        "seconds": 1.6,
+        "loop": true,
+        "planned": false
+      },
+      {
+        "name": "attack_axe",
+        "intent": "action",
+        "seconds": 0.78,
+        "loop": false,
+        "planned": false
+      },
+      {
+        "name": "idle_unarmed",
+        "intent": "idle",
+        "seconds": 1.6,
+        "loop": true,
+        "planned": false
+      },
+      {
+        "name": "punch",
+        "intent": "action",
+        "seconds": 0.45,
+        "loop": false,
+        "planned": false
+      },
+      {
+        "name": "punch_cross",
+        "intent": "action",
+        "seconds": 0.5,
+        "loop": false,
+        "planned": false
+      },
+      {
+        "name": "punch_upper",
+        "intent": "action",
+        "seconds": 0.45,
+        "loop": false,
+        "planned": false
+      },
+      {
+        "name": "punch_cross_upper",
+        "intent": "action",
+        "seconds": 0.5,
+        "loop": false,
+        "planned": false
+      },
+      {
+        "name": "run",
+        "intent": "loop",
+        "seconds": 0.6,
+        "loop": true,
+        "planned": false
+      },
+      {
+        "name": "jump",
+        "intent": "action",
+        "seconds": 1,
+        "loop": false,
+        "planned": false
+      }
+    ],
+    "preset": {
+      "skip": []
+    },
+    "confirmed": true,
+    "updatedAt": "2026-11-24T16:22:32.477Z"
+  }
+}

@@ -5,7 +5,10 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import os from 'node:os';
 import { decodePng } from '../src/render/png.js';
+import { copyExample } from '../src/server/examples.js';
+import { critiqueAnimationTool } from '../src/mcp/tools/understand.js';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const SHOWCASE = path.join(ROOT, 'examples', 'showcase');
@@ -30,6 +33,20 @@ for (const name of names) {
     const preview = decodePng(fs.readFileSync(path.join(dir, 'preview.png')));
     assert.deepEqual([preview.width, preview.height], [480, 360]);
     assert.ok(fs.existsSync(path.join(ROOT, 'test', `example-${name}.test.js`)), `test/example-${name}.test.js is missing`);
-    for (const left of fs.readdirSync(dir)) assert.ok(!['.backup', '.keyframe'].includes(left), `${name}/${left} is a working folder the build should have removed`);
+    assert.ok(!fs.existsSync(path.join(dir, '.backup')), `${name}/.backup is a working folder the build should have removed`);
+    assert.deepEqual(fs.readdirSync(path.join(dir, '.keyframe')), ['brief.json'], `${name}/.keyframe keeps only the confirmed brief`);
+  });
+
+  test(`showcase ${name}: opened as a project, the studio judges every clip as the build did (no warning, none mechanical)`, async (t) => {
+    const samples = fs.mkdtempSync(path.join(os.tmpdir(), 'kf-showcase-'));
+    t.after(() => fs.rmSync(samples, { recursive: true, force: true }));
+    const copy = copyExample({ name, dir: path.join(SHOWCASE, name) }, samples);
+    const sk = JSON.parse(fs.readFileSync(path.join(copy, `${name}_v2.json`), 'utf8'));
+    for (const clip of Object.keys(sk.animations)) {
+      const out = await critiqueAnimationTool.run({ file: `${name}_v2.json`, animation: clip }, { session: { dir: copy, writable: () => true } });
+      assert.ok(['good', 'unmeasured'].includes(out.verdict), `${name} ${clip}: ${out.verdict}`);
+      const warns = out.findings.filter((/** @type {any} */ f) => f.level === 'warn').map((/** @type {any} */ f) => f.code);
+      assert.deepEqual(warns, [], `${name} ${clip} warns`);
+    }
   });
 }

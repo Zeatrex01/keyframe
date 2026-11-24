@@ -1,0 +1,66 @@
+{
+  "mika_v2.json": {
+    "subject": "character",
+    "note": "A dialogue portrait that is never frozen. She breathes and blinks, reacts with a short lead-in clip and a loop for each emotion, waves, and goes back to idle; the hair always arrives after the head that moves it.",
+    "display": {
+      "height": 360,
+      "pixelsPerUnit": 0.8
+    },
+    "clips": [
+      {
+        "name": "idle",
+        "intent": "idle",
+        "seconds": 2.4,
+        "loop": true,
+        "planned": false
+      },
+      {
+        "name": "happy_in",
+        "intent": "transition",
+        "seconds": 0.6,
+        "loop": false,
+        "planned": false
+      },
+      {
+        "name": "happy",
+        "intent": "reaction",
+        "seconds": 2.4,
+        "loop": true,
+        "planned": false
+      },
+      {
+        "name": "surprised_in",
+        "intent": "transition",
+        "seconds": 0.4,
+        "loop": false,
+        "planned": false
+      },
+      {
+        "name": "surprised",
+        "intent": "reaction",
+        "seconds": 2,
+        "loop": true,
+        "planned": false
+      },
+      {
+        "name": "wave",
+        "intent": "loop",
+        "seconds": 1.2,
+        "loop": false,
+        "planned": false
+      },
+      {
+        "name": "to_idle",
+        "intent": "idle",
+        "seconds": 0.4,
+        "loop": false,
+        "planned": false
+      }
+    ],
+    "preset": {
+      "skip": []
+    },
+    "confirmed": true,
+    "updatedAt": "2026-11-24T16:22:18.574Z"
+  }
+}

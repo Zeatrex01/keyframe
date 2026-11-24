@@ -109,7 +109,7 @@ export const exportPlayerTool = {
 
 export const exportGodotTool = {
   name: 'export_godot',
-  tier: 'advanced',
+  tier: 'core',
   writes: true,
   summary: 'Writes <file>.kfscene for Godot 4: the Keyframe add-on imports it as Skeleton2D, Polygon2D and AnimationPlayer nodes.',
   description: 'Writes the Godot scene description of a skeleton beside it (<file>.kfscene). In a Godot 4 project with the Keyframe add-on (integrations/godot), copy the .kfscene with its atlas pages and Godot imports it as a scene: Skeleton2D and Bone2D, a Polygon2D per attachment, and an AnimationPlayer whose clips are Godot\'s own tracks (keyed bone channels keep their bezier handles; IK, inherit modes and shear are baked into keys at `fps`). The answer lists what was baked and what Godot cannot show (clipping, tint black). An existing .kfscene is replaced with a backup.',

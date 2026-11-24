@@ -30,7 +30,7 @@ test('every tool has a short summary, a full description, and core tools form th
     assert.ok(tool.description.length > tool.summary.length, `${tool.name} description adds to its summary`);
   }
   const core = TOOLS.filter(t => t.tier === 'core').map(t => t.name).sort();
-  assert.deepEqual(core, ['add_effect', 'apply_motion', 'bake_animation', 'brief', 'check_skeleton', 'compare_reference', 'critique_animation', 'critique_art', 'delete_animation', 'describe_animation', 'draw_rig', 'export_art', 'help', 'list_history',
+  assert.deepEqual(core, ['add_effect', 'apply_motion', 'bake_animation', 'brief', 'check_skeleton', 'compare_reference', 'critique_animation', 'critique_art', 'delete_animation', 'describe_animation', 'draw_rig', 'export_art', 'export_godot', 'help', 'list_history',
     'measure_reference', 'paint_weights', 'read_animation', 'read_rig', 'reply', 'restore_file', 'sample_animation', 'scan_project', 'see_animation',
     'see_reference', 'set_curves', 'start_here', 'style_guide', 'wait_for_message', 'write_animation']);
 });
@@ -43,7 +43,7 @@ test('by default only the core tools are on the wire; `all` adds the shelf', asy
     return sent[0].result.tools.map(t => t.name);
   };
   const served = await names({});
-  assert.equal(served.length, 29);
+  assert.equal(served.length, 30);
   assert.ok(served.includes('bake_animation') && !served.includes('export_binary'));
   assert.equal((await names({ all: true })).length, TOOLS.length);
 

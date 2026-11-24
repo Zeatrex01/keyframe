@@ -1,0 +1,66 @@
+{
+  "play-button_v2.json": {
+    "subject": "ui",
+    "note": "Every state a button lives through as a clip, timed for UI: quick, small anticipation, an overshoot sized for a button, every move readable at 160 px wide. The badge plays on track 1 over the idling button on track 0.",
+    "display": {
+      "height": 120,
+      "pixelsPerUnit": 0.615
+    },
+    "clips": [
+      {
+        "name": "idle",
+        "intent": "idle",
+        "seconds": 2.4,
+        "loop": true,
+        "planned": false
+      },
+      {
+        "name": "hover_in",
+        "intent": "transition",
+        "seconds": 0.15,
+        "loop": false,
+        "planned": false
+      },
+      {
+        "name": "press",
+        "intent": "action",
+        "seconds": 0.1,
+        "loop": false,
+        "planned": false
+      },
+      {
+        "name": "release",
+        "intent": null,
+        "seconds": 0.22,
+        "loop": false,
+        "planned": false
+      },
+      {
+        "name": "disabled",
+        "intent": null,
+        "seconds": 0.2,
+        "loop": false,
+        "planned": false
+      },
+      {
+        "name": "badge_pop",
+        "intent": null,
+        "seconds": 0.3,
+        "loop": false,
+        "planned": false
+      },
+      {
+        "name": "badge_pulse",
+        "intent": null,
+        "seconds": 2,
+        "loop": true,
+        "planned": false
+      }
+    ],
+    "preset": {
+      "skip": []
+    },
+    "confirmed": true,
+    "updatedAt": "2026-11-24T16:22:26.935Z"
+  }
+}

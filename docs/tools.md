@@ -2,7 +2,7 @@
 
 <!-- Written by `npm run docs:tools` from the tool definitions; do not edit by hand. -->
 
-The studio serves 29 tools to any MCP client by default; 13 more are on the shelf and served with
+The studio serves 30 tools to any MCP client by default; 12 more are on the shelf and served with
 `--all` (or `"all": true` in the connection). Any tool's full contract is also one `help { tool }` call away.
 Every refusal carries `fix` (how to get past it) and, for argument problems, an `example` call that works.
 
@@ -37,6 +37,7 @@ Every refusal carries `fix` (how to get past it) and, for argument problems, an 
 | [`paint_weights`](#paint_weights) | core | Binds a mesh (or a flat image turned into a grid mesh) to a chain of bones with smooth weights, so the part bends instead of moving rigidly. |
 | [`list_history`](#list_history) | core | The backups the studio keeps of a file it wrote, newest first. |
 | [`restore_file`](#restore_file) | core | Brings back an earlier version of a file the studio wrote; the current one is backed up first. |
+| [`export_godot`](#export_godot) | core | Writes <file>.kfscene for Godot 4: the Keyframe add-on imports it as Skeleton2D, Polygon2D and AnimationPlayer nodes. |
 | [`critique_rig`](#critique_rig) | advanced | Is the rig built well: unused bones, pivots sitting at the centre of their art, constraints with no effect. |
 | [`migrate_swap_to_skin`](#migrate_swap_to_skin) | advanced | Without groups: suggests clip families that differ only in attachments. With groups: folds each family into one clip plus named skins. |
 | [`merge_animation`](#merge_animation) | advanced | Copies an animation from another skeleton into this one, with the bones, slots and art it needs; conflicts retargeted or renamed. |
@@ -48,7 +49,6 @@ Every refusal carries `fix` (how to get past it) and, for argument problems, an 
 | [`spine_info`](#spine_info) | advanced | Asks the installed Spine command line about a .spine, .json or .skel file; refuses without a licensed Spine. |
 | [`export_binary`](#export_binary) | advanced | Writes a Spine binary .skel of a skeleton, verified by the official binary reader; needs the Spine add-on. |
 | [`export_player`](#export_player) | advanced | Writes one HTML file that plays a skeleton by double-click, with no studio, server or network. |
-| [`export_godot`](#export_godot) | advanced | Writes <file>.kfscene for Godot 4: the Keyframe add-on imports it as Skeleton2D, Polygon2D and AnimationPlayer nodes. |
 | [`ask_team`](#ask_team) | advanced | Hands one task to a helper of your team (the Art Director, the Senior Animator, the Researcher) and returns its answer. |
 
 ## help
@@ -1019,6 +1019,27 @@ Example:
 
 **Next:** `check_skeleton`
 
+## export_godot
+
+*core, writes files.* Writes <file>.kfscene for Godot 4: the Keyframe add-on imports it as Skeleton2D, Polygon2D and AnimationPlayer nodes.
+
+**Use when:** The animation goes into a Godot 4 game: Godot imports the .kfscene with the Keyframe add-on as its own nodes and tracks.
+
+Writes the Godot scene description of a skeleton beside it (<file>.kfscene). In a Godot 4 project with the Keyframe add-on (integrations/godot), copy the .kfscene with its atlas pages and Godot imports it as a scene: Skeleton2D and Bone2D, a Polygon2D per attachment, and an AnimationPlayer whose clips are Godot's own tracks (keyed bone channels keep their bezier handles; IK, inherit modes and shear are baked into keys at `fps`). The answer lists what was baked and what Godot cannot show (clipping, tint black). An existing .kfscene is replaced with a backup.
+
+| Argument | Type | Meaning |
+|---|---|---|
+| `file` | string | Project-relative skeleton JSON (Spine 4.2 or Keyframe). |
+| `fps` | number | Frames per second for baked keys (constraints, colour, draw order, deform). Default 30. |
+
+Example:
+
+```json
+{
+ "file": "hero_v2.json"
+}
+```
+
 ## critique_rig
 
 *advanced, read only.* Is the rig built well: unused bones, pivots sitting at the centre of their art, constraints with no effect.
@@ -1282,27 +1303,6 @@ Writes a standalone player: one HTML file with the studio's engine, the skeleton
 | `file` | string | Project-relative skeleton JSON (Spine 4.2 or Keyframe). |
 | `into` | string | Project-relative .html target; default <file>.player.html beside the skeleton. |
 | `animation` | string | The clip the player starts with; default the first. |
-
-Example:
-
-```json
-{
- "file": "hero_v2.json"
-}
-```
-
-## export_godot
-
-*advanced, writes files.* Writes <file>.kfscene for Godot 4: the Keyframe add-on imports it as Skeleton2D, Polygon2D and AnimationPlayer nodes.
-
-**Use when:** The animation goes into a Godot 4 game: Godot imports the .kfscene with the Keyframe add-on as its own nodes and tracks.
-
-Writes the Godot scene description of a skeleton beside it (<file>.kfscene). In a Godot 4 project with the Keyframe add-on (integrations/godot), copy the .kfscene with its atlas pages and Godot imports it as a scene: Skeleton2D and Bone2D, a Polygon2D per attachment, and an AnimationPlayer whose clips are Godot's own tracks (keyed bone channels keep their bezier handles; IK, inherit modes and shear are baked into keys at `fps`). The answer lists what was baked and what Godot cannot show (clipping, tint black). An existing .kfscene is replaced with a backup.
-
-| Argument | Type | Meaning |
-|---|---|---|
-| `file` | string | Project-relative skeleton JSON (Spine 4.2 or Keyframe). |
-| `fps` | number | Frames per second for baked keys (constraints, colour, draw order, deform). Default 30. |
 
 Example:
 

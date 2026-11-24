@@ -26,6 +26,10 @@ samples/
 # A project's working folders, also when an example folder is opened as a project.
 .keyframe/
 .backup/
+# ...except the confirmed brief an example ships, so the studio judges a copy as the build did.
+!/examples/showcase/*/.keyframe/
+/examples/showcase/*/.keyframe/*
+!/examples/showcase/*/.keyframe/brief.json
 reference/
 references/
 

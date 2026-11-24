@@ -1,0 +1,31 @@
+{
+  "chest_v2.json": {
+    "subject": "prop",
+    "note": "The reward moment, staged one idea at a time: the chest falls in and lands, rattles twice (the second bigger, so the payoff is earned), bursts open with a flash and a beam, and the cards fly out one after another and flip. A long wind-up, a fast payoff, then a glow that can loop while the player looks.",
+    "display": {
+      "height": 200,
+      "pixelsPerUnit": 0.545
+    },
+    "clips": [
+      {
+        "name": "appear",
+        "intent": "transition",
+        "seconds": 2.8,
+        "loop": false,
+        "planned": false
+      },
+      {
+        "name": "glow",
+        "intent": null,
+        "seconds": 2,
+        "loop": true,
+        "planned": false
+      }
+    ],
+    "preset": {
+      "skip": []
+    },
+    "confirmed": true,
+    "updatedAt": "2026-11-24T16:22:25.511Z"
+  }
+}

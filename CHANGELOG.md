@@ -6,6 +6,8 @@ All notable changes to this project. The format follows
 ## Unreleased
 
 ### Added
+- `export_godot` is served by default (thirty tools): Godot is the first engine target.
+- Each bundled example ships the brief its clips were proven by (`.keyframe/brief.json`), so an example opened as a project is judged by the studio exactly as the build judged it: every clip "good", no warnings.
 - The opening has a longer clip for the README and the launch, `reveal`: the amber key hops in and leaves an onion skin of itself on each spot it leaves, the mark's two ghosts, then lands in the lockup with a squash and a flash. The opening is now built through the studio by `examples/kit/opening.js`.
 
 - Versions are stated plainly (`docs/concept.md`): a base has one result file (`<name>_v2.json`) that every change updates, so a game keeps loading one name; the last 20 states are kept as versions to go back to. The delivery card says so.
