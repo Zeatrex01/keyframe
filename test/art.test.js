@@ -15,9 +15,10 @@ import { componentParts, COMPONENTS } from '../src/art/components.js';
 import { expandParts, deriveShapes } from '../src/art/draw-spec.js';
 import { critiqueArt } from '../src/art/critique-art.js';
 import { FIGURE_PARTS } from '../src/art/figure.js';
+import { editableOf, applyEdit } from '../src/art/edit.js';
 import { jointSeparations } from '../src/understand/joints.js';
 import { critiqueAnimation } from '../src/understand/critique.js';
-import { rasterizeSvg } from '../src/engine/svg.js';
+import { rasterizeSvg, svgSize } from '../src/engine/svg.js';
 import { safeTree } from '../src/render/svg-safe.js';
 import { decodePng } from '../src/render/png.js';
 import { createServer } from '../src/mcp/server.js';
@@ -238,6 +239,34 @@ test('a figure is jointed: limbs in three parts with hands and feet, each turnin
   } finally { s.done(); }
 });
 
+test('the words and colours of AI-drawn parts are edited by hand and drawn again in the guide, keeping where the owner put them', () => {
+  const { parts } = expandParts([{ name: 'win', component: { component: 'popup', title: 'YOU WON', lines: ['Nice'] }, at: [0, 0] },
+    { name: 'coin', box: [64, 64], shapes: [{ circle: [32, 32, 28], fill: 'reward' }, { text: '5', at: [32, 44], size: 24 }], at: [300, 0] }], style);
+  const sized = parts.map(p => ({ ...p, size: [svgSize(p.svg).width, svgSize(p.svg).height] }));
+  const moved = sized.map(p => (p.name === 'win_title' ? { ...p, at: [12, 140] } : p));
+  const fields = editableOf(moved, moved.find(p => p.name === 'win_title'));
+  assert.equal(fields.owner, 'win', 'a sub-part edits its component');
+  assert.deepEqual(fields.texts.map(t => t.key), ['title', 'lines.0']);
+  assert.ok(fields.colours.some(c => c.key === 'titleColor'));
+  const retitled = applyEdit(moved, 'win_title', 'title', 'YOU WON 250', style);
+  const title = retitled.find(p => p.name === 'win_title');
+  assert.deepEqual(title.at, [12, 140], 'the owner\'s move is kept');
+  assert.equal(title.source.texts[0].text, 'YOU WON 250');
+  assert.ok(title.size[0] > moved.find(p => p.name === 'win_title').size[0], 'the ribbon grows with its title');
+  const red = applyEdit(retitled, 'win', 'titleColor', 'danger', style);
+  assert.notEqual(red.find(p => p.name === 'win_title').svg, title.svg);
+  assert.equal(red.find(p => p.name === 'win').source.component.titleColor, 'danger');
+  // A shapes part: its fill and its text.
+  const coin = editableOf(red, red.find(p => p.name === 'coin'));
+  assert.deepEqual(coin.texts, [{ key: 'shapes.1.text', value: '5' }]);
+  assert.deepEqual(coin.colours, [{ key: 'fill:reward', value: 'reward' }]);
+  const blue = applyEdit(red, 'coin', 'fill:reward', 'secondary', style);
+  assert.equal(blue.find(p => p.name === 'coin').svg, renderShapes({ box: [64, 64], shapes: [{ circle: [32, 32, 28], fill: 'secondary' }, { text: '5', at: [32, 44], size: 24 }] }, style).svg, 'drawn in the new colour');
+  assert.equal(applyEdit(blue, 'coin', 'shapes.1.text', '10', style).find(p => p.name === 'coin').source.shapes[1].text, '10');
+  assert.throws(() => applyEdit(blue, 'coin', 'fill:secondary', 'notacolour', style), /palette role/);
+  assert.equal(editableOf(blue, { name: 'x', svg: '<svg/>' }), null, 'a part drawn as SVG has nothing to edit this way');
+});
+
 test('critique_art writes a contact sheet; export_art writes trimmed PNGs with pivots, a sprite sheet with its map, and clean SVG', async () => {
   const s = studio();
   try {
@@ -284,6 +313,14 @@ test('export_art turns a clip into a PNG sequence and a sheet with its frame tim
     assert.equal(Object.keys(map.frames).length, 7);
     assert.equal(map.meta.fps, 12);
     assert.ok(fs.existsSync(path.join(s.dir, 'b-export', 'clip-press', 'frame_0006.png')));
+    // Frames never touch: clear pixels around each one and from the sheet's edges.
+    const frames = Object.values(map.frames).map(f => f.frame);
+    for (const f of frames) assert.ok(f.x >= 2 && f.y >= 2 && f.x + f.w <= map.meta.size.w - 2 && f.y + f.h <= map.meta.size.h - 2, JSON.stringify(f));
+    for (const a of frames) for (const b of frames) if (a !== b) assert.ok(a.x + a.w + 2 <= b.x || b.x + b.w + 2 <= a.x || a.y + a.h + 2 <= b.y || b.y + b.h + 2 <= a.y, 'two pixels apart');
+    const wide = await s.call('export_art', { file: 'b.parts.json', kinds: ['clip'], animation: 'press', fps: 12, size: 64, padding: 6 });
+    assert.equal(wide.error, undefined);
+    const map6 = JSON.parse(fs.readFileSync(path.join(s.dir, 'b-export', 'clip-press@sheet.json'), 'utf8'));
+    assert.equal(Object.values(map6.frames)[0].frame.x, 6);
   } finally { s.done(); }
 });
 

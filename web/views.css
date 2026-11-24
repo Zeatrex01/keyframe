@@ -235,6 +235,7 @@ button.card { padding: 0; text-align: left; font: inherit; cursor: pointer; alig
 .draw .outline-colour { max-width: 48px; height: 36px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); }
 .draw .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .draw .input-row { flex-wrap: wrap; }
+.draw .input-row .select { flex: 1 1 auto; min-width: 0; } .draw .input-row .sw.custom { flex: 0 0 40px; width: 40px; height: 36px; padding: 2px; }
 .bar .seg.mode[hidden] { display: none; }
 @media (max-width: 1180px) { .view.draw { grid-template-columns: 52px 200px minmax(0, 1fr); } .draw .props { display: none; } }
 @media (max-width: 760px) {

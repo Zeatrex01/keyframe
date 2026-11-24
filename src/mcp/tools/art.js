@@ -103,16 +103,17 @@ export const exportArtTool = {
       animation: { type: 'string', short: 'clip to export (kind clip)', description: 'The animation to export as frames (kind clip). Read from the latest delivery (<name>_v2.json) when there is one.' },
       fps: { type: 'number', minimum: 1, maximum: 60, short: 'clip frames per second (24)', description: 'Frames per second of the clip export; default 24.' },
       size: { type: 'number', minimum: 16, maximum: 2048, short: 'clip frame px (256)', description: 'Square frame size of the clip export in pixels; default 256.' },
+      padding: { type: 'integer', minimum: 0, maximum: 32, short: 'clear px around each sprite (2)', description: 'Clear pixels around every sprite and clip frame in a sheet, so texture filtering never bleeds a neighbour in; default 2.' },
     },
   },
-  async run({ file, kinds, scales, pixels, animation, fps, size }, { session }) {
+  async run({ file, kinds, scales, pixels, animation, fps, size, padding }, { session }) {
     const project = projectOf(session);
     const { doc, abs } = readDrawing(project, file);
     const wanted = kinds?.length ? kinds : ['parts', 'sheet', 'svg', ...(animation ? ['clip'] : [])];
     const drawing = wanted.filter(k => EXPORT_KINDS.includes(k) && k !== 'clip');
     const outDir = path.join(path.dirname(abs), `${doc.name}-export`);
     const files = {};
-    const out = drawing.length ? exportDrawing(doc, { scales: scales?.length ? scales : [1, 2], kinds: drawing, pixels }) : { files: {}, manifest: { scales: [] } };
+    const out = drawing.length ? exportDrawing(doc, { scales: scales?.length ? scales : [1, 2], kinds: drawing, pixels, padding: padding ?? 2 }) : { files: {}, manifest: { scales: [] } };
     Object.assign(files, out.files);
     let clip = null, web = null;
     if (wanted.includes('clip') || wanted.includes('web')) {
@@ -127,7 +128,7 @@ export const exportArtTool = {
       if (wanted.includes('clip')) {
         if (!animation) throw new StudioError('bad-argument', 'kind clip needs `animation`.', {});
         const pages = Object.fromEntries(Object.entries(bytes).map(([k, v]) => [k, decodePng(v)]));
-        const done = await exportClip({ json, atlasText, pages, animation, fps: fps ?? 24, size: size ?? 256 });
+        const done = await exportClip({ json, atlasText, pages, animation, fps: fps ?? 24, size: size ?? 256, padding: padding ?? 2 });
         Object.assign(files, done.files);
         clip = { animation, frames: done.frames, fps: done.fps, from: project.rel(skeletonFile) };
       }

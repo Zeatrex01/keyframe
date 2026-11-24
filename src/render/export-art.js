@@ -36,7 +36,7 @@ export function crop(img, box) {
   return { width: box.width, height: box.height, data };
 }
 
-/** Shelf-pack images into one sheet (no rotation, 2 px apart); returns positions and size. */
+/** Shelf-pack images into one sheet (no rotation, `pad` px apart and from the edges); returns positions and size. */
 function packSheet(images, pad = 2) {
   const order = images.map((_, i) => i).sort((a, b) => images[b].height - images[a].height);
   const area = images.reduce((s, i) => s + (i.width + pad) * (i.height + pad), 0);
@@ -58,11 +58,11 @@ function packSheet(images, pad = 2) {
 /**
  * Export a drawing.
  * @param {{ name: string, kind?: string, parts: any[] }} doc  the parts document (svg-rig.js)
- * @param {{ scales?: number[], kinds?: string[], pixels?: number }} options
+ * @param {{ scales?: number[], kinds?: string[], pixels?: number, padding?: number }} options  padding: clear pixels around each sprite in a sheet (default 2)
  *   scales: pixels per rig unit (1x, 2x, 3x); pixels: instead, the longest side of the whole drawing in pixels
  * @returns {{ files: Record<string, Uint8Array | string>, manifest: object }}
  */
-export function exportDrawing(doc, { scales = [1, 2], kinds = ['parts', 'sheet', 'svg'], pixels } = {}) {
+export function exportDrawing(doc, { scales = [1, 2], kinds = ['parts', 'sheet', 'svg'], pixels, padding = 2 } = {}) {
   /** @type {Record<string, Uint8Array | string>} */
   const files = {};
   const manifest = { name: doc.name, kind: doc.kind ?? 'rig', units: 'rig units, y up; pixel boxes y down from the top left', scales: [], parts: {} };
@@ -93,7 +93,7 @@ export function exportDrawing(doc, { scales = [1, 2], kinds = ['parts', 'sheet',
       }
     }
     if (kinds.includes('sheet')) {
-      const { at, image } = packSheet(images.map(l => l.image));
+      const { at, image } = packSheet(images.map(l => l.image), padding);
       files[`${doc.name}@${tag}.png`] = encodePng(image);
       const frames = Object.fromEntries(images.map((l, i) => [l.name, {
         frame: { x: at[i][0], y: at[i][1], w: l.image.width, h: l.image.height }, rotated: false, trimmed: true,
@@ -113,9 +113,9 @@ export function exportDrawing(doc, { scales = [1, 2], kinds = ['parts', 'sheet',
 
 /**
  * An animation as a PNG sequence and one sheet, for engines without a skeletal runtime.
- * @param {{ json: object, atlasText: string, pages: object, animation: string, fps?: number, size?: number }} input
+ * @param {{ json: object, atlasText: string, pages: object, animation: string, fps?: number, size?: number, padding?: number }} input
  */
-export async function exportClip({ json, atlasText, pages, animation, fps = 24, size = 256 }) {
+export async function exportClip({ json, atlasText, pages, animation, fps = 24, size = 256, padding = 2 }) {
   const clip = json.animations?.[animation];
   if (!clip) throw new StudioError('bad-argument', `There is no animation "${animation}". Clips: ${Object.keys(json.animations ?? {}).join(', ') || 'none'}.`, { animation });
   let end = 0;
@@ -128,7 +128,7 @@ export async function exportClip({ json, atlasText, pages, animation, fps = 24, 
   const files = {};
   frames.forEach((f, i) => { files[`clip-${animation}/frame_${String(i).padStart(4, '0')}.png`] = encodePng(f.image); });
   const cols = Math.ceil(Math.sqrt(count));
-  const { at, image } = packSheetGrid(frames.map(f => f.image), cols);
+  const { at, image } = packSheetGrid(frames.map(f => f.image), cols, padding);
   files[`clip-${animation}@sheet.png`] = encodePng(image);
   files[`clip-${animation}@sheet.json`] = `${JSON.stringify({
     frames: Object.fromEntries(frames.map((f, i) => [`${animation}_${String(i).padStart(4, '0')}`, { frame: { x: at[i][0], y: at[i][1], w: size, h: size }, rotated: false, trimmed: false, spriteSourceSize: { x: 0, y: 0, w: size, h: size }, sourceSize: { w: size, h: size }, duration: Math.round(1000 / fps) }])),
@@ -137,14 +137,16 @@ export async function exportClip({ json, atlasText, pages, animation, fps = 24, 
   return { files, frames: count, fps };
 }
 
-function packSheetGrid(images, cols) {
+/** Frames on a grid, `pad` px of clear space around each, so a sampler never bleeds one into the next. */
+function packSheetGrid(images, cols, pad = 2) {
   const { width: w, height: h } = images[0];
   const rows = Math.ceil(images.length / cols);
-  const data = new Uint8Array(cols * w * rows * h * 4);
+  const W = cols * (w + pad) + pad, H = rows * (h + pad) + pad;
+  const data = new Uint8Array(W * H * 4);
   const at = images.map((img, n) => {
-    const ox = (n % cols) * w, oy = Math.floor(n / cols) * h;
-    for (let y = 0; y < h; y++) data.set(img.data.subarray(y * w * 4, (y + 1) * w * 4), ((oy + y) * cols * w + ox) * 4);
+    const ox = pad + (n % cols) * (w + pad), oy = pad + Math.floor(n / cols) * (h + pad);
+    for (let y = 0; y < h; y++) data.set(img.data.subarray(y * w * 4, (y + 1) * w * 4), ((oy + y) * W + ox) * 4);
     return [ox, oy];
   });
-  return { at, image: { width: cols * w, height: rows * h, data } };
+  return { at, image: { width: W, height: H, data } };
 }

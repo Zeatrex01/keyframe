@@ -65,6 +65,11 @@ studio, an engine and a browser, with no font file. Text is set to fit the shape
 last filled shape under it, else the part): a label too long for its button is set smaller, never
 cut off, and centred text is centred on its ink. `fit: false` keeps the size asked for.
 
+**Edits by hand.** On the Draw board, the settings of a part drawn from a component or from
+shapes show its words and colours: change a title, a label, a body line or a fill (a palette role,
+or a custom colour) and the part is drawn again in the guide, where the owner put it. A part of a
+component edits the whole component. A part drawn as plain SVG keeps the plain-shape settings.
+
 ## Artboards
 
 `draw_rig { as: "artboard" }` draws a design that is never rigged (an icon set, a logo, a UI sheet,

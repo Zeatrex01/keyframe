@@ -18,6 +18,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createServer as createMcp } from '../mcp/server.js';
 import { projectOf } from '../mcp/project.js';
+import { projectStyle } from '../mcp/style-file.js';
 import { projectFolders, insideProjectReal, isRealInside } from '../core/paths.js';
 import { readMessages, appendMessage, readAgent } from '../core/chat.js';
 import { writeFocus, clearFocus } from '../core/focus.js';
@@ -44,7 +45,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '.
 const PROJECT_TYPES = new Set(['.json', '.atlas', '.txt', '.png', '.jpg', '.jpeg', '.webp', '.gif', '.mp4', '.webm', '.mov']);
 const STATIC_ROOTS = { web: path.join(ROOT, 'web'), locale: path.join(ROOT, 'locale'), opening: path.join(ROOT, 'examples', 'opening'), assets: ASSET_ROOT };
 // The page plays on the studio's own engine, imported as is: only these isomorphic modules are served.
-const PAGE_SOURCES = new Set(['engine', 'shared', 'spine']);
+const PAGE_SOURCES = new Set(['engine', 'shared', 'spine', 'art']);   // the board redraws AI-drawn parts in the guide (src/art/edit.js)
 // What the Spine add-on serves to the page when it is on (src/core/spine-addon.js).
 const SPINE_FILES = new Set(['spine-player.min.js', 'spine-player.min.css']);
 const MAX_JSON = 64 * 1024;
@@ -154,7 +155,10 @@ export function createStudioServer({ projectDir, version, configFile, maxUpload 
     if (doc.format !== PARTS_FORMAT) throw new StudioError('bad-argument', `${file} is not a drawing.`, { file });
     // Each part's safe SVG tree, so the board can trace it again (Replay) without parsing SVG itself.
     const trees = Object.fromEntries((doc.parts ?? []).map(p => { try { return [p.name, safeTree(p.svg, p.name)]; } catch { return [p.name, null]; } }));
-    return { file, folder: path.posix.dirname(file).replace(/^\.$/, ''), ...doc, trees, version: drawingVersion(abs) };
+    // The project's style guide, so the board can redraw a part whose words or colours the owner edits.
+    let style = null;
+    try { style = projectStyle(dir).style; } catch { style = null; }
+    return { file, folder: path.posix.dirname(file).replace(/^\.$/, ''), ...doc, trees, version: drawingVersion(abs), style };
   }
 
   /** A drawing's version: a short hash of its file, so a save from an old copy is refused, not silently written over. */

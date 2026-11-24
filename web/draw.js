@@ -5,6 +5,7 @@
 
 import { S, el } from './store.js';
 import { showConflict, initConflict, confirmLeave } from './draw-conflict.js';
+import { artFields } from './draw-edit.js';
 import { api, button, node, t } from './ui.js';
 import { addShape, withNamespace, bonesOf, boxOf, drawingBounds, fitView, movePart, parentChoices, partAt, readShape, removePart, renamePart, reorder,
   resizePart, restyle, savePayload, drawingFile, setParent, setPivot, toRig, toScreen, uniqueName, formatNumber, parseNumber, PALETTE, NAME, MAX_PARTS } from './draw-model.js';
@@ -83,7 +84,7 @@ async function openDrawing(file) {
     return;
   }
   const doc = await api(`/api/drawing?file=${encodeURIComponent(file)}`);
-  Object.assign(D, { file, name: doc.name, folder: doc.folder ?? '', parts: doc.parts ?? [], trees: doc.trees ?? {}, sel: null, undo: [], dirty: false, version: doc.version ?? null });
+  Object.assign(D, { file, name: doc.name, folder: doc.folder ?? '', parts: doc.parts ?? [], trees: doc.trees ?? {}, sel: null, undo: [], dirty: false, version: doc.version ?? null, style: doc.style ?? null });
   D.saved = D.parts;
   showConflict('');
   fit();
@@ -293,7 +294,7 @@ function renderProps() {
     o.append(node('span', 'field-name', t('draw.outline')), row);
     out.push(o);
   } else {
-    out.push(node('p', 't-caption', t('draw.artNote')));
+    out.push(...artFields(p, { D, commit, say }, () => node('p', 't-caption', t('draw.artNote'))));
   }
 
   out.push(pair('draw.size', p.size, v => commit(resizePart(D.parts, p.name, v[0], v[1]))));
@@ -444,6 +445,5 @@ export function askToDraw(showWork) {
   el.text.setSelectionRange(el.text.value.length, el.text.value.length);
 }
 
-export const drawState = D; // for the e2e gate
 /** What the live drawing (draw-live.js) drives on the board. */
 export const board = { D, render, openDrawing, size, say, showConflict };

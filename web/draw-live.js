@@ -110,7 +110,7 @@ async function playSession(session) {
   if (S.view !== 'draw') showView('draw');
   try {
     const doc = await api(`/api/drawing?file=${encodeURIComponent(session.file)}`);
-    Object.assign(D, { file: session.file, name: doc.name, folder: doc.folder ?? '', parts: doc.parts ?? [], trees: doc.trees ?? {}, sel: null, undo: [], dirty: false, version: doc.version ?? null });
+    Object.assign(D, { file: session.file, name: doc.name, folder: doc.folder ?? '', parts: doc.parts ?? [], trees: doc.trees ?? {}, sel: null, undo: [], dirty: false, version: doc.version ?? null, style: doc.style ?? null });
     D.saved = D.parts;
     board.showConflict('');
     D.list = (await api('/api/drawings')).drawings;

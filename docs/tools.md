@@ -880,6 +880,7 @@ Writes new files into <folder>/<name>-export/ (never touches the drawing or the 
 | `animation` | string | The animation to export as frames (kind clip). Read from the latest delivery (<name>_v2.json) when there is one. |
 | `fps` | number (≥ 1, ≤ 60) | Frames per second of the clip export; default 24. |
 | `size` | number (≥ 16, ≤ 2048) | Square frame size of the clip export in pixels; default 256. |
+| `padding` | integer (≥ 0, ≤ 32) | Clear pixels around every sprite and clip frame in a sheet, so texture filtering never bleeds a neighbour in; default 2. |
 
 Example:
 
