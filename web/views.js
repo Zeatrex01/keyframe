@@ -1,5 +1,6 @@
 // The other views: Projects, Settings, and the opening at every start.
 
+import { loadUpdate } from './update.js';
 import { disposePlayer } from './stage.js';
 import { S, el } from './store.js';
 import { loadProjects, placeProjects } from './projects.js';
@@ -51,7 +52,7 @@ export function showView(view) {
 }
 
 export async function loadSettings() {
-  try { S.settings = await api('/api/settings'); renderSettings(); loadAgentSlots(); }
+  try { S.settings = await api('/api/settings'); renderSettings(); loadAgentSlots(); loadUpdate(); }
   catch (err) { el.checkText.textContent = String(err.message ?? err); }
 }
 

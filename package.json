@@ -43,7 +43,8 @@
     "player": "node tools/player.js",
     "godot": "node tools/godot.js",
     "examples": "node examples/kit/build.js",
-    "docs:tools": "node tools/docs-tools.js"
+    "docs:tools": "node tools/docs-tools.js",
+    "package:win": "node tools/package-win.js"
   },
   "bin": {
     "keyframe-studio": "tools/mcp-server.js",

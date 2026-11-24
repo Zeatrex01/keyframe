@@ -39,6 +39,8 @@ import { createAgentHub } from '../agent/hub.js';
 import { listPacks, ASSET_ROOT } from '../core/asset-library.js';
 import { PARTS_FORMAT } from '../render/svg-rig.js';
 import { copyExample, findExample, listExamples } from './examples.js';
+import { updateRoutes } from './update-routes.js';
+import { appRootOf } from '../core/update.js';
 
 export { statusFor } from './respond.js';
 
@@ -71,8 +73,8 @@ export function saveReference(projectDir, folder, name, data) {
 }
 
 /** How an agent connects: the MCP server of this checkout, as each client writes it (src/core/connect.js). */
-export function connectionBlocks(root = ROOT) {
-  const { server, clients } = connectionFor(root);
+export function connectionBlocks(root = ROOT, appRoot = appRootOf(root)) {
+  const { server, clients } = connectionFor(root, { appRoot });
   const text = id => clients.find(c => c.id === id).text;
   return { server, claudeCommand: text('claude-code'), claudeJson: text('claude-desktop'), codexToml: text('codex'), clients };
 }
@@ -96,9 +98,12 @@ function text(body, key, { optional = false } = {}) {
  * @param {number} [options.maxUpload] the largest reference upload in bytes (gates lower it)
  * @param {ReturnType<typeof import('../core/log.js').createLogger>} [options.log] where requests and failures are logged
  * @param {NodeJS.ProcessEnv} [options.agentEnv] where agent CLIs are looked up and what they run with (gates stand a fake CLI in)
- * @returns {{ server: import('node:http').Server, agents: ReturnType<typeof createAgentHub>, listen(port?: number): Promise<number>, close(): Promise<void> }}
+ * @param {string|null} [options.appRoot] the packaged app's install folder (null: a source checkout, which does not update itself)
+ * @param {() => void} [options.restart] how the app restarts into an installed update
+ * @param {object} [options.update] the update check and download (gates stand fakes in)
+ * @returns {{ server: import('node:http').Server, agents: ReturnType<typeof createAgentHub>, listen(port?: number): Promise<number>, close(): Promise<void>, lastPoll(): number }}
  */
-export function createStudioServer({ projectDir, version, configFile, maxUpload = MAX_UPLOAD, log = silentLogger, agentEnv = process.env }) {
+export function createStudioServer({ projectDir, version, configFile, maxUpload = MAX_UPLOAD, log = silentLogger, agentEnv = process.env, appRoot = appRootOf(ROOT), restart, update = {} }) {
   const registry = { file: configFile };
   // The open project can change while the server runs (the Projects view), so everything below
   // reads `dir` and `project` when it is called. The in-page MCP session reads session.dir per call.
@@ -185,7 +190,10 @@ export function createStudioServer({ projectDir, version, configFile, maxUpload 
 
   // ---------- routes: "METHOD /path" -> handler({ req, res, url, body() }) ----------
   // `project: true` routes need an open project; everything else works on the Projects view.
+  // When a page last polled: the app mode stops the studio once its window is gone (src/core/desktop.js).
+  let polled = 0;
   const routes = {
+    ...updateRoutes({ version, appRoot, registry, restart, ...update }),
     'GET /api/projects': { run: () => projects() },
     'GET /api/examples': { run: () => ({ examples: listExamples(ROOT).map(e => ({ name: e.name, preview: Boolean(e.preview) })) }) },
     'GET /api/examples/preview': { raw: true, run: ({ req, res, url }) => {
@@ -205,7 +213,7 @@ export function createStudioServer({ projectDir, version, configFile, maxUpload 
       embeddedAgent: 'GET /api/agent' in routes, connection: connectionBlocks(), addons: addonStatus(found), spine: spineAddonStatus(),
       project: dir ? { name: path.basename(dir), dir, agent: readAgent(dir) } : null }) },
     // `agent` keeps what the page already reads (connected, name, work) and adds the slots.
-    'GET /api/state': { run: () => { const st = views.state(); return { ...st, agent: { ...(st.agent ?? { connected: false }), ...agents.summary(dir ?? null) } }; } },
+    'GET /api/state': { run: () => { polled = Date.now(); const st = views.state(); return { ...st, agent: { ...(st.agent ?? { connected: false }), ...agents.summary(dir ?? null) } }; } },
     'GET /api/assets': { run: () => ({ packs: listPacks() }) },
     'GET /api/agent': { run: () => { agents.detect(); return agents.summary(dir ?? null); } },
     // Both answer with the slots as the open project sees them (as GET /api/agent does).
@@ -394,6 +402,7 @@ export function createStudioServer({ projectDir, version, configFile, maxUpload 
         });
       });
     },
+    lastPoll: () => polled,
     /** Stop accepting, end idle keep-alive connections, and resolve when the last request is done. */
     close() {
       return new Promise(resolve => {

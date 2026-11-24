@@ -247,3 +247,6 @@ button.card { padding: 0; text-align: left; font: inherit; cursor: pointer; alig
   .draw .dbar .t-caption { display: none; }
   .draw .dbar .input { flex: 1; width: auto; }
 }
+.update-pill { gap: 6px; font-size: var(--text-sm); }
+.update-box { display: grid; gap: 10px; padding: 12px 0; border-top: 1px solid var(--line); }
+.update-notes { white-space: pre-wrap; max-height: 220px; overflow: auto; font-size: var(--text-xs, 12px); margin: 8px 0 0; }

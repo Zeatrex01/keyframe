@@ -18,7 +18,7 @@ for (const id of ['app', 'projectName', 'projectSwitch', 'projectThumb', 'barSep
   'navProjects', 'navSettings', 'hub', 'settings', 'openForm', 'openPath', 'createForm', 'createParent', 'createName', 'hubStatus', 'hubEmpty',
   'first', 'firstClient', 'firstCode', 'firstDirector', 'firstDirectorGo', 'firstCopy', 'firstDot', 'firstStatusText', 'firstConnect', 'firstOpen', 'firstExamples', 'firstFolder',
   'hubNew', 'hubOpen', 'exampleList', 'projectFilter',
-  'projectList', 'addonList', 'spineAddon', 'spineState', 'spineAccept', 'spineToggle', 'spineLicense', 'spineStatus', 'checkDot', 'checkText', 'checkButton', 'settingsLang', 'settingsTheme', 'aboutTitle', 'aboutFolder', 'aboutData', 'settingsNav', 'settingsClient', 'clientWhere', 'clientCode', 'clientJson', 'clientMore',
+  'projectList', 'addonList', 'spineAddon', 'spineState', 'spineAccept', 'spineToggle', 'spineLicense', 'spineStatus', 'checkDot', 'checkText', 'checkButton', 'settingsLang', 'settingsTheme', 'aboutTitle', 'aboutFolder', 'aboutData', 'updatePill', 'updatePillText', 'updateBox', 'updateState', 'updateNotes', 'updateNotesText', 'updateCheckNow', 'updateInstall', 'updateAuto', 'updateStatus', 'settingsNav', 'settingsClient', 'clientWhere', 'clientCode', 'clientJson', 'clientMore',
   'agentSlots', 'slotList', 'slotAdd', 'slotStatus', 'externalTitle', 'splash', 'splashPlayer', 'splashSkip', 'splashStatus',
   'modeSwitch', 'modeAnimate', 'modeDraw', 'draw', 'drawTools', 'drawAsk', 'drawPick', 'drawCount', 'drawParts', 'drawStage', 'drawSvg', 'drawEmpty', 'drawBones', 'drawZoom',
   'drawLive', 'drawLiveLabel', 'drawReplay', 'drawSpeed', 'drawName', 'drawSummary', 'drawUndo', 'drawSave', 'drawStatus', 'drawConflict', 'drawConflictText', 'drawConflictLoad', 'drawConflictCopy', 'drawPartTitle', 'drawPartKind', 'drawProps']) el[id] = $(id);
@@ -26,6 +26,8 @@ for (const id of ['app', 'projectName', 'projectSwitch', 'projectThumb', 'barSep
 export const S = {
   lang: DEFAULT_LANG, dict: {},
   state: null, online: true,
+  serverVersion: '',     // the studio version this page loaded from (a new one after an update reloads the page)
+  update: null,         // GET /api/update: the packaged app's update status
   seen: new Set(), lastId: 0, sendError: '',
   shown: null,          // the skeleton record on the stage
   picked: null,         // the file the owner flipped the stage to (a delivery's base or a base's delivery), or null

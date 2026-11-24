@@ -91,6 +91,9 @@ export async function poll() {
   try {
     const epoch = S.focusEpoch;
     const state = await api('/api/state');
+    // The app installed an update and restarted into it: load the new page.
+    if (S.serverVersion && state.version && state.version !== S.serverVersion) { location.reload(); return; }
+    S.serverVersion = state.version ?? S.serverVersion;
     const dir = state.project?.dir ?? null;
     if (dir !== S.projectDir) { switchedProject(dir); resetLive(); }
     // The conversation is fetched only when the state says there is something past the cursor.

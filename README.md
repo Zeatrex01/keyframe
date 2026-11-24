@@ -75,7 +75,16 @@ checked and critiqued it, and exported it as one HTML file
 
 ## Quick start
 
-You need [Node.js](https://nodejs.org) 18 or newer. There is nothing to install: the studio has no
+**Windows app.** Download `Keyframe-Studio-<version>-win-x64-setup.exe` from the
+[releases](https://github.com/Zeatrex01/keyframe/releases) and run it, or unzip
+`Keyframe-Studio-<version>-win-x64.zip` and start `Keyframe Studio.exe` from the folder (portable).
+Node is bundled, the studio opens in its own window, and closing the window stops it. The app is
+not signed yet, so on the first start SmartScreen may say "Windows protected your PC": choose
+**More info**, then **Run anyway**. Settings → About tells you when a new version is out and
+installs it when you say so; your projects and settings are kept. Details:
+[`docs/desktop-app.md`](docs/desktop-app.md).
+
+**From source** (any system). You need [Node.js](https://nodejs.org) 18 or newer. There is nothing to install: the studio has no
 runtime dependencies.
 
 ```bash
@@ -184,6 +193,8 @@ Command-line flags win over environment variables.
 | `KS_LOG_FORMAT` | both | `text` | `json` writes one object per line |
 | `KS_CONFIG` | both | `studio.config.json` in the checkout | the file that remembers projects |
 | `KS_DATA_DIR` | packaged builds | per-user app data | where a packaged build keeps its config and logs |
+| `KS_PACKAGED` | studio | unset (the Windows app sets `1`) | run as the packaged app: data in the per-user app data folder |
+| `KS_UPDATE_FEED` | Windows app | the repository's GitHub releases | where the app looks for a newer version (a test feed, a mirror) |
 | `KS_LIBRARY` | both | per user | where learned motions are kept |
 | `KS_SPINE_RUNTIME` | both | the app data folder | where the Spine add-on keeps the official runtime |
 | `KS_AGENT_CLAUDE`, `KS_AGENT_CODEX`, `KS_AGENT_GEMINI` | `studio.js` | found on `PATH` | the agent CLI the Director drives |
@@ -201,6 +212,7 @@ install it.
 - **The Director does not start**: install Claude Code and run `claude` once in a terminal to sign
   in. Settings says what it found.
 - **A reference video does not play or measure**: install `ffmpeg` and restart the studio.
+- **The Windows app does not open**: its log is `%LOCALAPPDATA%\Keyframe Studio\logs\studio.log`.
 - **Something else**: start with `KS_LOG_LEVEL=debug`, read the console window, and open an issue
   with those lines (without private paths).
 
@@ -211,8 +223,8 @@ drawing and effects, and the app itself. All five are in this beta.
 
 **In 0.0.1-beta:** everything above: the tools, the engine, the Director and its team, drawing and
 art export, effects, reference learning, Godot import and runtime API, the HTML player, versions,
-six examples.
-**Later:** an editor panel inside Godot with the embedded agent, a studio that runs fully in the
+six examples, and the Windows app (portable or installed, with updates).
+**Later:** a signed Windows build, macOS and Linux app packages, an editor panel inside Godot with the embedded agent, a studio that runs fully in the
 browser, open 2D asset packs, Codex and Gemini proven as the Director. The plan:
 [`docs/roadmap.md`](docs/roadmap.md).
 

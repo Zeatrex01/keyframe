@@ -25,8 +25,11 @@ the animation principles and saves it beside your file, which is never changed.
 - A new brand and app: Projects, the first run, the studio with key lanes, Draw mode and Settings, in dark and light, English and Turkish.
 - Six showcase examples: Mika, Pip, the reward chest, the play button, the coin burst and the Warrior.
 - The opening: the brand mark's intro, drawn and animated with the studio's own tools.
+- A Windows app: portable or installed, Node bundled, its own window and icon, and updates installed on the owner's word after a checksum check (`docs/desktop-app.md`).
 
 ### Added
+- The Windows app (`npm run package:win`): a portable folder and zip with Node bundled, a launcher that opens the studio in its own window without a console, a per-user setup with Start menu and desktop shortcuts and an uninstaller, and data kept in `%LOCALAPPDATA%\Keyframe Studio` so updates never touch it. Closing the window stops the studio; the launcher goes back to the previous version if a new one fails to start.
+- Updates for the Windows app: Settings > About and a header pill say when a newer release is out, show its notes, and install it on the owner's confirmation; the package must match the release's `SHA256SUMS.txt`. The check can be turned off and stays quiet while there is no release.
 - `export_godot` is served by default (thirty tools): Godot is the first engine target.
 - An example opened from Projects carries the brief its clips were proven by, so the studio judges the copy exactly as the build did: every clip "good", no warnings.
 - The opening has a longer clip for the README and the launch, `reveal`: the amber key hops in and leaves an onion skin of itself on each spot it leaves, the mark's two ghosts, then lands in the lockup with a squash and a flash. The opening is now built through the studio by `examples/kit/opening.js`.

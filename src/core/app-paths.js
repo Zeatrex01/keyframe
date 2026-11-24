@@ -6,18 +6,20 @@
 // release, while a source checkout keeps its repo-local files (studio.config.json at the
 // repository root, ignored by git).
 //
-// Not carried: packaging. Legacy detected a packaged exe itself (`node:sea`, `process.pkg`),
-// migrated a versioned portable folder into the shared directory, and resolved install and
-// learning-library folders. None of that exists in this tree; `packaged` is now an explicit
-// option, so a future packaged launcher states it instead of the module guessing.
+// A packaged build (tools/package-win.js) carries a PACKAGED file at the studio root; the app
+// mode also says so with KS_PACKAGED=1. The install folder holds one folder per version, so the
+// data can never live inside it: an update would leave it behind.
 //
 // Node-only (layer `core`).
 
+import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const APP_NAME = 'Keyframe Studio';
+/** The file a packaged build carries at the studio root. */
+export const PACKAGED_MARK = 'PACKAGED';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
@@ -37,8 +39,8 @@ export function resolvePaths(opts = {}) {
   const env = opts.env || process.env;
   const platform = opts.platform || process.platform;
   const homeDir = opts.homeDir || os.homedir();
-  const packaged = !!opts.packaged;
   const rootDir = path.resolve(opts.rootDir || REPO_ROOT);
+  const packaged = opts.packaged ?? (env.KS_PACKAGED === '1' || fs.existsSync(path.join(rootDir, PACKAGED_MARK)));
   const exePath = path.resolve(opts.exePath || process.execPath);
 
   const dataRoot = packaged

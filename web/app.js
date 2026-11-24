@@ -13,6 +13,7 @@ import { flipStage, pickStage, poll } from './sync.js';
 import { setPhoneTab, setTab, showPanel } from './panels.js';
 import { setLang, setTheme, storedLang, storedTheme, t } from './ui.js';
 import { closeOpening, opening, playOpening, showView } from './views.js';
+import { loadUpdate } from './update.js';
 
 // ---------- wiring ----------
 
@@ -99,6 +100,8 @@ el.splashStatus.textContent = '';
 // starting (the window can open first) fails with "An unknown error occurred when fetching the script".
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
 showView(location.hash.slice(1) || 'work');
+// The installed app asks once at start whether a newer version is out (only if the owner left that on).
+loadUpdate();
 await opening;
 closeOpening();
 setInterval(poll, POLL_MS);

@@ -86,6 +86,7 @@
   </div>
   <span class="grow"></span>
   <span class="agent-pill" id="agentPill" role="status"><span class="dot" id="agentDot"></span><b id="agentName" hidden></b><span id="agentLabel"></span></span>
+  <button type="button" class="btn ghost update-pill" id="updatePill" hidden><span class="dot ok"></span><span id="updatePillText"></span></button>
   <button type="button" class="btn ghost icon" id="navSettings" data-i18n-label="nav.settings">
     <svg class="ic" aria-hidden="true"><use href="#i-sliders"/></svg>
   </button>
@@ -496,6 +497,12 @@
           <dt data-i18n="settings.folder"></dt><dd id="aboutFolder" class="mono"></dd>
           <dt data-i18n="settings.data"></dt><dd id="aboutData" class="mono"></dd>
         </dl>
+        <div class="update-box" id="updateBox" hidden>
+          <div class="addon-head"><b data-i18n="update.title"></b><span class="chip" id="updateState"></span></div>
+          <details id="updateNotes" hidden><summary data-i18n="update.notes"></summary><pre class="mono update-notes" id="updateNotesText"></pre></details>
+          <label class="check"><input type="checkbox" id="updateAuto"> <span data-i18n="update.auto"></span></label>
+          <div class="row"><button type="button" class="btn" id="updateInstall" hidden></button><button type="button" class="btn ghost" id="updateCheckNow" data-i18n="update.checkNow"></button><span class="status" id="updateStatus" role="status"></span></div>
+        </div>
         <p class="t-caption" data-i18n="settings.packageLead"></p>
         <a class="btn" id="packageLink" href="/api/package" download><svg class="ic" aria-hidden="true"><use href="#i-download"/></svg><span data-i18n="settings.package"></span></a>
       </section>
