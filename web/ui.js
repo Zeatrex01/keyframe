@@ -7,6 +7,8 @@ import { renderAll } from './sync.js';
 import { renderProjects } from './projects.js';
 import { renderSettings } from './views.js';
 import { renderDraw } from './draw.js';
+import { renderAgentSlots } from './agent-slots.js';
+import { renderUpdate } from './update.js';
 
 // ---------- small helpers ----------
 
@@ -69,6 +71,10 @@ export async function setLang(lang) {
   for (const b of el.settingsLang.querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset.lang === lang));
   if (S.projects) renderProjects();
   if (S.settings) renderSettings();
+  // Everything drawn from the catalog is drawn again, so no label stays in the old language
+  // (the agent slots' roles, the update box). test/i18n-leak.test.js keeps this list whole.
+  renderAgentSlots();
+  renderUpdate();
   renderDraw();
   renderAll();
 }
