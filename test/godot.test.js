@@ -264,4 +264,9 @@ test('the dressable warrior reaches Godot with every look and weapon, each stanc
   const builder = fs.readFileSync(path.join(ROOT, 'integrations/godot/addons/keyframe/keyframe_builder.gd'), 'utf8');
   assert.match(builder, /set_meta\("keyframe_slot", String\(slot\.name\)\)/);
   assert.match(builder, /set_meta\("keyframe_default", slot\.attachment\)/);
+  for (const prop of ['@export var look: String', '@export var weapon: String']) assert.ok(rig.includes(prop), `${prop}: set in the Inspector`);
+  // The example ships ready for Godot, and up to date with its delivery.
+  const shipped = JSON.parse(fs.readFileSync(path.join(dir, 'godot', 'warrior.kfscene'), 'utf8'));
+  assert.deepEqual(shipped, JSON.parse(JSON.stringify(godotScene(json, { atlasText: fs.readFileSync(path.join(dir, 'warrior_v2.atlas'), 'utf8'), name: 'warrior' }))));
+  assert.ok(fs.existsSync(path.join(dir, 'godot', 'warrior.png')));
 });

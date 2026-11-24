@@ -36,6 +36,13 @@ The demo project in this folder shows it: open `integrations/godot/` in Godot an
 | Events | a method track; connect to the root's `keyframe_event(event_name, int_value, float_value, string_value)` signal |
 | A clip whose last pose is its first | `loop_mode` linear |
 
+### The quickest path: the Warrior
+
+1. Copy `addons/keyframe/` into your project and enable the plugin.
+2. Copy `examples/showcase/warrior/godot/` (`warrior.kfscene` and `warrior.png`) into the project.
+3. Drag `warrior.kfscene` into a scene. Play a clip with `$warrior/AnimationPlayer.play("run")`;
+   set **Look** to `leather` in the Inspector (or `$warrior.look = "leather"`) to change its armour.
+
 ### Dressing a rig at run time
 
 A rig drawn with other looks of its parts (armour in plate and leather, several weapons in one
@@ -43,7 +50,7 @@ slot) keeps them all as `Polygon2D` nodes, one shown per slot. The root swaps th
 
 ```gdscript
 var rig = $Warrior
-rig.set_look("leather")                     # every piece with a leather look wears it
+rig.look = "leather"                        # every piece with a leather look wears it (also in the Inspector)
 rig.set_look("")                            # back to the look it was drawn in
 rig.set_attachment("helmet", "")            # take the helmet off
 rig.set_attachment("weapon", "weapon_spear")

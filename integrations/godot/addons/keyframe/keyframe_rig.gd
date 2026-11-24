@@ -12,6 +12,28 @@ extends Node2D
 ## Emitted when a clip passes one of its events.
 signal keyframe_event(event_name: String, int_value: int, float_value: float, string_value: String)
 
+## The look the rig wears, set in the Inspector or from code: "leather" dresses every piece that
+## has a leather look; empty is the look it was drawn in.
+@export var look: String = "":
+	set(value):
+		look = value
+		if is_node_ready():
+			set_look(value)
+
+## What the "weapon" slot shows when no clip says otherwise: "weapon", "weapon_spear"... or empty.
+@export var weapon: String = "":
+	set(value):
+		weapon = value
+		if is_node_ready() and value != "":
+			set_attachment("weapon", value)
+
+
+func _ready() -> void:
+	if look != "":
+		set_look(look)
+	if weapon != "":
+		set_attachment("weapon", weapon)
+
 
 ## Called by the AnimationPlayer's method track; connect to `keyframe_event` instead.
 func _keyframe_event(event_name: String, int_value: int, float_value: float, string_value: String) -> void:

@@ -8,6 +8,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tool, fresh } from './studio.js';
 import { finish } from './showcase.js';
+import { godotScene } from '../../src/engine/godot.js';
 
 const NAME = 'warrior';
 const DIR = fileURLToPath(new URL(`../showcase/${NAME}/`, import.meta.url));
@@ -157,6 +158,12 @@ export async function build() {
   for (const c of brief.clips) await tool(DIR, 'export_art', { file: `${NAME}.parts.json`, kinds: ['clip'], animation: c.name, fps: 12, size: 256, loop: c.loop });
   const out = path.join(DIR, `${NAME}-export`);
   for (const f of fs.readdirSync(out)) if (!f.includes('@sheet.')) fs.rmSync(path.join(out, f), { recursive: true, force: true });
+  // Ready for Godot: copy godot/ into a project with the Keyframe add-on and drop warrior.kfscene in.
+  const godot = path.join(DIR, 'godot');
+  fs.mkdirSync(godot, { recursive: true });
+  const scene = godotScene(JSON.parse(fs.readFileSync(path.join(DIR, `${NAME}_v2.json`), 'utf8')), { atlasText: fs.readFileSync(path.join(DIR, `${NAME}_v2.atlas`), 'utf8'), name: NAME });
+  fs.writeFileSync(path.join(godot, `${NAME}.kfscene`), JSON.stringify(scene) + '\n');
+  for (const page of scene.pages) fs.copyFileSync(path.join(DIR, page.name), path.join(godot, page.name));
   for (const folder of ['.backup', '.keyframe']) fs.rmSync(path.join(DIR, folder), { recursive: true, force: true });
 }
 
