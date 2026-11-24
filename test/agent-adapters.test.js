@@ -94,7 +94,7 @@ test('every agent CLI runs isolated: none of the owner\'s personal instructions,
   // Codex: the whole server table replaced, no AGENTS.md, no notify hook.
   const c = codex.command(plan()).args;
   const servers = c[c.indexOf(c.find(x => x.startsWith('mcp_servers=')))];
-  assert.equal(servers, "mcp_servers={'keyframe-studio'={command='/usr/bin/node',args=['/s/tools/mcp-server.js','--project','/p','--only','help,read_rig'],enabled_tools=['help','read_rig']}}");
+  assert.equal(servers, "mcp_servers={'keyframe-studio'={command='/usr/bin/node',args=['/s/tools/mcp-server.js','--project','/p','--only','help,read_rig'],enabled_tools=['help','read_rig'],tool_timeout_sec=1900}}");
   assert.ok(c.includes('project_doc_max_bytes=0') && c.includes('notify=[]'));
   // Gemini: system settings with no context files, extensions off, only the studio server.
   const g = gemini.command(plan());

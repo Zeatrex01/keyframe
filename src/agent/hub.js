@@ -23,7 +23,8 @@ import { unproven } from '../core/proof.js';
 import { silentLogger } from '../core/log.js';
 import { ADAPTERS, adapterFor } from './adapters.js';
 import { locateCli } from './locate.js';
-import { briefFor, toolsFor } from './roles.js';
+import { briefFor, toolsFor, TEAM_TOOL } from './roles.js';
+import { takeAsks, answerAsk } from '../core/team.js';
 import { readSlots, writeSlots, sessionFor, saveSession } from './slots.js';
 import { startRun } from './run.js';
 
@@ -31,6 +32,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '.
 const ACTIVITY_KEEP = 20;
 const CONTEXT_MESSAGES = 12;
 const SEEN_REFRESH_MS = 15_000;
+const TEAM_POLL_MS = 400;
 export const DEFAULT_TIMEOUT_MS = 20 * 60_000;
 
 // What the owner sees while a run works: the phase follows the tool being called.
@@ -71,7 +73,7 @@ export function createAgentHub({ configFile, env = process.env, root = ROOT, tim
   const limit = timeoutMs ?? (Number(env.KS_AGENT_TIMEOUT_MS) > 0 ? Number(env.KS_AGENT_TIMEOUT_MS) : DEFAULT_TIMEOUT_MS);
   /** @type {Record<string, string|null>} */
   let found = {};
-  /** @type {Map<string, { status: string, message?: string, live?: null|{ phase: string, tool: string|null, text: string, startedAt: number }, activity: Array<{ kind: string, name: string, at: string, dir?: string }>, lastDir?: string, run: null|{ stop(): void, dir: string }, pending: Array<{ dir: string, text: string }>, idle: Promise<void>, settle?: () => void }>} */
+  /** @type {Map<string, { status: string, message?: string, live?: null|{ phase: string, tool: string|null, text: string, startedAt: number }, activity: Array<{ kind: string, name: string, at: string, dir?: string }>, lastDir?: string, run: null|{ stop(): void, dir: string }, pending: Array<{ dir: string, text: string }>, idle: Promise<void>, settle?: () => void, team?: ReturnType<typeof setInterval>|null }>} */
   const states = new Map();
 
   function detect() {
@@ -156,9 +158,10 @@ export function createAgentHub({ configFile, env = process.env, root = ROOT, tim
    * @param {string} slotId
    * @param {string} dir the project folder
    * @param {string} text the request
-   * @param {{ uptoId?: number }} [options]
+   * @param {{ uptoId?: number, onDone?: (result: { ok: boolean, text: string, code?: string, message?: string, tools: unknown[] }) => void }} [options]
+   *   onDone: told how the run ended (a helper's answer goes back to the Director's ask_team)
    */
-  function run(slotId, dir, text, { uptoId } = {}) {
+  function run(slotId, dir, text, { uptoId, onDone } = {}) {
     const slot = readSlots(configFile).find(s => s.id === slotId);
     if (!slot) throw new StudioError('unknown-slot', `There is no slot "${slotId}".`, { slot: slotId });
     if (typeof text !== 'string' || !text.trim()) throw new StudioError('bad-argument', 'A run needs text.');
@@ -168,20 +171,25 @@ export function createAgentHub({ configFile, env = process.env, root = ROOT, tim
     if (!cli) throw new StudioError('no-agent-cli', `${adapter.name} is not installed here. ${install(adapter)}`, { slot: slot.id, agent: adapter.id });
     const st = stateOf(slot.id);
     if (st.run) throw new StudioError('agent-busy', `The ${slot.id} slot is still working; wait for it or stop it.`, { slot: slot.id });
-    launch({ slot, adapter, cli, dir, text: text.trim(), uptoId, st, retried: false });
+    launch({ slot, adapter, cli, dir, text: text.trim(), uptoId, st, retried: false, onDone });
     return { slot: slot.id, started: true };
   }
 
-  function launch({ slot, adapter, cli, dir, text, uptoId, st, retried }) {
+  /** The helpers the Director may hand tasks to: every other slot that has an agent. */
+  const teamOf = () => readSlots(configFile).filter(s => s.role !== 'director' && s.agent);
+
+  function launch({ slot, adapter, cli, dir, text, uptoId, st, retried, onDone }) {
     const resume = sessionFor(dir, slot.id, adapter.id); // a retry finds none: the stale one was dropped
-    const tools = toolsFor(slot.tools);
+    const director = slot.role === 'director';
+    const team = director ? teamOf() : [];
+    const tools = [...toolsFor(slot.tools), ...(team.length ? [TEAM_TOOL] : [])];
     const plan = {
       projectDir: dir, tools, resume, model: slot.model ?? adapter.defaultModel,
       brief: adapter.systemPrompt ? briefFor(slot.role, slot.brief) : '',
-      mcp: { command: process.execPath, args: [path.join(root, 'tools', 'mcp-server.js'), '--project', dir, '--only', tools.join(',')] },
+      mcp: { command: process.execPath, args: [path.join(root, 'tools', 'mcp-server.js'), '--project', dir, '--only', tools.join(','),
+        ...(team.length ? ['--team', team.map(m => `${m.id}:${m.role}`).join(',')] : [])] },
       configFile: path.join(dir, CHAT_DIR, 'agent', `${slot.id}-${adapter.id}.json`),
     };
-    const director = slot.role === 'director';
     const before = readMessages(dir).reduce((max, m) => Math.max(max, Number(m.id) || 0), 0);
     const started = Date.now();
     if (!retried) {
@@ -232,6 +240,7 @@ export function createAgentHub({ configFile, env = process.env, root = ROOT, tim
       },
     });
     st.run = { stop: () => handle.stop(), dir };
+    if (team.length && !st.team) st.team = setInterval(() => serveAsks(dir, team), TEAM_POLL_MS);
     log.info('agent run started', { slot: slot.id, agent: adapter.id, resume: !!resume });
 
     handle.done.then(result => {
@@ -239,18 +248,44 @@ export function createAgentHub({ configFile, env = process.env, root = ROOT, tim
       if (!result.ok && resume && result.code === 'agent-failed' && !result.tools.length && !result.texts.length) {
         try { saveSession(dir, slot.id, adapter.id, null); } catch { /* nothing to forget */ }
         st.run = null;
-        return launch({ slot, adapter, cli, dir, text, uptoId, st, retried: true });
+        return launch({ slot, adapter, cli, dir, text, uptoId, st, retried: true, onDone });
       }
       if (result.session) { try { saveSession(dir, slot.id, adapter.id, result.session); } catch { /* resumed fresh next time */ } }
-      finish({ slot, adapter, dir, st, result, before, started });
+      finish({ slot, adapter, dir, st, result, before, started, onDone });
     }).catch(err => {
       log.error('agent run failed unexpectedly', { slot: slot.id, err });
-      finish({ slot, adapter, dir, st, result: { ok: false, text: '', session: null, tools: [], texts: [], code: 'agent-failed', message: String(err?.message ?? err) }, before, started });
+      finish({ slot, adapter, dir, st, result: { ok: false, text: '', session: null, tools: [], texts: [], code: 'agent-failed', message: String(err?.message ?? err) }, before, started, onDone });
     });
   }
 
-  function finish({ slot, adapter, dir, st, result, before, started = Date.now() }) {
+  /** The Director's asks (ask_team): each runs its helper slot, and the helper's answer goes back. */
+  function serveAsks(dir, team) {
+    for (const ask of takeAsks(dir)) {
+      const member = team.find(m => m.id === ask.slot);
+      if (!member) { answerAsk(dir, ask.id, { ok: false, code: 'unknown-slot', message: `there is no helper "${ask.slot}"` }); continue; }
+      log.info('director asks a helper', { slot: member.id });
+      try {
+        run(member.id, dir, `The Director asks:\n${ask.task}`, {
+          onDone: result => answerAsk(dir, ask.id, result.ok
+            ? { ok: true, text: result.text.trim(), tools: result.tools.length }
+            : { ok: false, code: result.code, message: result.message ?? result.code }),
+        });
+      } catch (err) {
+        answerAsk(dir, ask.id, { ok: false, code: err?.code ?? 'agent-failed', message: String(err?.message ?? err) });
+      }
+    }
+  }
+
+  function finish({ slot, adapter, dir, st, result, before, started = Date.now(), onDone }) {
     const director = slot.role === 'director';
+    if (st.team) {
+      clearInterval(st.team); st.team = null;
+      // An ask left when the Director's turn ends has nobody to answer to.
+      for (const ask of takeAsks(dir)) answerAsk(dir, ask.id, { ok: false, code: 'agent-stopped', message: 'the Director\'s turn ended' });
+      // A helper still working for a turn that was stopped stops with it.
+      for (const member of teamOf()) states.get(member.id)?.run?.stop();
+    }
+    try { onDone?.(result); } catch (err) { log.warn('run result not handed back', { slot: slot.id, err }); }
     const name = adapter.name;
     try {
       if (result.ok) {
@@ -347,7 +382,7 @@ export function createAgentHub({ configFile, env = process.env, root = ROOT, tim
   }
 
   /** Stop everything (the studio is closing). */
-  function stopAll() { for (const st of states.values()) { st.pending.length = 0; st.run?.stop(); } }
+  function stopAll() { for (const st of states.values()) { st.pending.length = 0; st.run?.stop(); if (st.team) { clearInterval(st.team); st.team = null; } } }
 
   return { summary, agents, detect: () => { detect(); return agents(); }, run, onOwnerMessage, stop, setSlots, idle, stopAll };
 }

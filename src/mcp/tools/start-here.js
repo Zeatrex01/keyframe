@@ -92,6 +92,7 @@ export default {
     else next = { tool: 'read_rig', args: { file: bases[0].file }, why: 'Learn the bone names, parents and orientation before writing motion.' };
     return { project: project.dir, skeletons, capabilities: CAPABILITIES, steps: bases.length ? STEPS : [DRAW, ...STEPS], conversation: CONVERSATION, reference: { ...REFERENCE, videos: references }, rules: RULES,
       principles: { fpsBasis: FPS_BASIS, note: 'Rules marked estimate are rules of thumb: follow them by default, break them on purpose.', rules: WRITING_RULES, clipTiming: CLIP_TIMING },
+      ...(Array.isArray(session.team) && session.team.length ? { team: { members: session.team, how: 'ask_team {slot, task} hands one task to a helper and returns its answer; look at what it delivered before you reply ready.' } } : {}),
       ...exampleFor(project, bases[0]), next };
   },
 };

@@ -136,7 +136,7 @@ export const claudeCode = {
     if (plan.resume) args.push('--resume', plan.resume);
     // No instruction files: the owner's global and folder CLAUDE.md (which may hold anything from
     // their other work) are never read. No auto-memory: what the agent learns elsewhere stays there.
-    return { args, env: { CLAUDE_CODE_DISABLE_CLAUDE_MDS: '1', CLAUDE_CODE_DISABLE_AUTO_MEMORY: '1' }, files };
+    return { args, env: { CLAUDE_CODE_DISABLE_CLAUDE_MDS: '1', CLAUDE_CODE_DISABLE_AUTO_MEMORY: '1', MCP_TOOL_TIMEOUT: String(TOOL_TIMEOUT_SEC * 1000) }, files };
   },
   parse: parseClaude,
 };
@@ -176,6 +176,9 @@ export function parseCodex(line) {
 // TOML for a `-c` override. Strings are literal ('...') where they can be, so a Windows path keeps
 // its backslashes and the argument holds no double quote (cmd.exe, the last-resort way to start
 // a CLI, would strip it).
+// The longest one studio tool call may take: ask_team waits for a helper up to 30 minutes.
+export const TOOL_TIMEOUT_SEC = 1900;
+
 const toml = value => {
   if (Array.isArray(value)) return `[${value.map(toml).join(',')}]`;
   const text = String(value);
@@ -190,7 +193,7 @@ export const codex = {
   command(plan) {
     // The whole mcp_servers table is replaced, so the owner's other servers are not started; no
     // AGENTS.md instructions are read (project_doc_max_bytes=0) and no notify hook runs.
-    const server = `{command=${toml(plan.mcp.command)},args=${toml(plan.mcp.args)},enabled_tools=${toml(plan.tools)}}`;
+    const server = `{command=${toml(plan.mcp.command)},args=${toml(plan.mcp.args)},enabled_tools=${toml(plan.tools)},tool_timeout_sec=${TOOL_TIMEOUT_SEC}}`;
     const options = ['--json', '--skip-git-repo-check', '--sandbox', 'read-only',
       '-c', `mcp_servers={${toml(SERVER_NAME)}=${server}}`,
       '-c', 'project_doc_max_bytes=0',
@@ -232,7 +235,7 @@ export const gemini = {
     // a trusted server with an explicit tool list, and nothing else.
     // System settings win over the owner's: no context files (GEMINI.md) are read, and extensions
     // are off for the run.
-    const settings = { mcpServers: { [SERVER_NAME]: { ...mcpServers(plan)[SERVER_NAME], trust: true, includeTools: plan.tools } },
+    const settings = { mcpServers: { [SERVER_NAME]: { ...mcpServers(plan)[SERVER_NAME], trust: true, includeTools: plan.tools, timeout: TOOL_TIMEOUT_SEC * 1000 } },
       context: { fileName: ['.keyframe-no-context.md'] } };
     const args = ['--output-format', 'stream-json', '--allowed-mcp-server-names', SERVER_NAME, '--extensions', 'none'];
     if (plan.model) args.push('--model', plan.model);

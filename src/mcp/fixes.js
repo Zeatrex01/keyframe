@@ -20,6 +20,8 @@ const SPECIFIC = {
   'no-spine-cli': 'The Spine command line is optional: use check_skeleton instead, or set SPINE_CLI to a licensed Spine install.',
   'no-agent-cli': 'The agent CLI for this slot is not installed: install it (Settings lists how) and sign in once in a terminal, or choose another agent for the slot.',
   'agent-off': 'The slot has no agent: choose Claude Code, Codex CLI or Gemini CLI for it in Settings.',
+  'no-team': 'Only the studio\'s own Director has a team: do the work yourself, or add helpers in the studio\'s Settings (AI connection).',
+  'team-timeout': 'Do the work yourself, or ask the helper again with a smaller task.',
   'agent-busy': 'The slot is still working: wait for its answer, or stop it first.',
   'unknown-asset': 'Use a reference from `available`, written asset:<pack>/<item>.',
   'not-proven': 'Run the calls named in `missing` on the delivery (check_skeleton, critique_animation; critique_art for a drawing), read and look at what they say, fix what they find, then reply ready.',

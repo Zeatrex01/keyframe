@@ -40,7 +40,7 @@ export function pillState(state, online = true) {
 // ---------- the embedded agent's slots (Settings → AI connection) ----------
 
 /** The roles a slot can have: the Director first, then the helpers the owner can add. */
-export const SLOT_ROLES = Object.freeze(['director', 'illustrator', 'researcher']);
+export const SLOT_ROLES = Object.freeze(['director', 'art-director', 'senior-animator', 'researcher']);
 const RUNNING = new Set(['starting', 'ready', 'working']);
 
 /** Is the slot's agent running (so Stop makes sense)? */

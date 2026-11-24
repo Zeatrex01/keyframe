@@ -6,6 +6,7 @@ All notable changes to this project. The format follows
 ## Unreleased
 
 ### Added
+- The Director has a team: an Art Director (draws, keeps the style guide, checks the art), a Senior Animator (writes and polishes motion) and a Researcher, each set up in Settings with its own agent and tools. The Director hands one of them a task with `ask_team` and gets its answer back, then checks the work before it replies; the helper's answer shows in the chat too. The Illustrator slot is now the Art Director.
 - A large-rig gate: a 240-bone rig goes through read, write, check and critique in tens of milliseconds each (`test/large-rig.test.js`).
 - The delivery card has an HTML player button: one self-contained page that plays the delivered skeleton in any browser (`GET /api/player`).
 - Godot export keeps clipping masks: a clipping attachment becomes a `Polygon2D` mask that shows only the slots it clips (Pip's eyes stay inside their whites).

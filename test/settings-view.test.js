@@ -41,9 +41,9 @@ test('slots: the Director first and always there, one slot per helper role', () 
   assert.deepEqual(orderSlots(undefined).map(s => s.id), ['director']);
   const slots = [{ id: 'researcher', role: 'researcher', agent: 'codex', status: 'ready' }, { id: 'd', role: 'director', agent: 'claude-code', status: 'working' }, { id: 'x', role: 'singer' }];
   assert.deepEqual(orderSlots(slots).map(s => s.id), ['d', 'researcher'], 'unknown roles are left out');
-  assert.deepEqual(rolesToAdd(slots), ['illustrator']);
-  assert.deepEqual(rolesToAdd([]), ['illustrator', 'researcher']);
-  assert.deepEqual(SLOT_ROLES, ['director', 'illustrator', 'researcher']);
+  assert.deepEqual(rolesToAdd(slots), ['art-director', 'senior-animator']);
+  assert.deepEqual(rolesToAdd([]), ['art-director', 'senior-animator', 'researcher']);
+  assert.deepEqual(SLOT_ROLES, ['director', 'art-director', 'senior-animator', 'researcher']);
   assert.equal(isRunning({ status: 'working' }), true);
   assert.equal(isRunning({ status: 'off' }), false);
   assert.equal(isRunning({ status: 'error' }), false);
@@ -51,14 +51,14 @@ test('slots: the Director first and always there, one slot per helper role', () 
 
 test('slots: a change is saved as the whole list the server takes', () => {
   const slots = [{ id: 'director', role: 'director', agent: 'claude-code', status: 'ready', brief: 'ignored', message: 'x' }];
-  const added = changeSlots(slots, { add: 'illustrator' });
-  assert.deepEqual(slotsForSave(added), [{ id: 'director', role: 'director', agent: 'claude-code' }, { id: 'illustrator', role: 'illustrator', agent: null, brief: '' }]);
-  const picked = changeSlots(added, { id: 'illustrator', patch: { agent: 'gemini', brief: 'Flat shapes' } });
-  assert.deepEqual(slotsForSave(picked)[1], { id: 'illustrator', role: 'illustrator', agent: 'gemini', brief: 'Flat shapes' });
+  const added = changeSlots(slots, { add: 'art-director' });
+  assert.deepEqual(slotsForSave(added), [{ id: 'director', role: 'director', agent: 'claude-code' }, { id: 'art-director', role: 'art-director', agent: null, brief: '' }]);
+  const picked = changeSlots(added, { id: 'art-director', patch: { agent: 'gemini', brief: 'Flat shapes' } });
+  assert.deepEqual(slotsForSave(picked)[1], { id: 'art-director', role: 'art-director', agent: 'gemini', brief: 'Flat shapes' });
   assert.deepEqual(slotsForSave(changeSlots(picked, { id: 'director', patch: { agent: '' } }))[0].agent, null, 'none is null');
-  assert.deepEqual(slotsForSave(changeSlots(picked, { remove: 'illustrator' })).map(s => s.id), ['director']);
-  assert.deepEqual(slotsForSave(changeSlots(picked, { remove: 'director' })).map(s => s.id), ['director', 'illustrator'], 'the Director cannot be removed');
-  assert.equal(changeSlots(added, { add: 'illustrator' }).length, 2, 'one slot per role');
+  assert.deepEqual(slotsForSave(changeSlots(picked, { remove: 'art-director' })).map(s => s.id), ['director']);
+  assert.deepEqual(slotsForSave(changeSlots(picked, { remove: 'director' })).map(s => s.id), ['director', 'art-director'], 'the Director cannot be removed');
+  assert.equal(changeSlots(added, { add: 'art-director' }).length, 2, 'one slot per role');
   assert.deepEqual(slotsForSave([{ id: 'r', role: 'researcher', agent: 'codex', tools: ['see'] }])[1].tools, ['see']);
 });
 
@@ -66,6 +66,6 @@ test('every word the settings use is in both languages', () => {
   const keys = new Set([...settings.matchAll(/data-i18n(?:-label|-placeholder)?="([\w.]+)"/g)].map(m => m[1]));
   for (const role of SLOT_ROLES) for (const k of [`agent.role.${role}`, `agent.roleLead.${role}`]) keys.add(k);
   for (const k of ['agent.pick', 'agent.none', 'agent.notInstalled', 'agent.stop', 'agent.remove', 'agent.lastActivity', 'agent.brief', 'agent.add', 'agent.install',
-    'agent.briefPlaceholder.illustrator', 'agent.briefPlaceholder.researcher', 'settings.aboutName', 'settings.whereClaude', 'settings.whereCodex', 'settings.whereOther']) keys.add(k);
+    'agent.briefPlaceholder.art-director', 'agent.briefPlaceholder.senior-animator', 'agent.briefPlaceholder.researcher', 'settings.aboutName', 'settings.whereClaude', 'settings.whereCodex', 'settings.whereOther']) keys.add(k);
   for (const k of keys) { assert.ok(en[k], `en ${k}`); assert.ok(tr[k], `tr ${k}`); }
 });

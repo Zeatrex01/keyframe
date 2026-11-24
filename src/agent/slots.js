@@ -1,6 +1,6 @@
 // The slots: which agent CLI plays which role. Exactly one agent per slot; the `director` slot is
-// the one the owner talks to and always exists. Extra slots (an illustrator, a researcher, any
-// named role) each have their own CLI, tool scope and brief.
+// the one the owner talks to and always exists. Extra slots (the Art Director, the Senior Animator, a
+// researcher, any named role) each have their own CLI, tool scope and brief.
 //
 // The slots are a machine-local setting, kept in the studio's config file under `agentSlots`
 // beside the project registry (src/core/projects.js). The session id each slot resumes is per
@@ -15,7 +15,7 @@ import { StudioError } from '../shared/errors.js';
 import { readConfig, writeConfig } from '../core/projects.js';
 import { CHAT_DIR } from '../core/chat.js';
 import { AGENT_IDS } from './adapters.js';
-import { KNOWN_TOOLS, TOOL_SCOPES, defaultScope } from './roles.js';
+import { KNOWN_TOOLS, TOOL_SCOPES, ROLE_ALIASES, defaultScope } from './roles.js';
 
 export const MAX_SLOTS = 6;
 export const MAX_BRIEF = 2000;
@@ -24,7 +24,7 @@ const MODEL = /^[A-Za-z0-9][A-Za-z0-9._:[\]-]{0,63}$/;
 const CONFIG_KEY = 'agentSlots';
 
 /**
- * @typedef {{ id: string, role: string, agent: string|null, tools: 'studio'|'read'|string[], brief: string, model?: string }} Slot
+ * @typedef {{ id: string, role: string, agent: string|null, tools: 'studio'|'read'|'draw'|'animate'|'research'|string[], brief: string, model?: string }} Slot
  * model: the model the slot's CLI runs ('' its own default); absent, the agent's default in the studio
  */
 
@@ -44,7 +44,8 @@ export function validateSlots(input) {
   const ids = new Set();
   const slots = input.map((raw, i) => {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw bad(`Slot ${i + 1} must be an object.`, { index: i });
-    const { id, role, agent = null, tools, brief = '', model } = /** @type {Record<string, any>} */ (raw);
+    const { id, role: named, agent = null, tools, brief = '', model } = /** @type {Record<string, any>} */ (raw);
+    const role = typeof named === 'string' ? (ROLE_ALIASES[named] ?? named) : named;
     if (typeof id !== 'string' || !ID.test(id)) throw bad(`Slot ${i + 1}: "id" is lower-case letters, digits and dashes, starting with a letter.`, { index: i });
     if (ids.has(id)) throw bad(`Slot id "${id}" is used twice.`, { id });
     ids.add(id);

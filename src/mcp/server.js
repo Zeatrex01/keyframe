@@ -29,6 +29,7 @@ import drawRigTool from './tools/draw-rig.js';
 import styleGuideTool from './tools/style-guide.js';
 import { critiqueArtTool, exportArtTool } from './tools/art.js';
 import { waitForMessageTool, replyTool } from './tools/chat.js';
+import { askTeamTool } from './tools/team.js';
 import { seeReferenceTool, measureReferenceTool, applyMotionTool, compareReferenceTool } from './tools/reference.js';
 
 export const SERVER_NAME = 'keyframe-studio';
@@ -52,7 +53,7 @@ export const INSTRUCTIONS = [
 export const TOOLS = [help, startHere, waitForMessageTool, replyTool, seeReferenceTool, measureReferenceTool, applyMotionTool, compareReferenceTool, scanProject, briefTool, readRigTool, readAnimationTool, sampleAnimationTool, describeAnimationTool,
   critiqueAnimationTool, critiqueRigTool, checkSkeleton, seeAnimation, writeAnimation, deleteAnimation,
   setCurves, addEffectTool, styleGuideTool, drawRigTool, critiqueArtTool, exportArtTool, bakeAnimation, paintWeightsTool, migrateSwapToSkin, mergeAnimation, editWeights, readWeights,
-  diffSkeletonsTool, readAtlasTool, checkAssetsTool, listHistoryTool, spineInfoTool, restoreFileTool, exportBinaryTool, exportPlayerTool, exportGodotTool].map(withGuide);
+  diffSkeletonsTool, readAtlasTool, checkAssetsTool, listHistoryTool, spineInfoTool, restoreFileTool, exportBinaryTool, exportPlayerTool, exportGodotTool, askTeamTool].map(withGuide);
 
 /**
  * @param {object} options

@@ -1,5 +1,5 @@
 // Settings → AI connection, when the studio can run an AI of its own: the Director slot (one
-// installed command-line agent, or none), its status and Stop, and helper slots (Illustrator,
+// installed command-line agent, or none), its status and Stop, and helper slots (Art Director, Senior Animator,
 // Researcher), each with its own agent and brief. One agent per slot. When the studio has no
 // embedded agent (GET /api/agent answers 404), only the external MCP instructions show.
 
@@ -95,7 +95,7 @@ function slotRow(slot) {
   row.dataset.slot = slot.id;
   const head = node('div', 'slot-head');
   const badge = node('span', 'aic');
-  badge.append(icon(slot.role === 'director' ? 'i-spark' : slot.role === 'illustrator' ? 'i-film' : 'i-video'));
+  badge.append(icon(slot.role === 'director' ? 'i-spark' : slot.role === 'art-director' ? 'i-pen' : slot.role === 'senior-animator' ? 'i-bone' : 'i-video'));
   const title = node('div', 'grow');
   const name = node('div', 'slot-name');
   const status = slot.agent ? (slot.status ?? 'off') : 'off';

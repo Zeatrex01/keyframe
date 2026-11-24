@@ -2,7 +2,7 @@
 
 <!-- Written by `npm run docs:tools` from the tool definitions; do not edit by hand. -->
 
-The studio serves 29 tools to any MCP client by default; 12 more are on the shelf and served with
+The studio serves 29 tools to any MCP client by default; 13 more are on the shelf and served with
 `--all` (or `"all": true` in the connection). Any tool's full contract is also one `help { tool }` call away.
 Every refusal carries `fix` (how to get past it) and, for argument problems, an `example` call that works.
 
@@ -49,6 +49,7 @@ Every refusal carries `fix` (how to get past it) and, for argument problems, an 
 | [`export_binary`](#export_binary) | advanced | Writes a Spine binary .skel of a skeleton, verified by the official binary reader; needs the Spine add-on. |
 | [`export_player`](#export_player) | advanced | Writes one HTML file that plays a skeleton by double-click, with no studio, server or network. |
 | [`export_godot`](#export_godot) | advanced | Writes <file>.kfscene for Godot 4: the Keyframe add-on imports it as Skeleton2D, Polygon2D and AnimationPlayer nodes. |
+| [`ask_team`](#ask_team) | advanced | Hands one task to a helper of your team (the Art Director, the Senior Animator, the Researcher) and returns its answer. |
 
 ## help
 
@@ -1310,3 +1311,30 @@ Example:
  "file": "hero_v2.json"
 }
 ```
+
+## ask_team
+
+*advanced, writes files.* Hands one task to a helper of your team (the Art Director, the Senior Animator, the Researcher) and returns its answer.
+
+**Use when:** You are the studio's Director and a helper of your team is better placed for part of the work: a drawing for the Art Director, a motion pass for the Senior Animator, a reference study for the Researcher.
+
+**Not when:** You have no team (start_here lists it), or the task is quicker to do yourself.
+
+The owner set up helpers under you in the studio's Settings. Give one of them one task in plain words with everything it needs (the file, the animation, what the owner asked, what to deliver); it works with its own studio tools in this project and answers here, and its answer is also shown to the owner. The Art Director draws and judges art (style_guide, draw_rig, critique_art, export_art); the Senior Animator writes and polishes motion (write_animation, set_curves, add_effect, critique_animation, see_animation); the Researcher studies references and clips and answers in numbers. You stay responsible: look at what a helper delivered (critique and see it) before you reply ready. One task per call; the call waits until the helper is done.
+
+| Argument | Type | Meaning |
+|---|---|---|
+| `slot` (required) | string | The helper's slot id: art-director, senior-animator, researcher, or another slot the owner added (start_here lists your team). |
+| `task` (required) | string | The task in plain words, with the file names and what to deliver. |
+| `timeoutSec` | number (≥ 30, ≤ 1800) | How long to wait for the helper (30-1800 seconds, default 900). |
+
+Example:
+
+```json
+{
+ "slot": "senior-animator",
+ "task": "Polish the \"jump\" animation in hero_v2.json: more anticipation in the crouch and a settle on landing; critique and see it before you answer."
+}
+```
+
+**Next:** `critique_animation`, `see_animation`, `reply`

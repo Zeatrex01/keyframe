@@ -67,7 +67,7 @@ test('PUT /api/agent/slots validates and saves; the director answers the owner f
     assert.equal((await s.call('PUT', '/api/agent/slots', { body: {} })).status, 400);
     const saved = await s.call('PUT', '/api/agent/slots', { body: { slots: [DIRECTOR, { id: 'look', role: 'illustrator', agent: 'gemini' }] } });
     assert.equal(saved.status, 200);
-    assert.deepEqual(saved.json.slots.map(x => [x.id, x.agent, x.tools, x.status]), [['director', 'claude-code', 'studio', 'ready'], ['look', 'gemini', 'read', 'error']]);
+    assert.deepEqual(saved.json.slots.map(x => [x.id, x.agent, x.tools, x.status]), [['director', 'claude-code', 'studio', 'ready'], ['look', 'gemini', 'draw', 'error']]);
     assert.match(saved.json.slots[1].message, /Gemini CLI is not installed/);
 
     const sent = await s.call('POST', '/api/messages', { body: { text: 'add a bounce' } });

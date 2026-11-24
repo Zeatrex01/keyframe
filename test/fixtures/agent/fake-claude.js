@@ -6,11 +6,13 @@
 // The request steers it: "#slow" waits (for stop, busy and timeout), "#fail" answers a login
 // error, "#write" (with "#slow") writes and checks first, "#crash" exits with only a stderr line, "#reply" first appends a reply through the
 // conversation file the way the studio's `reply` tool does, "#unproven" leaves a write in the
-// proof ledger that nothing proved. A --resume of "stale-session" fails
+// proof ledger that nothing proved, "#team" hands "polish the jump" to the first helper its
+// server was given (--team) the way ask_team does, and answers with what came back. A --resume of "stale-session" fails
 // the way Claude Code fails for a session it does not know.
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { postAsk, waitAnswer } from '../../../src/core/team.js';
 
 const args = process.argv.slice(2);
 const option = name => { const i = args.indexOf(name); return i >= 0 ? args[i + 1] : undefined; };
@@ -44,6 +46,19 @@ function main() {
     out({ type: 'result', subtype: 'success', is_error: true, result: 'Not logged in · Please run /login', session_id: session });
     process.exit(1);
   }
+  if (asked.includes('#team')) {
+    const mcp = JSON.parse(fs.readFileSync(option('--mcp-config'), 'utf8')).mcpServers['keyframe-studio'];
+    const team = mcp.args.includes('--team') ? mcp.args[mcp.args.indexOf('--team') + 1].split(',').map(e => e.split(':')[0]) : [];
+    if (!team.length) { finish(session, 'No team.'); return; }
+    out({ type: 'assistant', message: { role: 'assistant', content: [{ type: 'tool_use', id: 'toolu_team', name: 'mcp__keyframe-studio__ask_team', input: {} }] }, parent_tool_use_id: null, session_id: session });
+    const id = postAsk(process.cwd(), { slot: team[0], task: asked.includes('#slowtask') ? 'polish the jump #slow' : 'polish the jump' });
+    waitAnswer(process.cwd(), id, { timeoutMs: 20_000, pollMs: 50 }).then(answer => {
+      out({ type: 'user', message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: 'toolu_team', content: JSON.stringify(answer), is_error: false }] }, parent_tool_use_id: null, session_id: session });
+      if (asked.includes('#slowtask')) { setTimeout(() => finish(session), 60_000); return; }
+      finish(session, answer?.ok ? `${team[0]} said: ${answer.text}` : `${team[0]} failed: ${answer?.code}`);
+    });
+    return;
+  }
   if (asked.includes('#slow')) {
     // What --include-partial-messages streams: a tool announced, then the answer token by token.
     out({ type: 'stream_event', event: { type: 'content_block_start', index: 0, content_block: { type: 'tool_use', id: 'toolu_0', name: 'mcp__keyframe-studio__read_rig', input: {} } }, parent_tool_use_id: null, session_id: session });
@@ -62,11 +77,11 @@ function main() {
   finish(session);
 }
 
-function finish(session) {
+function finish(session, said = null) {
   out({ type: 'assistant', message: { role: 'assistant', content: [{ type: 'tool_use', id: 'toolu_1', name: 'mcp__keyframe-studio__start_here', input: {} }] }, parent_tool_use_id: null, session_id: session });
   out({ type: 'user', message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: 'toolu_1', content: '{}', is_error: false }] }, parent_tool_use_id: null, session_id: session });
   const last = prompt.trim().split('\n').pop();
-  const answer = `Reply to: ${last}`;
+  const answer = said ?? `Reply to: ${last}`;
   if (asked.includes('#reply')) {
     // What the studio's reply tool does from the MCP server process: append to the conversation.
     const file = path.join(process.cwd(), '.keyframe', 'chat.jsonl');

@@ -47,9 +47,9 @@ Now, Next and Later below still hold; each names the phase it now belongs to.
   - *Shipped:* the slot data model (one agent per slot, a role, a tool scope enforced by the MCP
     server's `--only`, a brief), saved in the studio config; extra slots start
     (`POST /api/agent/run`) and stop like the director.
-  - *Next:* the director delegates to an extra slot (an `ask_slot` tool on its wire), so an
-    illustrator or a researcher answers the director instead of the owner; Codex and Gemini each
-    proven in one real session on Windows.
+  - *Shipped:* the director delegates to its team with `ask_team`: an Art Director, a Senior
+    Animator and a Researcher, each with its role's tools, answer the director instead of the owner.
+  - *Next:* Codex and Gemini each proven in one real session on Windows.
 
 ### Phase 2: a native core; Spine becomes an opt-in adapter
 

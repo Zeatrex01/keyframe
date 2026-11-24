@@ -39,19 +39,27 @@ A slot is one agent with one role. Exactly one agent per slot.
 | Field | Meaning |
 |---|---|
 | `id` | lower-case letters, digits and dashes; unique; `director` is required |
-| `role` | `director` (only the `director` slot), `illustrator`, `researcher`, or any other name |
+| `role` | `director` (only the `director` slot), `art-director`, `senior-animator`, `researcher`, or any other name (`illustrator`, the earlier name, is read as `art-director`) |
 | `agent` | `claude-code`, `codex`, `gemini`, or `null` (the slot is off) |
-| `tools` | `studio` (every core tool), `read` (the core tools that change nothing), or a list of tool names |
+| `tools` | `studio` (every core tool), `read` (the core tools that change nothing), `draw` (read plus style_guide, draw_rig, critique_art, export_art), `animate` (read plus the motion writers), `research` (read plus measure_reference), or a list of tool names; the role's scope when absent |
 | `brief` | the owner's own words for this slot (at most 2000 characters), added after the role's brief |
 | `model` | the model the slot's CLI runs (`--model`); absent, the studio's default for that CLI (Claude Code: `sonnet`, a capable lower-cost model, since a session runs many turns on the owner's account); `""` leaves it to the CLI's own default. Settings offers each CLI's models. |
 
 - The **director** is the one the owner talks to. It is started first, writes with the `studio`
   scope by default, and its brief tells it the working order: start with `start_here`, write, then
   prove with `check_skeleton`, `critique_animation` and `see_animation` before calling it done.
-- **Extra slots** (illustrator, researcher, anything else) read by default. They run when given a
-  task (`POST /api/agent/run { slot, text }`); their answer is appended to the conversation with
-  their slot id. Delegation from the director to an extra slot (an `ask_slot` tool on the
-  director's wire) is the next step; see `docs/roadmap.md`.
+- **Helpers** work under the director, each with its role's scope: the **Art Director** draws and
+  judges art (`draw`), the **Senior Animator** writes and polishes motion (`animate`), the
+  **Researcher** studies references and clips (`research`); any other role reads. A helper never
+  talks to the owner (`reply` is not in its scope); it answers the director.
+- **Delegation.** When the director has helpers with an agent chosen, its server also serves
+  `ask_team { slot, task }` and `start_here` lists the team. The tool leaves the ask in
+  `<project>/.keyframe/team/`; the studio takes it, runs the helper with "The Director asks: ..."
+  and hands the helper's final answer back as the tool's result (the call waits, up to 30 minutes;
+  every CLI is started with a tool timeout that allows it). The helper's answer is also appended
+  to the conversation with its slot id, so the owner sees who did what. Stopping the director
+  stops the helper working for it. A helper can also be given a task directly
+  (`POST /api/agent/run { slot, text }`).
 - The role briefs are short English system prompts in `src/agent/roles.js`. Claude Code gets them
   through `--append-system-prompt`; Codex and Gemini have no such flag, so the brief leads the
   first prompt of each session.

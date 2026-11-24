@@ -18,7 +18,8 @@ test('a valid list is filled in with defaults and the director comes first', () 
   ]);
   assert.deepEqual(slots.map(s => s.id), ['director', 'look', 'refs']);
   assert.deepEqual(slots[0], { id: 'director', role: 'director', agent: 'claude-code', tools: 'studio', brief: 'Keep replies short.' });
-  assert.equal(slots[1].tools, 'read', 'a role other than the director reads by default');
+  assert.equal(slots[1].role, 'art-director', 'the Illustrator saved earlier is the Art Director');
+  assert.equal(slots[1].tools, 'draw', 'the Art Director draws by default');
   assert.deepEqual(slots[2].tools, ['read_rig', 'see_reference']);
 });
 

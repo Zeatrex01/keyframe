@@ -222,6 +222,12 @@ export const GUIDE = Object.freeze({
     example: { file: 'hero_v2.json' },
     next: [],
   },
+  ask_team: {
+    when: 'You are the studio\'s Director and a helper of your team is better placed for part of the work: a drawing for the Art Director, a motion pass for the Senior Animator, a reference study for the Researcher.',
+    notWhen: 'You have no team (start_here lists it), or the task is quicker to do yourself.',
+    example: { slot: 'senior-animator', task: 'Polish the "jump" animation in hero_v2.json: more anticipation in the crouch and a settle on landing; critique and see it before you answer.' },
+    next: ['critique_animation', 'see_animation', 'reply'],
+  },
   export_godot: {
     when: 'The animation goes into a Godot 4 game: Godot imports the .kfscene with the Keyframe add-on as its own nodes and tracks.',
     example: { file: 'hero_v2.json' },

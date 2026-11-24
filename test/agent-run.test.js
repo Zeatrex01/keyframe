@@ -241,15 +241,15 @@ test('absent CLI and no agent: refused with codes the server maps, and the owner
   } finally { await off.cleanup(); }
 });
 
-test('an extra slot runs with its own brief and only the reading tools', async () => {
+test('an extra slot runs with its own brief and its role\'s tools (an Illustrator saved earlier is the Art Director)', async () => {
   const s = setup({ slots: [{ id: 'director', role: 'director', agent: null }, { id: 'look', role: 'illustrator', agent: 'claude-code', brief: 'Mind the silhouette.' }] });
   try {
     assert.deepEqual(s.hub.run('look', s.dir, 'is the pose readable?'), { slot: 'look', started: true });
     await s.hub.idle();
     const [call] = s.calls();
-    assert.match(fs.readFileSync(call.args[call.args.indexOf('--append-system-prompt-file') + 1], 'utf8'), /Illustrator[\s\S]*Mind the silhouette\.$/);
+    assert.match(fs.readFileSync(call.args[call.args.indexOf('--append-system-prompt-file') + 1], 'utf8'), /Art Director[\s\S]*Mind the silhouette\.$/);
     const allowed = call.args[call.args.indexOf('--allowedTools') + 1];
-    assert.ok(allowed.includes('see_animation') && !allowed.includes('write_animation') && !allowed.includes('reply'));
+    assert.ok(allowed.includes('see_animation') && allowed.includes('draw_rig') && allowed.includes('critique_art') && !allowed.includes('write_animation') && !allowed.includes('reply') && !allowed.includes('ask_team'));
     const last = readMessages(s.dir).at(-1);
     assert.deepEqual([last.slot, last.name], ['look', 'Claude Code']);
     assert.equal(readAgent(s.dir).name, null, 'only the director stands for the agent in the page');
@@ -291,5 +291,48 @@ test('the slots are seen per project: the error and activity of another project 
     assert.equal(elsewhere.status, 'ready');
     assert.equal(elsewhere.message, undefined);
     assert.deepEqual(elsewhere.activity, []);
+  } finally { await s.cleanup(); }
+});
+
+test('the Director hands a task to a helper with ask_team and gets its answer back', { timeout: 20_000 }, async () => {
+  const s = setup({ slots: [{ id: 'director', role: 'director', agent: 'claude-code' }, { id: 'senior-animator', role: 'senior-animator', agent: 'claude-code' }] });
+  try {
+    s.say('make the jump better #team');
+    await s.until(() => readMessages(s.dir).some(m => m.slot === 'director' && m.from === 'agent'), 15_000);
+    await s.hub.idle();
+    const [lead, helper] = s.calls();
+    // The Director's server serves ask_team and names its team; the helper's never does.
+    const leadMcp = JSON.parse(fs.readFileSync(lead.args[lead.args.indexOf('--mcp-config') + 1], 'utf8')).mcpServers['keyframe-studio'];
+    assert.equal(leadMcp.args[leadMcp.args.indexOf('--team') + 1], 'senior-animator:senior-animator');
+    assert.ok(lead.args[lead.args.indexOf('--allowedTools') + 1].includes('ask_team'));
+    assert.equal(helper.prompt.trim().split('\n').pop(), 'polish the jump');
+    assert.match(helper.prompt, /The Director asks:/);
+    assert.match(fs.readFileSync(helper.args[helper.args.indexOf('--append-system-prompt-file') + 1], 'utf8'), /Senior Animator/);
+    const helperAllowed = helper.args[helper.args.indexOf('--allowedTools') + 1];
+    assert.ok(helperAllowed.includes('write_animation') && !helperAllowed.includes('ask_team') && !helperAllowed.includes('draw_rig') && !helperAllowed.includes('reply'));
+    const said = readMessages(s.dir).filter(m => m.from === 'agent');
+    assert.deepEqual(said.map(m => [m.slot, m.text]), [['senior-animator', 'Reply to: polish the jump'], ['director', 'senior-animator said: Reply to: polish the jump']]);
+    assert.deepEqual(fs.readdirSync(path.join(s.dir, '.keyframe', 'team')), [], 'nothing is left behind');
+  } finally { await s.cleanup(); }
+});
+
+test('without helpers the Director has no ask_team; stopping the Director stops the helper it asked', { timeout: 20_000 }, async () => {
+  const alone = setup();
+  try {
+    alone.say('hello #team');
+    await alone.hub.idle();
+    const [call] = alone.calls();
+    assert.ok(!call.args[call.args.indexOf('--allowedTools') + 1].includes('ask_team'));
+    assert.equal(readMessages(alone.dir).at(-1).text, 'No team.');
+  } finally { await alone.cleanup(); }
+
+  const s = setup({ slots: [{ id: 'director', role: 'director', agent: 'claude-code' }, { id: 'art-director', role: 'art-director', agent: 'claude-code' }] });
+  try {
+    s.say('redraw the chest #team #slowtask');
+    await s.until(() => s.hub.summary().slots.find(x => x.id === 'art-director').status === 'working', 10_000);
+    s.hub.stop('director');
+    await s.hub.idle();
+    assert.equal(s.hub.summary().slots.find(x => x.id === 'art-director').status, 'ready', 'the helper stopped with the Director');
+    assert.ok(readMessages(s.dir).some(m => m.slot === 'art-director' && m.stopped));
   } finally { await s.cleanup(); }
 });
