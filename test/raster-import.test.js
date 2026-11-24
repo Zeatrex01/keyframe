@@ -97,7 +97,7 @@ test('one fused picture becomes one image on the root with bones placed from pic
   assert.throws(() => puppetRig({ name: 'fig', image: img, bones: [{ name: 'x', parent: 'nope', from: [0, 0], to: [1, 1] }] }), /parent/);
 });
 
-test('the head goes on the collar: its neck lines up with the top of the torso and tucks under it', () => {
+test('the head goes on the collar: the neck rises from its front and tucks under it', () => {
   // A torso whose top edge (a collar) is only at the front, and a head whose neck is at the back.
   const shape = (w, h, inside) => {
     const data = new Uint8Array(w * h * 4);
@@ -110,8 +110,9 @@ test('the head goes on the collar: its neck lines up with the top of the torso a
     thighFront: solid(40, 110), shinFront: solid(36, 110), thighBack: solid(40, 110), shinBack: solid(36, 110) };
   const parts = Object.fromEntries(assembleSideBiped(named, { scale: 1 }).map(p => [p.name, p]));
   const { torso, head } = parts;
-  const collarX = torso.at[0] - 50 + 80, neckX = head.at[0] - 50 + 15;
-  assert.ok(Math.abs(collarX - neckX) < 2, `neck ${neckX} on collar ${collarX}`);
+  // Facing right, the throat rises from the front of the collar: the neck's front edge on the torso's.
+  const collarFront = torso.at[0] - 50 + 100, neckFront = head.at[0] - 50 + 30;
+  assert.ok(Math.abs(collarFront - neckFront) < 2, `neck front ${neckFront} on collar front ${collarFront}`);
   assert.ok(head.at[1] - 50 < torso.at[1] + 100, 'the bottom of the neck sits inside the torso');
   const drawn = SIDE_BIPED_DRAW;
   assert.ok(drawn.indexOf('head') < drawn.indexOf('torso'), 'the collar is drawn over the neck');

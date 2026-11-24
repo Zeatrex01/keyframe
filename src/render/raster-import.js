@@ -141,10 +141,12 @@ export function assembleSideBiped(named, { scale = 0.5, joints = {} } = {}) {
   const [tw, th] = size('torso');
   const legLength = Math.max(...['Front', 'Back'].map(s => limbReach(size(`thigh${s}`)) + limbReach(size(`shin${s}`))));
   // Torso centre such that the hip sits a leg's length above the ground.
-  // The neck is measured: the middle of the torso's top edge (a collar drawn to the front moves it).
-  const timg = named.torso.image, collar = rowRun(timg, 0.03);
+  // The neck is measured: in a side view facing right the throat rises from the front of the collar,
+  // so the neck's front edge goes on the torso's front edge a tenth of the way down (the collar row).
+  const timg = named.torso.image, collar = rowRun(timg, 0.1), neckRun = rowRun(named.head.image, 0.97);
+  const neckX = (collar.x + collar.width / 2 - neckRun.width / 2) / timg.width;
   // The hip sits well inside the torso, so a hem or a shirt tail covers the round tops of the thighs.
-  const J = { shoulder: [0.55, 0.12], hip: [0.5, 0.75], neck: [collar.x / timg.width, 0.03], ...joints };
+  const J = { shoulder: [0.55, 0.12], hip: [0.5, 0.75], neck: [neckX, 0.03], ...joints };
   const torsoAt = [0, legLength + th * (J.hip[1] - 0.5)];
   const onTorso = (/** @type {number[]} */ f) => [torsoAt[0] + (f[0] - 0.5) * tw, torsoAt[1] + (0.5 - f[1]) * th];
   const parts = new Map();
