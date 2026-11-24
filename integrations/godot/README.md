@@ -49,16 +49,17 @@ A rig drawn with other looks of its parts (armour in plate and leather, several 
 slot) keeps them all as `Polygon2D` nodes, one shown per slot. The root swaps them:
 
 ```gdscript
-var rig = $Warrior
+var rig = $warrior
 rig.look = "leather"                        # every piece with a leather look wears it (also in the Inspector)
-rig.set_look("")                            # back to the look it was drawn in
-rig.set_attachment("helmet", "")            # take the helmet off
-rig.set_attachment("weapon", "weapon_spear")
+rig.look = ""                               # back to the look it was drawn in, pieces taken off included
+rig.weapon = "weapon_spear"                 # "" puts the weapon away
+rig.set_attachment("helmet", "")            # take one piece off
 rig.get_attachments("weapon")               # weapon, weapon_spear, weapon_bow, weapon_axe
 ```
 
-A clip that keys a slot shows what the clip says while it plays: each stance of the Warrior
-example keys its own weapon, so playing `idle_spear` puts the spear in the hand.
+A clip that keys a slot shows what the clip says while it plays: each stance and attack of the
+Warrior keys its own weapon (`idle_spear` puts the spear in the hand, `idle_unarmed` and `punch`
+put it away), while `run` and `jump` leave it alone, so they keep the weapon the game set.
 
 Godot's 2D stack has no counterpart for IK constraints, inherit modes other than normal or shear
 under rotation, so the bones they move are baked into position, rotation, scale and skew keys at

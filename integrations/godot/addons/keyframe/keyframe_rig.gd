@@ -3,10 +3,10 @@ extends Node2D
 ## The root of an imported Keyframe rig. Animation events arrive as `keyframe_event`.
 ##
 ## A dressable rig (a character drawn with armour looks and weapons) changes at run time:
-##   rig.set_look("leather")                  # every piece that has a leather look wears it
-##   rig.set_look("")                         # back to the look it was drawn in
-##   rig.set_attachment("helmet", "")         # take the helmet off
-##   rig.set_attachment("weapon", "weapon_spear")
+##   rig.look = "leather"                     # every piece that has a leather look wears it
+##   rig.look = ""                            # back to the look it was drawn in, taken-off pieces too
+##   rig.weapon = "weapon_spear"              # or "" to put it away
+##   rig.set_attachment("helmet", "")         # take one piece off
 ## A clip that keys a slot (each stance keys its weapon) shows what the clip says while it plays.
 
 ## Emitted when a clip passes one of its events.
@@ -20,19 +20,27 @@ signal keyframe_event(event_name: String, int_value: int, float_value: float, st
 		if is_node_ready():
 			set_look(value)
 
-## What the "weapon" slot shows when no clip says otherwise: "weapon", "weapon_spear"... or empty.
+## What the "weapon" slot shows: "weapon", "weapon_spear"... Set it empty to put the weapon away.
+## In the Inspector, empty keeps the weapon the rig was drawn with. Stance and attack clips show
+## their own weapon while they play; the run and the jump keep this one.
 @export var weapon: String = "":
 	set(value):
 		weapon = value
-		if is_node_ready() and value != "":
-			set_attachment("weapon", value)
+		if is_node_ready():
+			set_attachment(WEAPON_SLOT, value)
+
+## The slot `weapon` drives; set_look leaves it alone.
+const WEAPON_SLOT := "weapon"
+
+var _slot_map := {}
 
 
 func _ready() -> void:
+	_index_slots()
 	if look != "":
 		set_look(look)
 	if weapon != "":
-		set_attachment("weapon", weapon)
+		set_attachment(WEAPON_SLOT, weapon)
 
 
 ## Called by the AnimationPlayer's method track; connect to `keyframe_event` instead.
@@ -65,36 +73,43 @@ func get_attachments(slot_name: String) -> PackedStringArray:
 	return names
 
 
-## Dresses the rig in one look: each slot with an attachment "<slot>_<look>" shows it, the others
-## keep what they show. An empty look puts every such slot back in the attachment it was drawn with.
-func set_look(look: String) -> void:
-	for slot in _slots():
-		var slot_name := String(slot.get_meta("keyframe_slot", ""))
-		var default_attachment = slot.get_meta("keyframe_default", null)
-		if look == "":
-			if default_attachment != null and get_attachments(slot_name).has(String(default_attachment)) and _shown(slot) != "":
-				set_attachment(slot_name, String(default_attachment))
-		elif get_attachments(slot_name).has("%s_%s" % [slot_name, look]) and _shown(slot) != "":
-			set_attachment(slot_name, "%s_%s" % [slot_name, look])
+## Dresses the rig in one look: every slot with an attachment "<slot>_<look>" wears it, a piece
+## that was taken off included. An empty look puts every such piece back in the attachment it was
+## drawn with. The weapon slot is left to `weapon`.
+func set_look(new_look: String) -> void:
+	for slot_name in _slots():
+		if slot_name == WEAPON_SLOT:
+			continue
+		var names := get_attachments(slot_name)
+		var drawn = _slot_map[slot_name].get_meta("keyframe_default", null)
+		if drawn == null:
+			continue
+		var has_looks := false
+		for n in names:
+			has_looks = has_looks or n.begins_with("%s_" % slot_name)
+		if not has_looks:
+			continue
+		var wanted := "%s_%s" % [slot_name, new_look]
+		if new_look != "" and names.has(wanted):
+			set_attachment(slot_name, wanted)
+		elif new_look == "" or not names.has(wanted):
+			set_attachment(slot_name, String(drawn))
+
+
+func _index_slots() -> void:
+	_slot_map.clear()
+	for node in find_children("*", "Node2D", true, false):
+		if node.has_meta("keyframe_slot"):
+			_slot_map[String(node.get_meta("keyframe_slot"))] = node
 
 
 func _slots() -> Array:
-	var out := []
-	for node in find_children("*", "Node2D", true, false):
-		if node.has_meta("keyframe_slot"):
-			out.append(node)
-	return out
+	if _slot_map.is_empty():
+		_index_slots()
+	return _slot_map.keys()
 
 
 func _slot_node(slot_name: String) -> Node2D:
-	for node in _slots():
-		if String(node.get_meta("keyframe_slot")) == slot_name:
-			return node
-	return null
-
-
-func _shown(slot: Node2D) -> String:
-	for child in slot.get_children():
-		if child is Polygon2D and child.visible:
-			return String(child.name)
-	return ""
+	if _slot_map.is_empty():
+		_index_slots()
+	return _slot_map.get(slot_name)

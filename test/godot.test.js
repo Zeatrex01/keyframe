@@ -260,11 +260,17 @@ test('the dressable warrior reaches Godot with every look and weapon, each stanc
   assert.equal(shown('punch', 'weapon'), null);
   // The add-on's rig finds slots by name and swaps looks and weapons.
   const rig = fs.readFileSync(path.join(ROOT, 'integrations/godot/addons/keyframe/keyframe_rig.gd'), 'utf8');
-  for (const api of ['func set_attachment(slot_name: String, attachment: String) -> bool', 'func set_look(look: String) -> void', 'func get_attachments(slot_name: String) -> PackedStringArray']) assert.ok(rig.includes(api), api);
+  for (const api of ['func set_attachment(slot_name: String, attachment: String) -> bool', 'func set_look(new_look: String) -> void', 'func get_attachments(slot_name: String) -> PackedStringArray']) assert.ok(rig.includes(api), api);
   const builder = fs.readFileSync(path.join(ROOT, 'integrations/godot/addons/keyframe/keyframe_builder.gd'), 'utf8');
   assert.match(builder, /set_meta\("keyframe_slot", String\(slot\.name\)\)/);
   assert.match(builder, /set_meta\("keyframe_default", slot\.attachment\)/);
   for (const prop of ['@export var look: String', '@export var weapon: String']) assert.ok(rig.includes(prop), `${prop}: set in the Inspector`);
+  // Putting the weapon away through the property works, and set_look reaches pieces that were taken off.
+  assert.match(rig, /weapon = value\n\t\tif is_node_ready\(\):\n\t\t\tset_attachment\(WEAPON_SLOT, value\)/);
+  assert.ok(!/_shown\(/.test(rig), 'set_look does not skip a slot that shows nothing');
+  assert.match(rig, /func _index_slots\(\)/);
+  // Locomotion leaves the weapon to the game.
+  for (const clip of ['run', 'jump']) assert.equal(shown(clip, 'weapon'), undefined, `${clip} keys the weapon`);
   // The example ships ready for Godot, and up to date with its delivery.
   const shipped = JSON.parse(fs.readFileSync(path.join(dir, 'godot', 'warrior.kfscene'), 'utf8'));
   assert.deepEqual(shipped, JSON.parse(JSON.stringify(godotScene(json, { atlasText: fs.readFileSync(path.join(dir, 'warrior_v2.atlas'), 'utf8'), name: 'warrior' }))));

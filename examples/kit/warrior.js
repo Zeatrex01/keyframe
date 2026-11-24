@@ -1,7 +1,8 @@
 // "Warrior": the side-view figure dressed for a fight (src/art/figure-gear.js), with a stance and
 // an attack for each weapon it carries, an unarmed punch, a run and a jump. One skeleton: plate
 // armour with leather as the other look of every piece, and a sword, spear, bow and axe in one
-// weapon slot that each clip switches at its first key. Teaches weight shift with planted feet
+// weapon slot that each stance and attack switches at its first key (the run and the jump leave it
+// alone, so they keep whatever weapon the game gave the character). Teaches weight shift with planted feet
 // (write_animation `plant`), a stance per weapon, and a run with a moment in the air.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -68,6 +69,12 @@ export const clips = {
     upperArmBack: { rotate: K([[0, 10], [0.3, 84, 'outCubic'], [0.6, 76], [0.64, 52, 'outQuad'], [0.82, 46], [1.1, 10]]) },
     forearmBack: { rotate: K([[0, 30], [0.3, 150, 'outCubic'], [0.6, 160], [0.64, 120, 'outQuad'], [0.82, 116], [1.1, 30]]) },
   } },
+  idle_unarmed: { slots: weapon(null), bones: { ...stance(1.6, 1, -1),
+    body: { rotate: K([[0, -1], [0.8, 1], [1.6, -1]]), translate: T([[0, 0, -21], [0.8, -1, -24], [1.6, 0, -21]]) },
+    head: { rotate: K([[0, 2], [0.9, 4], [1.6, 2]]) },
+    upperArmFront: { rotate: K([[0, 30], [0.85, 26], [1.6, 30]]) }, forearmFront: { rotate: K([[0, 100], [0.9, 106], [1.6, 100]]) },
+    upperArmBack: { rotate: K([[0, 40], [0.8, 36], [1.6, 40]]) }, forearmBack: { rotate: K([[0, 100], [0.85, 106], [1.6, 100]]) },
+  } },
   punch: { slots: weapon(null), bones: { ...stance(0.7, 1, -1),
     body: { rotate: K([[0, -1], [0.18, 8, 'inCubic'], [0.25, -16, 'outQuad'], [0.42, -14], [0.7, -1]]), translate: T([[0, 0, -21], [0.18, -8, -23, 'inCubic'], [0.25, 9, -25, 'outQuad'], [0.42, 8, -25], [0.7, 0, -21]]) },
     head: { rotate: K([[0, 2], [0.2, -4], [0.28, 8], [0.45, 6], [0.72, 2]]) },
@@ -75,7 +82,7 @@ export const clips = {
     forearmFront: { rotate: K([[0, 100], [0.18, 116, 'inCubic'], [0.25, 0, 'outQuad'], [0.42, 4], [0.7, 100]]) },
     upperArmBack: { rotate: K([[0, 40], [0.2, 60], [0.28, -30], [0.44, -26], [0.72, 40]]) }, forearmBack: { rotate: K([[0, 100], [0.2, 110], [0.28, 110], [0.44, 104], [0.72, 100]]) },
   } },
-  run: { slots: weapon('weapon'), bones: {
+  run: { bones: {
     // Contact, down, passing, push-off in each step, the down quick after the contact and the
     // flight the longest: the hips lowest just after contact and highest in the air, the support
     // foot travelling back at an even speed so the stride holds at game speed. Every key is passed
@@ -88,7 +95,7 @@ export const clips = {
     upperArmFront: { rotate: K([[0, -25.8], [0.1, -19.0], [0.2, 16.7], [0.3, 45.8], [0.4, 39.0], [0.5, 3.3], [0.6, -25.8]], 'smooth') }, forearmFront: { rotate: K([[0, 69.3], [0.117, 70.4], [0.217, 79.8], [0.317, 87.4], [0.417, 85.6], [0.517, 76.2], [0.6, 69.3]], 'smooth') }, handFront: { rotate: K([[0, -45.0], [0.083, -42.1], [0.183, -44.1], [0.283, -50.0], [0.383, -53.9], [0.483, -51.9], [0.6, -45.0]], 'smooth') },
     upperArmBack: { rotate: K([[0, 45.8], [0.1, 39.0], [0.2, 3.3], [0.3, -25.8], [0.4, -19.0], [0.5, 16.7], [0.6, 45.8]], 'smooth') }, forearmBack: { rotate: K([[0, 90.7], [0.117, 89.6], [0.217, 80.2], [0.317, 72.6], [0.417, 74.4], [0.517, 83.8], [0.6, 90.7]], 'smooth') },
   } },
-  jump: { slots: weapon('weapon'), bones: {
+  jump: { bones: {
     body: { rotate: K([[0, 0], [0.15, -10], [0.22, -4, 'outQuad'], [0.45, 0], [0.7, -2, 'outQuad'], [0.78, -10], [1, 0]]), translate: T([[0, 0, 0], [0.15, 0, -24, 'inCubic'], [0.22, 0, 0, 'outQuad'], [0.45, 0, 74, 'inQuad'], [0.7, 0, 0, 'outQuad'], [0.78, 0, -24], [0.9, 0, -6], [1, 0, 0]]) },
     head: { rotate: K([[0, 0], [0.15, 8], [0.26, -6], [0.45, 2], [0.74, -4], [0.8, 8], [1, 0]]) },
     thighFront: { rotate: K([[0, 0], [0.15, 42, 'inCubic'], [0.22, 0, 'outQuad'], [0.3, -6], [0.45, 62], [0.62, 18], [0.7, 0, 'outQuad'], [0.78, 42], [0.9, 10], [1, 0]]) },
@@ -116,11 +123,16 @@ for (const clip of Object.values(clips)) {
   }
 }
 // Idles hold the head still for a moment: a beat for the eye to rest on.
-for (const name of ['idle_sword', 'idle_spear', 'idle_bow']) {
+for (const name of ['idle_sword', 'idle_spear', 'idle_bow', 'idle_unarmed']) {
   const head = clips[name].bones.head.rotate;
   head.splice(1, 0, { ...head[1], time: 0.5, curve: 'linear' }, { ...head[1], time: 0.7 });
   head.splice(3, 1);
 }
+
+// The axe fights like the sword: the same stance and cut, the axe in the hand.
+clips.idle_axe = { ...structuredClone(clips.idle_sword), slots: weapon('weapon_axe') };
+clips.attack_axe = { ...structuredClone(clips.attack_sword), slots: weapon('weapon_axe') };
+Object.assign(PLANT, { idle_axe: PLANT.idle_sword, attack_axe: PLANT.attack_sword, idle_unarmed: PLANT.punch });
 
 /** @type {Record<string, { plant?: any[] }>} */
 const EXTRA = Object.fromEntries(Object.entries(PLANT).map(([clip, plant]) => [clip, { plant }]));
@@ -142,9 +154,12 @@ export const brief = {
     { name: 'attack_spear', seconds: 0.82, loop: false, does: 'draw back, thrust with the whole body, hold, recover' },
     { name: 'idle_bow', seconds: 1.6, loop: true, does: 'bow low in the near hand, relaxed' },
     { name: 'shoot_bow', seconds: 1.1, loop: false, does: 'raise the bow, draw to the cheek, hold, release with a recoil' },
+    { name: 'idle_axe', seconds: 1.6, loop: true, does: 'the sword stance with the axe in hand' },
+    { name: 'attack_axe', seconds: 0.78, loop: false, does: 'the overhead cut with the axe' },
+    { name: 'idle_unarmed', seconds: 1.6, loop: true, does: 'no weapon: fists up in guard, breathing over planted feet' },
     { name: 'punch', seconds: 0.72, loop: false, does: 'no weapon: guard, a short pull back, a straight punch from the hips, hold, recover' },
-    { name: 'run', seconds: 0.6, loop: true, does: 'two strides with a moment in the air after each push-off, arms opposite the legs, sword in hand' },
-    { name: 'jump', seconds: 1, loop: false, does: 'crouch with the feet planted, launch, tuck at the top, land into a planted crouch and stand' },
+    { name: 'run', seconds: 0.6, loop: true, does: 'two strides with a moment in the air after each push-off, arms opposite the legs; keeps whatever weapon the game gave it' },
+    { name: 'jump', seconds: 1, loop: false, does: 'crouch with the feet planted, launch, tuck at the top, land into a planted crouch and stand; keeps the weapon in hand' },
   ],
 };
 

@@ -63,6 +63,24 @@
       "does": "raise the bow, draw to the cheek, hold, release with a recoil"
     },
     {
+      "name": "idle_axe",
+      "seconds": 1.6,
+      "loop": true,
+      "does": "the sword stance with the axe in hand"
+    },
+    {
+      "name": "attack_axe",
+      "seconds": 0.78,
+      "loop": false,
+      "does": "the overhead cut with the axe"
+    },
+    {
+      "name": "idle_unarmed",
+      "seconds": 1.6,
+      "loop": true,
+      "does": "no weapon: fists up in guard, breathing over planted feet"
+    },
+    {
       "name": "punch",
       "seconds": 0.72,
       "loop": false,
@@ -72,13 +90,13 @@
       "name": "run",
       "seconds": 0.6,
       "loop": true,
-      "does": "two strides with a moment in the air after each push-off, arms opposite the legs, sword in hand"
+      "does": "two strides with a moment in the air after each push-off, arms opposite the legs; keeps whatever weapon the game gave it"
     },
     {
       "name": "jump",
       "seconds": 1,
       "loop": false,
-      "does": "crouch with the feet planted, launch, tuck at the top, land into a planted crouch and stand"
+      "does": "crouch with the feet planted, launch, tuck at the top, land into a planted crouch and stand; keeps the weapon in hand"
     }
   ]
 }

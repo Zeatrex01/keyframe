@@ -9,13 +9,14 @@ const { brief, skeleton } = showcaseGates('warrior');
 const model = compileSkeleton(skeleton);
 
 test('warrior: every stance shows its own weapon, and the punch none', () => {
-  const want = { sword: 'weapon', spear: 'weapon_spear', bow: 'weapon_bow', punch: null };
+  const want = { sword: 'weapon', spear: 'weapon_spear', bow: 'weapon_bow', axe: 'weapon_axe', unarmed: null, punch: null };
   for (const clip of brief.clips) {
     const key = Object.keys(want).find(k => clip.name.includes(k));
     if (!key) continue;
     const pose = sample(model, clip.name, [0.1])[0];
     assert.equal(pose.slots.find(s => s.name === 'weapon').attachment ?? null, want[key], clip.name);
   }
+  for (const clip of ['run', 'jump']) assert.equal(skeleton.animations[clip].slots?.weapon, undefined, `${clip} leaves the weapon to the game`);
 });
 
 test('warrior: planted feet stay on their point through every stance and attack', () => {

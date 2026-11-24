@@ -14,9 +14,12 @@ Kind: Character. Shown at 320 px wide. Teaches: weight shift with planted feet, 
 | `attack_spear` | 0.82 s | draw back, thrust with the whole body, hold, recover |
 | `idle_bow` | 1.6 s, loop | bow low in the near hand, relaxed |
 | `shoot_bow` | 1.1 s | raise the bow, draw to the cheek, hold, release with a recoil |
+| `idle_axe` | 1.6 s, loop | the sword stance with the axe in hand |
+| `attack_axe` | 0.78 s | the overhead cut with the axe |
+| `idle_unarmed` | 1.6 s, loop | no weapon: fists up in guard, breathing over planted feet |
 | `punch` | 0.72 s | no weapon: guard, a short pull back, a straight punch from the hips, hold, recover |
-| `run` | 0.6 s, loop | two strides with a moment in the air after each push-off, arms opposite the legs, sword in hand |
-| `jump` | 1 s | crouch with the feet planted, launch, tuck at the top, land into a planted crouch and stand |
+| `run` | 0.6 s, loop | two strides with a moment in the air after each push-off, arms opposite the legs; keeps whatever weapon the game gave it |
+| `jump` | 1 s | crouch with the feet planted, launch, tuck at the top, land into a planted crouch and stand; keeps the weapon in hand |
 
 Files: `warrior.json` + `.atlas` + `.png` (the rig, no clips), `warrior_v2.json` (the
 delivery with the clips), `brief.json` (what was asked, for the studio and the gates), `preview.png`.
