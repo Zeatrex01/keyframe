@@ -12,6 +12,9 @@ const TEXT_KEYS = ['label', 'title', 'button', 'value'];
 const COLOUR_KEYS = { button: ['color'], iconButton: ['color'], panel: ['color', 'titleColor'], popup: ['color', 'titleColor', 'buttonColor'],
   progress: ['color'], toggle: ['color'], badge: ['color', 'plateColor'], icon: ['color', 'plateColor'], figure: ['skin', 'shirt', 'pants', 'hair', 'shoes'] };
 
+/** The colour keys that paint a component's sub-part, by the sub-part's name after the component's. */
+const SUB_COLOURS = { _title: ['titleColor'], _ok: ['buttonColor'] };
+
 /** The part that holds how a component was drawn: the part itself, or the one it was drawn with. */
 export function ownerOf(parts, part) {
   if (!part?.source) return null;
@@ -31,7 +34,10 @@ export function editableOf(parts, part) {
   if (c && COMPONENTS[c.component]) {
     for (const k of TEXT_KEYS) if (typeof c[k] === 'string' || typeof c[k] === 'number') texts.push({ key: k, value: String(c[k]) });
     (Array.isArray(c.lines) ? c.lines : []).forEach((line, i) => texts.push({ key: `lines.${i}`, value: String(line) }));
-    for (const k of COLOUR_KEYS[c.component] ?? []) colours.push({ key: k, value: typeof c[k] === 'string' ? c[k] : '' });
+    // A sub-part shows the colour that paints it: a popup's title tab its titleColor, not the panel's.
+    const sub = part.name.startsWith(`${owner.name}_`) ? part.name.slice(owner.name.length) : '';
+    const keys = (COLOUR_KEYS[c.component] ?? []).filter(k => !SUB_COLOURS[sub] || SUB_COLOURS[sub].includes(k));
+    for (const k of keys) colours.push({ key: k, value: typeof c[k] === 'string' ? c[k] : '' });
   } else if (Array.isArray(owner.source.shapes)) {
     owner.source.shapes.forEach((s, i) => { if (s && typeof s.text === 'string') texts.push({ key: `shapes.${i}.text`, value: s.text }); });
     const fills = [...new Set(owner.source.shapes.map(s => s?.fill).filter(f => typeof f === 'string' && f !== 'none'))];

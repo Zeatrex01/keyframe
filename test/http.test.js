@@ -124,13 +124,13 @@ test('the conversation: the owner posts, the agent reads it through its tool, th
     assert.ok(early.isError && JSON.stringify(early.content).includes('not-proven'), 'ready is refused before the write is proven');
     await s.agent('check_skeleton', { file: wrote.structuredContent.file });
     await s.agent('critique_animation', { file: wrote.structuredContent.file, animation: 'bounce' });
-    const sent = await s.agent('reply', { text: 'Added.', work: 'ready', file: wrote.structuredContent.file, animation: 'bounce' });
+    const sent = await s.agent('reply', { text: 'Added.', work: 'ready', file: wrote.structuredContent.file, animation: 'bounce', weak: 'a two-key bounce, kept simple for this test.' });
     assert.ok(!sent.isError, JSON.stringify(sent.content));
 
     state = (await s.get('/api/state')).json;
     assert.deepEqual([state.agent.connected, state.agent.name, state.agent.work], [true, 'Claude', 'ready']);
     assert.deepEqual(state.show, { file: wrote.structuredContent.file, animation: 'bounce' }, 'the stage follows what the agent called ready');
-    assert.deepEqual((await s.get('/api/messages?after=1')).json.messages.map(m => [m.from, m.text]), [['agent', 'Added.']]);
+    assert.deepEqual((await s.get('/api/messages?after=1')).json.messages.map(m => [m.from, m.text]), [['agent', 'Added.\n\nStill weak: a two-key bounce, kept simple for this test.']]);
 
     const check = (await s.get(`/api/check?file=${wrote.structuredContent.file}`)).json;
     assert.deepEqual([check.opens, check.fatal], [true, 0]);

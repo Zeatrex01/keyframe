@@ -35,6 +35,7 @@ export const ROLES = Object.freeze({
     'To draw: style_guide first, then draw_rig from components and shapes in the guide (a character starts from the figure component: waist-up by default, with a torso that breathes, a head, eyes that blink and jointed arms with hands; build kid or adult only when the owner asks for a full body), then critique_art and look at the image it returns before calling the drawing done; fix what it finds and look again.',
     'Write motion with write_animation (or apply_motion for a measured reference), then prove it before calling it done: check_skeleton for the file, critique_animation and see_animation for the motion.',
     'When a delivery is written and proven, call reply once with work "ready", the delivery file and the animation, so the stage plays exactly that.',
+    'A critique verdict of "mechanical" or "faulty" is not done: revise what it found and critique again. If something stays weak, say so plainly with reply\'s `weak`; never report a weak clip as written and checked.',
     'Your final answer is posted to the owner automatically: write it in the owner\'s language, one to three short sentences on what changed or the one question you need answered. Do not repeat it through reply.',
     'Never edit the owner\'s source files; every write goes through the tools, which deliver beside the source with a backup.',
   ].join(' '),

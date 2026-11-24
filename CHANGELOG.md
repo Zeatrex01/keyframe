@@ -18,12 +18,15 @@ All notable changes to this project. The format follows
 - `critique_animation` flags a limb that comes apart from the part it hangs from (`limb-separates`): an arm translated off the shoulder, or a pivot in the middle of a limb.
 - A `clean` style preset, now the default: no dark outline, only a thin edge a shade darker than each fill (`stroke.color: "tint"`), gentle radii, a soft top light and a light shadow. The thick-outline cartoon look stays as the optional `casual-game` preset.
 - The `figure` component draws a waist-up character by default (`build: upper`): a torso that breathes at the waist, a head, eyes as their own part so they blink, hair behind, and tapered arms with hands. The full-body `kid` and `adult` builds are there when a full body is asked for.
+- A weak critique is never passed off as done: `reply` refuses "ready" after a "faulty" critique, and after a "mechanical" one unless `weak` tells the owner plainly what is still weak.
 - The prove step is enforced: the studio keeps a ledger of what was written and what proved it (`.keyframe/proof.json`). `reply` refuses work "ready" for a clip that was not checked with `check_skeleton` and critiqued with `critique_animation` after its last write, or a drawing not critiqued with `critique_art`; a Director turn that ends with unproven writes says so in plain words.
 - The Draw settings edit the words and colours of a part the AI drew from a component or shapes (a title, a label, a body line, a fill, by palette role or a custom colour); the part is drawn again in the style guide and keeps where the owner put it.
 - `export_art` sheets keep clear pixels around every sprite and clip frame (`padding`, default 2), so nothing bleeds when an engine filters the texture.
 - Parts reach the page as safe trees (`src/render/svg-safe.js`): only shapes, groups and gradients survive, so nothing in a drawing can run.
 
 ### Fixed
+- The web player no longer grows a canvas that has no CSS size on every frame at a display scale above 1; it keeps the canvas at its laid-out size.
+- A text shape takes its `fill` as its colour (it was saved and not drawn), and on the Draw board a popup's title tab or action button edits its own colour instead of the whole panel's.
 - Text is set to fit the shape it sits on and centred on its ink; a popup's title ribbon is measured from its title, so "YOU WON 250" is no longer clipped.
 - The Draw board never loses the AI's drawing: Undo back to the saved drawing is no longer an unsaved change, a drawing the AI changes while the board holds edits shows a notice (load the AI's version, or keep yours as a copy), and the board's save is refused if the AI drew on the file since it was opened.
 - Labels and popup text pick the readable text colour for their fill in every style.

@@ -118,7 +118,7 @@ export function renderShapes(spec, style) {
       const half = w / 2 + outlineOf(k);
       texts.push({ text: String(s.text), align, size: r2(k), asked: r2(size),
         ink: [laid.bounds[0] - half, laid.bounds[1] - half, laid.bounds[2] + half, laid.bounds[3] + half].map(r2), frame: frame.map(r2), box: [W, H] });
-      const color = colorOf(style, s.color ?? 'text');
+      const color = colorOf(style, s.color ?? s.fill ?? 'text');   // fill is the text's colour too, as on every other shape
       const line = { fill: 'none', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', opacity };
       if (outline) {
         const ow = outlineOf(k);

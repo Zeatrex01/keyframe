@@ -391,3 +391,13 @@ test('export_art web writes an embeddable player script, the skeleton with its a
     assert.ok(!fs.existsSync(path.join(s.dir, 'b-export', 'png@1x')), 'only what was asked');
   } finally { s.done(); }
 });
+
+test('a text shape takes its fill as its colour, and a popup title tab edits the title colour, not the panel', () => {
+  const red = renderShapes({ box: [100, 40], shapes: [{ text: 'HI', at: [50, 30], size: 20, fill: 'danger' }] }, style).svg;
+  assert.ok(red.includes(`stroke="${colorOf(style, 'danger')}"`), 'the glyphs are drawn in the fill');
+  const { parts } = expandParts([{ name: 'win', component: { component: 'popup', title: 'YOU WON', button: 'OK' }, at: [0, 0] }], style);
+  const sized = parts.map(p => ({ ...p, size: [svgSize(p.svg).width, svgSize(p.svg).height] }));
+  assert.deepEqual(editableOf(sized, sized.find(p => p.name === 'win_title')).colours.map(c => c.key), ['titleColor']);
+  assert.deepEqual(editableOf(sized, sized.find(p => p.name === 'win_ok')).colours.map(c => c.key), ['buttonColor']);
+  assert.ok(editableOf(sized, sized.find(p => p.name === 'win')).colours.some(c => c.key === 'color'));
+});

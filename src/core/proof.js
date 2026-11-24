@@ -56,7 +56,7 @@ export function noteCall(dir, tool, args, result, now = Date.now()) {
     ledger.checks[file] = now;
   } else if (tool === 'critique_animation' && typeof args?.animation === 'string') {
     const w = ledger.writes[key(file, args.animation)];
-    if (w) w.critiqued = now;
+    if (w) { w.critiqued = now; if (typeof r.verdict === 'string') w.verdict = r.verdict; }
   } else if (tool === 'critique_art') {
     const w = ledger.writes[key(file, null)];
     if (w) w.critiqued = now;
@@ -77,11 +77,11 @@ function missingFor(ledger, w) {
   return out;
 }
 
-/** The proof of one delivery: what it lacks ([] when proven or never written through the tools). */
+/** The proof of one delivery: what it lacks ([] when proven or never written through the tools), and the critique's last verdict on a clip. */
 export function proofOf(dir, file, animation) {
   const ledger = read(dir);
   const w = ledger.writes[key(file, animation)] ?? (animation ? null : ledger.writes[key(file.replace(/\.json$/, '.parts.json'), null)]);
-  return { written: !!w, missing: w ? missingFor(ledger, w) : [] };
+  return { written: !!w, missing: w ? missingFor(ledger, w) : [], verdict: w?.verdict ?? null };
 }
 
 /** Everything written since `since` (ms) and not proven yet. */

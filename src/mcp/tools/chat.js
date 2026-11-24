@@ -38,7 +38,7 @@ export const replyTool = {
   tier: 'core',
   writes: true,
   summary: 'Says one short thing to the owner in the studio page and sets the work state shown there (writing, checking, ready).',
-  description: 'Appends your message to the conversation in the studio page. `work` drives the three-step indicator the owner watches: "writing" when you start, "checking" while you check and look at frames, "ready" when the delivery is written and proven (refused with `not-proven` until check_skeleton and critique_animation ran on a clip after its last write, or critique_art on a drawing); with "ready" pass the delivery `file` and the `animation` so the page loads and plays exactly that. "idle" clears the indicator (use it for a plain answer or a question). One or two sentences: what you did or what you need; numbers only when they help the owner decide.',
+  description: 'Appends your message to the conversation in the studio page. `work` drives the three-step indicator the owner watches: "writing" when you start, "checking" while you check and look at frames, "ready" when the delivery is written and proven (refused with `not-proven` until check_skeleton and critique_animation ran on a clip after its last write, or critique_art on a drawing; refused with `weak-verdict` after a "faulty" critique, and after a "mechanical" one unless `weak` says what is still weak); with "ready" pass the delivery `file` and the `animation` so the page loads and plays exactly that. "idle" clears the indicator (use it for a plain answer or a question). One or two sentences: what you did or what you need; numbers only when they help the owner decide.',
   inputSchema: {
     type: 'object', required: ['text'], additionalProperties: false,
     properties: {
@@ -46,19 +46,26 @@ export const replyTool = {
       work: { type: 'string', enum: [...WORK_STATES], short: 'idle | writing | checking | ready', description: 'The work state the page shows. Default: unchanged.' },
       file: { type: 'string', short: 'delivery file, with work:"ready"', description: 'Project-relative delivery file the page should show (with work:"ready").' },
       animation: { type: 'string', short: 'animation to play, with work:"ready"', description: 'Animation the page should play (with work:"ready").' },
+      weak: { type: 'string', short: 'what stays weak, when the critique said mechanical', description: 'With work "ready" on a clip whose last critique_animation verdict was "mechanical": one plain sentence for the owner on what is still weak and why it was not fixed. Leave it out after a revision that critiques "good".' },
     },
   },
-  run({ text, work, file, animation }, { session }) {
+  run({ text, work, file, animation, weak }, { session }) {
     const project = projectOf(session);
     if (file) project.resolve(file);
     // "Ready" is a claim about the file: refused for a delivery written and not proven since.
     if (work === 'ready' && file) {
-      const { missing } = proofOf(project.dir, file, animation ?? null);
+      const { missing, verdict } = proofOf(project.dir, file, animation ?? null);
       if (missing.length) {
         throw new StudioError('not-proven', `${file}${animation ? ` (${animation})` : ''} was written and not proven since: run ${missing.join(' and ')} on it, look at what they say, then reply ready.`,
           { file, ...(animation ? { animation } : {}), missing });
       }
+      // A weak critique is revised, or said plainly: never passed off as done.
+      if (verdict === 'faulty') throw new StudioError('weak-verdict', `The last critique of ${file}${animation ? ` (${animation})` : ''} found errors: fix them, critique again, then reply ready.`, { file, verdict });
+      if (verdict === 'mechanical' && !(typeof weak === 'string' && weak.trim())) {
+        throw new StudioError('weak-verdict', `The last critique of ${file}${animation ? ` (${animation})` : ''} said "mechanical": revise what it found and critique again, or reply ready with \`weak\` saying plainly what is still weak.`, { file, verdict });
+      }
     }
+    if (weak && typeof weak === 'string' && weak.trim()) text = `${text}\n\nStill weak: ${weak.trim()}`;
     const state = work ?? readAgent(project.dir).work;
     const message = appendMessage(project.dir, { from: 'agent', text, work: state, ...(file ? { file } : {}), ...(animation ? { animation } : {}) });
     // The cursor is not moved here: an owner message that arrived while the agent worked is still

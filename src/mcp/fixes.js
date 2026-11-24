@@ -23,6 +23,7 @@ const SPECIFIC = {
   'agent-busy': 'The slot is still working: wait for its answer, or stop it first.',
   'unknown-asset': 'Use a reference from `available`, written asset:<pack>/<item>.',
   'not-proven': 'Run the calls named in `missing` on the delivery (check_skeleton, critique_animation; critique_art for a drawing), read and look at what they say, fix what they find, then reply ready.',
+  'weak-verdict': 'Revise what critique_animation found and critique again until it says good; or, when a weakness stays on purpose, reply ready with `weak` naming it in one plain sentence for the owner.',
   'stale-drawing': 'Open the drawing again to see the newer version, or save the board\'s copy under another name.',
   'not-ours': 'draw_rig only redraws files it drew (a <name>.parts.json sits beside them): choose another `name` or `folder`.',
   'check-failed': 'The findings name what the check rejects in the drawing: fix those parts and call again.',

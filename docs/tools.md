@@ -120,7 +120,7 @@ Example:
 
 **Use when:** Tell the owner in the studio page what you are doing or what is ready; set work to writing, checking or ready.
 
-Appends your message to the conversation in the studio page. `work` drives the three-step indicator the owner watches: "writing" when you start, "checking" while you check and look at frames, "ready" when the delivery is written and proven (refused with `not-proven` until check_skeleton and critique_animation ran on a clip after its last write, or critique_art on a drawing); with "ready" pass the delivery `file` and the `animation` so the page loads and plays exactly that. "idle" clears the indicator (use it for a plain answer or a question). One or two sentences: what you did or what you need; numbers only when they help the owner decide.
+Appends your message to the conversation in the studio page. `work` drives the three-step indicator the owner watches: "writing" when you start, "checking" while you check and look at frames, "ready" when the delivery is written and proven (refused with `not-proven` until check_skeleton and critique_animation ran on a clip after its last write, or critique_art on a drawing; refused with `weak-verdict` after a "faulty" critique, and after a "mechanical" one unless `weak` says what is still weak); with "ready" pass the delivery `file` and the `animation` so the page loads and plays exactly that. "idle" clears the indicator (use it for a plain answer or a question). One or two sentences: what you did or what you need; numbers only when they help the owner decide.
 
 | Argument | Type | Meaning |
 |---|---|---|
@@ -128,6 +128,7 @@ Appends your message to the conversation in the studio page. `work` drives the t
 | `work` | `idle` \\| `writing` \\| `checking` \\| `ready` | The work state the page shows. Default: unchanged. |
 | `file` | string | Project-relative delivery file the page should show (with work:"ready"). |
 | `animation` | string | Animation the page should play (with work:"ready"). |
+| `weak` | string | With work "ready" on a clip whose last critique_animation verdict was "mechanical": one plain sentence for the owner on what is still weak and why it was not fixed. Leave it out after a revision that critiques "good". |
 
 Example:
 

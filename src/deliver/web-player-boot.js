@@ -44,6 +44,11 @@ export function defineKeyframePlayer(load) {
 
     constructor(canvas, json, atlas, pages, options = {}) {
       this.canvas = canvas;
+      // A canvas with no CSS size is laid out at its width and height attributes, so drawing it at
+      // the device pixel ratio would grow it on every frame. Keep that size as its CSS size.
+      if (!canvas.style.width && !canvas.style.height && canvas.clientWidth === canvas.width && canvas.clientHeight === canvas.height && canvas.width > 0) {
+        canvas.style.width = `${canvas.width}px`; canvas.style.height = `${canvas.height}px`;
+      }
       this.json = isKeyframeDocument(json) ? toSkeletonJson(json) : json;
       this.model = engine.compileSkeleton(this.json);
       this.regions = engine.atlasRegions(atlas);
