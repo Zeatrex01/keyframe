@@ -3,7 +3,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { detectKey, keyOut, findPieces, assembleSideBiped, puppetRig, SIDE_BIPED, SIDE_BIPED_DRAW } from '../src/render/raster-import.js';
+import { detectKey, keyOut, findPieces, assembleSideBiped, placeGear, rasterRig, puppetRig, SIDE_BIPED, SIDE_BIPED_DRAW } from '../src/render/raster-import.js';
 
 const KEY = [255, 0, 255];
 
@@ -115,4 +115,37 @@ test('the head goes on the collar: its neck lines up with the top of the torso a
   assert.ok(head.at[1] - 50 < torso.at[1] + 100, 'the bottom of the neck sits inside the torso');
   const drawn = SIDE_BIPED_DRAW;
   assert.ok(drawn.indexOf('head') < drawn.indexOf('torso'), 'the collar is drawn over the neck');
+});
+
+test('gear goes on the bone that carries it, in the hand at the grip, and into its own skin', () => {
+  const solid = (w, h) => {
+    const data = new Uint8Array(w * h * 4);
+    for (let i = 0; i < w * h; i++) data.set([90, 90, 90, 255], i * 4);
+    return { width: w, height: h, data };
+  };
+  const sizes = { head: [80, 90], torso: [90, 160], upperArmFront: [30, 90], forearmFront: [28, 90], upperArmBack: [30, 90],
+    forearmBack: [28, 90], thighFront: [40, 110], shinFront: [36, 110], thighBack: [40, 110], shinBack: [36, 110] };
+  const images = Object.fromEntries(Object.entries(sizes).map(([k, [w, h]]) => [k, solid(w, h)]));
+  const named = Object.fromEntries(Object.entries(images).map(([k, image]) => [k, { image }]));
+  const body = assembleSideBiped(named, { scale: 1 });
+  const gear = [{ name: 'hat', on: 'head', image: solid(100, 40) }, { name: 'sword', on: 'hand', image: solid(10, 200) },
+    { name: 'cape', on: 'back', image: solid(60, 120) }];
+  const parts = placeGear(body, named, gear, { scale: 1, ratio: 0.5 });
+  const by = Object.fromEntries(parts.map(p => [p.name, p]));
+  assert.equal(by.sword.parent, 'forearmFront');
+  assert.deepEqual(by.sword.size, [5, 100], 'the gear sheet ratio scales the piece');
+  const fore = by.forearmFront, handY = fore.at[1] + 45 - 0.86 * 90;
+  assert.ok(Math.abs(by.sword.pivot[1] - handY) < 1, 'the grip is in the hand');
+  assert.ok(by.sword.at[1] > by.sword.pivot[1], 'an upright blade rises from the grip');
+  assert.ok(by.hat.at[1] - 10 > by.head.at[1], 'the hat sits on the top of the head');
+  const order = parts.map(p => p.name);
+  assert.equal(order[0], 'cape', 'a back item is drawn behind everything');
+  assert.equal(order.indexOf('sword') + 1, order.indexOf('forearmFront'), 'the fingers close over the grip');
+  assert.ok(order.indexOf('hat') > order.indexOf('torso'));
+  const rig = rasterRig({ name: 'kit', parts, images: { ...images, hat: gear[0].image, sword: gear[1].image, cape: gear[2].image } });
+  const skins = Object.fromEntries(rig.skeleton.skins.map(k => [k.name, Object.keys(k.attachments)]));
+  assert.ok(!skins.default.includes('sword'), 'the bare body has no gear');
+  assert.deepEqual(skins.full.sort(), ['cape', 'hat', 'sword']);
+  assert.deepEqual(skins.sword, ['sword']);
+  assert.throws(() => placeGear(body, named, [{ name: 'x', on: 'tail', image: solid(4, 4) }]), /one of/);
 });

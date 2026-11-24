@@ -6,7 +6,10 @@
 //       <out>/pieces/<n>.png, <out>/pieces.json and <out>/pieces-sheet.png (the pieces in a row on a
 //       checkerboard, numbered left to right as in pieces.json) for the agent to look at and name
 //   node tools/raster-trial.js rig <out-folder> <name> <names.json> [--scale 0.5]
-//       names.json maps piece numbers to side-view part names ({ "1": "head", "2": "torso", ... });
+//       names.json maps piece numbers to side-view part names ({ "1": "head", "2": "torso", ... }), or
+//       { "parts": {...}, "gear": { "<n>": { "name", "on": head|hand|offhand|back|hip, "offset"?, "rotate"? } },
+//       "gearHeadRef": "<n>" } with the gear sheet cut into <out>/gear (cut <gear.png> <out>/gear);
+//       gear goes in skins (one per piece, and "full")
 //       writes <out>/<name>.json, .atlas and .png: a project the studio opens, ready for
 //       paint_weights, write_animation, check_skeleton and the exports
 //   node tools/raster-trial.js puppet <picture.png> <out-folder> <name> <bones.json> [--scale 0.5]
@@ -20,7 +23,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { decodePng, encodePng } from '../src/render/png.js';
-import { keyOut, findPieces, assembleSideBiped, rasterRig, puppetRig } from '../src/render/raster-import.js';
+import { keyOut, findPieces, assembleSideBiped, placeGear, rasterRig, puppetRig } from '../src/render/raster-import.js';
 
 const [cmd, ...rest] = process.argv.slice(2);
 const option = (name, fallback) => { const i = rest.indexOf(name); return i >= 0 ? rest[i + 1] : fallback; };
@@ -57,12 +60,21 @@ if (cmd === 'cut') {
   console.log(`key ${keyed.key ? `rgb(${keyed.key})` : 'none (transparent)'}; ${pieces.length} pieces: ${pieces.map(p => `${p.index} ${p.box[2]}x${p.box[3]}`).join(', ')}`);
 } else if (cmd === 'rig') {
   const [out, name, namesFile] = rest;
-  const names = JSON.parse(fs.readFileSync(namesFile, 'utf8'));
+  const spec = JSON.parse(fs.readFileSync(namesFile, 'utf8'));
+  const names = spec.parts ?? spec, scale = Number(option('--scale', 0.5));
   /** @type {Record<string, { width: number, height: number, data: Uint8Array }>} */
   const images = {};
-  for (const [n, part] of Object.entries(names)) images[part] = decodePng(fs.readFileSync(path.join(out, 'pieces', `${n}.png`)));
+  const piece = (dir, n) => decodePng(fs.readFileSync(path.join(out, dir, 'pieces', `${n}.png`)));
+  for (const [n, part] of Object.entries(names)) images[part] = piece('', n);
   const named = Object.fromEntries(Object.entries(images).map(([k, image]) => [k, { image }]));
-  const parts = assembleSideBiped(named, { scale: Number(option('--scale', 0.5)) });
+  let parts = assembleSideBiped(named, { scale });
+  if (spec.gear) {
+    // The gear sheet was cut into <out>/gear; its copy of the head sets its scale against the body's.
+    const ratio = spec.gearHeadRef ? images.head.height / piece('gear', spec.gearHeadRef).height : Number(spec.gearRatio ?? 1);
+    const gear = Object.entries(spec.gear).map(([n, g]) => ({ ...g, image: piece('gear', n) }));
+    for (const g of gear) images[g.name] = g.image;
+    parts = placeGear(parts, named, gear, { scale, ratio });
+  }
   const rig = rasterRig({ name, parts, images });
   fs.writeFileSync(path.join(out, `${name}.json`), JSON.stringify(rig.skeleton, null, 2));
   fs.writeFileSync(path.join(out, `${name}.atlas`), rig.atlasText);

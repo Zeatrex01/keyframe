@@ -5,7 +5,8 @@
 //   findPieces  the separate pieces of a parts sheet: connected regions of opaque pixels
 //   assembleSideBiped  named pieces of a side-view figure placed on a skeleton: limbs hang from
 //               shoulder and hip, each turns at the centre of its rounded top end
-//   rasterRig   the parts, as images, become an atlas page and a Spine 4.2 skeleton
+//   placeGear   accessories (hat, weapon, shield, quiver, cape, pouch) on the bone that carries them
+//   rasterRig   the parts, as images, become an atlas page and a Spine 4.2 skeleton; gear goes in skins
 //
 // What it cannot do: split one fused figure into parts (that needs the parts drawn apart, or a
 // mesh bound to a skeleton over the whole picture; see tools/raster-trial.js).
@@ -193,14 +194,90 @@ export function rowRun(img, fy) {
   return x0 < 0 ? { x: w / 2, width: w } : { x: (x0 + x1 + 1) / 2, width: x1 - x0 + 1 };
 }
 
+/** Where each kind of gear hangs, which bone carries it, and where it is drawn. */
+const GEAR_ON = Object.freeze({
+  head: { bone: 'head', drawAfter: 'torso' },          // hat, hood, helmet: over the head and the collar
+  hand: { bone: 'forearmFront', drawBefore: 'forearmFront' }, // held in the near hand, under the fingers
+  offhand: { bone: 'forearmBack', drawAfter: 'forearmBack' }, // shield or lantern in the far hand
+  back: { bone: 'torso', drawFirst: true },            // cape, quiver, backpack: behind everything
+  hip: { bone: 'torso', drawAfter: 'torso' },          // knife, satchel, pouch: over the hip
+});
+export const GEAR_KINDS = Object.freeze(Object.keys(GEAR_ON));
+
+/**
+ * Gear (accessories) placed on an assembled side-view figure, each on the bone that carries it,
+ * so it can be shown or hidden by skin.
+ *   head    the gear's box is centred on the head's box and its top sits a little above the head's
+ *   hand / offhand  the grip (middle of the gear's bottom eighth) goes in the hand (the forearm
+ *           piece near its lower end); `rotate` turns it about the grip (0 = pointing up)
+ *   back    the gear's box centre on the upper back of the torso; hip: on the front of the hip
+ * `offset` ([dx, dy] in body-sheet pixels, y down) and `rotate` (degrees, counter-clockwise) fine-tune
+ * each piece after looking at it; `ratio` is gear-sheet pixels to body-sheet pixels.
+ * @param {Array<{ name: string, at: number[], pivot: number[], parent: string|null, size: number[] }>} parts  from assembleSideBiped
+ * @param {Record<string, { image: { width: number, height: number, data: Uint8Array } }>} named  the body pieces
+ * @param {Array<{ name: string, on: string, image: { width: number, height: number, data: Uint8Array }, offset?: number[], rotate?: number }>} gear
+ * @param {{ scale?: number, ratio?: number }} [options]
+ */
+export function placeGear(parts, named, gear, { scale = 0.5, ratio = 1 } = {}) {
+  const byName = new Map(parts.map(p => [p.name, p]));
+  const out = [...parts];
+  for (const g of gear) {
+    const on = GEAR_ON[g.on];
+    if (!on) throw new StudioError('bad-argument', `Gear "${g.name}": "on" is one of ${GEAR_KINDS.join(', ')}.`, { gear: g.name });
+    if (byName.has(g.name)) throw new StudioError('bad-argument', `Gear "${g.name}" has the name of a body part.`, { gear: g.name });
+    const k = scale * ratio, w = g.image.width * k, h = g.image.height * k;
+    const [dx, dy] = g.offset ?? [0, 0], off = [dx * scale, -dy * scale];
+    const bone = byName.get(on.bone);
+    const rot = (g.rotate ?? 0) * Math.PI / 180;
+    let pivot, centre;
+    if (g.on === 'hand' || g.on === 'offhand') {
+      // The hand: the middle of the forearm piece near its lower end, in rig units.
+      const img = named[on.bone].image, palm = rowRun(img, 0.86);
+      pivot = [bone.at[0] - bone.size[0] / 2 + palm.x * scale + off[0], bone.at[1] + bone.size[1] / 2 - img.height * 0.86 * scale + off[1]];
+      const grip = rowRun(g.image, 0.94);
+      const fromGrip = [(g.image.width / 2 - grip.x) * k, (0.94 - 0.5) * h];
+      centre = [pivot[0] + fromGrip[0] * Math.cos(rot) - fromGrip[1] * Math.sin(rot), pivot[1] + fromGrip[0] * Math.sin(rot) + fromGrip[1] * Math.cos(rot)];
+    } else {
+      const [bw, bh] = bone.size;
+      const anchor = g.on === 'head' ? [bone.at[0], bone.at[1] + bh / 2 + bh * 0.04 - h / 2]
+        : g.on === 'back' ? [bone.at[0] - bw * 0.25, bone.at[1] + bh * 0.15] : [bone.at[0] + bw * 0.1, bone.at[1] - bh * 0.2];
+      centre = [anchor[0] + off[0], anchor[1] + off[1]];
+      pivot = [...bone.pivot];
+    }
+    const part = { name: g.name, at: centre, pivot, parent: on.bone, size: [w, h], rotation: g.rotate ?? 0, gear: true };
+    if (on.drawFirst) out.unshift(part);
+    else {
+      const i = out.findIndex(p => p.name === (on.drawAfter ?? on.drawBefore));
+      out.splice(on.drawAfter ? i + 1 : i, 0, part);
+    }
+    byName.set(g.name, part);
+  }
+  return out;
+}
+
 /**
  * Raster parts become a rig: an atlas page with every part and a skeleton whose setup pose is the
  * assembled figure.
- * @param {{ name: string, parts: Array<{ name: string, at: number[], pivot: number[], parent: string|null, size: number[] }>, images: Record<string, { width: number, height: number, data: Uint8Array }> }} input
+ * @param {{ name: string, parts: Array<{ name: string, at: number[], pivot: number[], parent: string|null, size: number[], gear?: boolean, rotation?: number }>, images: Record<string, { width: number, height: number, data: Uint8Array }> }} input
  */
 export function rasterRig({ name, parts, images }) {
   if (typeof name !== 'string' || !/^[A-Za-z0-9_-]{1,64}$/.test(name)) throw new StudioError('bad-argument', 'The rig name is 1-64 letters, digits, _ or -.', { name });
-  return rigFromImages({ name, parts, regions: parts.map(p => p.name), images: parts.map(p => images[p.name]) });
+  const rig = rigFromImages({ name, parts, regions: parts.map(p => p.name), images: parts.map(p => images[p.name]) });
+  const gear = parts.filter(p => p.gear);
+  if (!gear.length) return rig;
+  // Gear lives in skins: one per piece, plus "full" with all of it; "default" is the bare body.
+  // A turned piece keeps its box centre where placed: the attachment carries the rotation.
+  const base = rig.skeleton.skins[0].attachments, moved = {};
+  for (const p of gear) {
+    const a = base[p.name][p.name];
+    if (p.rotation) a.rotation = p.rotation;
+    moved[p.name] = base[p.name];
+    delete base[p.name];
+  }
+  rig.skeleton.skins.push(
+    { name: 'full', attachments: { ...moved } },
+    ...gear.map(p => ({ name: p.name, attachments: { [p.name]: moved[p.name] } })));
+  return rig;
 }
 
 /** The opaque bounds of an image: [x, y, width, height], or null when it is all clear. */
