@@ -138,7 +138,7 @@ export const brief = {
     { name: 'happy', seconds: 2.4, loop: true, track: 0, does: 'a light bounce with a held beat, the head rocks out of step, the tails swing behind' },
     { name: 'surprised_in', seconds: 0.4, loop: false, track: 0, does: 'a startled blink and a dip, then up with wide eyes, small pupils, raised brows and an open mouth' },
     { name: 'surprised', seconds: 2, loop: true, track: 0, does: 'the surprise held alive: the body rises and settles, the eyes stay wide, the hair keeps moving' },
-    { name: 'wave', seconds: 1.2, loop: false, track: 0, does: 'a small backswing, the arm swings up with an overshoot, three waves with the hand flapping late, and down' },
+    { name: 'wave', seconds: 1.2, loop: false, track: 0, does: 'a small backswing, the elbow swings out to the side with an overshoot, the forearm upright beside her face, three waves with the hand flapping late, and down' },
     { name: 'to_idle', seconds: 0.4, loop: false, track: 0, does: 'a blink covers the change, everything settles back to the rest pose' },
   ],
 };
@@ -246,8 +246,8 @@ export const clips = {
   },
   wave: {
     bones: {
-      armR: rot([[0, 0, 'inQuad'], [3, -6, 'outBack'], [11, 140, 'inOutSine'], [20, 134, 'inOutSine'], [28, 138, 'inQuad'], [36, 0]]),
-      forearmR: rot([[0, 0, 'inOutSine'], [4, 4, 'outCubic'], [12, 104, 'inOutSine'], [16, 86, 'inOutSine'], [20, 110, 'inOutSine'], [24, 88, 'inOutSine'], [28, 106, 'inQuart'], [36, 0]]),
+      armR: rot([[0, 0, 'inQuad'], [3, -6, 'outBack'], [11, 118, 'inOutSine'], [20, 110, 'inOutSine'], [28, 114, 'inQuad'], [36, 0]]),
+      forearmR: rot([[0, 0, 'inOutSine'], [4, 4, 'outCubic'], [12, 72, 'inOutSine'], [16, 50, 'inOutSine'], [20, 80, 'inOutSine'], [24, 52, 'inOutSine'], [28, 70, 'inQuart'], [36, 0]]),
       handR: rot([[0, 0], [12, 0, 'outQuad'], [15, -16, 'inOutSine'], [19, 15, 'inOutSine'], [23, -13, 'inOutSine'], [27, 12, 'inOutSine'], [31, 0], [36, 0]]),
       head: rot([[0, 0, 'inOutSine'], [6, 1, 'inOutCubic'], [14, -5, 'outSine'], [28, -4, 'inOutSine'], [36, 0]]),
       torso: rot([[0, 0, 'inOutSine'], [10, 2.2, 'outSine'], [28, 2.6, 'inOutSine'], [36, 0]]),
@@ -260,7 +260,7 @@ export const clips = {
       strand: rot([[0, 0, 'outSine'], [10, 6, 'inOutQuad'], [18, -6, 'outBack'], [36, 0]]),
     },
     slots: {
-      handR: swap([[0, null], [6, 'handR'], [35, null]]),
+      handR: swap([[0, null], [6, 'handR'], [36, null]]),
       ...both(swap([[0, null], [8, 'lid_closed'], [10, 'lid_happy'], [29, 'lid_closed'], [31, null]])),
       mouth: swap([[0, 'mouth_neutral'], [9, 'mouth_smile'], [32, 'mouth_neutral']]),
     },

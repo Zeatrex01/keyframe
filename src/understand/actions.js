@@ -1,6 +1,6 @@
 // What a senior animator checks first for each kind of action: the minimums below which a clip is
 // valid but does not read as what it is called. A punch with no weight behind it, a jump that only
-// hops, a hop that floats into the ground, a wave that never rises above the head, an idle that
+// hops, a hop that floats into the ground, a wave that never rises to the face, an idle that
 // does not breathe.
 //
 // The action comes from the clip's name (punch, jump, hop, wave, walk, idle...) or from the brief.
@@ -141,10 +141,13 @@ export function actionFindings(sk, name, { action } = {}) {
 
   if (kind === 'wave' && hands.length && head) {
     const headBone = sk.bones.find(b => b.name === head);
-    const headTop = Math.max(...track(head).map(b => b.worldY)) + Math.max(Number(headBone?.length) || 0, H * 0.08);
-    const best = hands.map(h => ({ h, y: Math.max(...track(h).map(b => b.worldY)), rot: track(h).map(b => b.worldRotation) })).sort((a, b) => b.y - a.y)[0];
-    if (best.y < headTop) add('weak', 'low-wave', `${best.h} never rises above the head (it peaks ${r2((headTop - best.y) / H * 100)}% of the height below its top): it reads as a salute.`,
-      { hand: best.h, below: r2(headTop - best.y) }, 'Raise the upper arm 120-160 degrees so the hand clears the head, then swing the forearm and hand.', 'staging');
+    // A wave is read at the face: the hand (its tip, not its wrist) rises to the eyes or higher, out
+    // to the side, where the face does not hide it. Below the eyes it reads as a salute.
+    const eyes = Math.max(...track(head).map(b => b.worldY)) + Math.max(Number(headBone?.length) || 0, H * 0.08) * 0.5;
+    const lengthOf = h => Number(sk.bones.find(b => b.name === h)?.length) || 0;
+    const best = hands.map(h => ({ h, y: Math.max(...track(h).map(b => b.worldY + lengthOf(h) * Math.sin(b.worldRotation * Math.PI / 180))), rot: track(h).map(b => b.worldRotation) })).sort((a, b) => b.y - a.y)[0];
+    if (best.y < eyes) add('weak', 'low-wave', `${best.h} never rises to the face (its tip peaks ${r2((eyes - best.y) / H * 100)}% of the height below the eyes): it reads as a salute.`,
+      { hand: best.h, below: r2(eyes - best.y) }, 'Raise the upper arm 100-160 degrees, out to the side, so the hand is up beside the face or above it, then swing the forearm and hand.', 'staging');
     const forearm = arms.length ? arms.map(a => track(a).map(b => b.worldRotation)) : [best.rot];
     const swings = forearm.map(r => { let turns = 0, dir = 0; for (let i = 1; i < r.length; i++) { const d = Math.sign(r[i] - r[i - 1]); if (d && dir && d !== dir) turns++; if (d) dir = d; } return { turns, amp: range(r) }; });
     if (!swings.some(s => s.turns >= 2 && s.amp >= 12)) add('look', 'no-wave-swing', 'the hand does not swing back and forth: a wave is at least two swings of 15-30 degrees.',

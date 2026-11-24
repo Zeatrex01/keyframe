@@ -13,7 +13,7 @@ Kind: Character. Shown at 320 px wide. Teaches: overlap and follow-through, seco
 | `happy` | 2.4 s, loop | a light bounce with a held beat, the head rocks out of step, the tails swing behind |
 | `surprised_in` | 0.4 s | a startled blink and a dip, then up with wide eyes, small pupils, raised brows and an open mouth |
 | `surprised` | 2 s, loop | the surprise held alive: the body rises and settles, the eyes stay wide, the hair keeps moving |
-| `wave` | 1.2 s | a small backswing, the arm swings up with an overshoot, three waves with the hand flapping late, and down |
+| `wave` | 1.2 s | a small backswing, the elbow swings out to the side with an overshoot, the forearm upright beside her face, three waves with the hand flapping late, and down |
 | `to_idle` | 0.4 s | a blink covers the change, everything settles back to the rest pose |
 
 Files: `mika.json` + `.atlas` + `.png` (the rig, no clips), `mika_v2.json` (the
