@@ -6,7 +6,7 @@
 //   assembleSideBiped  named pieces of a side-view figure placed on a skeleton: limbs hang from
 //               shoulder and hip, each turns at the centre of its rounded top end
 //   placeGear   accessories (hat, weapon, shield, quiver, cape, pouch) on the bone that carries them
-//   rasterRig   the parts, as images, become an atlas page and a Spine 4.2 skeleton; gear goes in skins
+//   rasterRig   the parts, as images, become an atlas page and a Spine 4.2 skeleton; each gear piece is a slot
 //
 // What it cannot do: split one fused figure into parts (that needs the parts drawn apart, or a
 // mesh bound to a skeleton over the whole picture; see tools/raster-trial.js).
@@ -208,7 +208,7 @@ export const GEAR_KINDS = Object.freeze(Object.keys(GEAR_ON));
 
 /**
  * Gear (accessories) placed on an assembled side-view figure, each on the bone that carries it,
- * so it can be shown or hidden by skin.
+ * each in its own slot so a game can show or hide it.
  *   head    the gear's box is centred on the head's box and its top sits a little above the head's
  *   hand / offhand  the grip (`grip`: how far down the piece, 0.94 by default; a bow's is its middle) goes in the hand (the forearm
  *           piece near its lower end); `rotate` turns it about the grip (0 = pointing up)
@@ -267,18 +267,12 @@ export function rasterRig({ name, parts, images }) {
   const rig = rigFromImages({ name, parts, regions: parts.map(p => p.name), images: parts.map(p => images[p.name]) });
   const gear = parts.filter(p => p.gear);
   if (!gear.length) return rig;
-  // Gear lives in skins: one per piece, plus "full" with all of it; "default" is the bare body.
-  // A turned piece keeps its box centre where placed: the attachment carries the rotation.
-  const base = rig.skeleton.skins[0].attachments, moved = {};
-  for (const p of gear) {
-    const a = base[p.name][p.name];
-    if (p.rotation) a.rotation = p.rotation;
-    moved[p.name] = base[p.name];
-    delete base[p.name];
-  }
-  rig.skeleton.skins.push(
-    { name: 'full', attachments: { ...moved } },
-    ...gear.map(p => ({ name: p.name, attachments: { [p.name]: moved[p.name] } })));
+  // Gear stays in the default skin, worn in the setup pose: each piece is its own slot, so a game
+  // shows or hides it like any slot (the web player's setLook, a node's visibility in Godot), the
+  // same way the drawn warrior is dressed. A turned piece keeps its box centre where placed: the
+  // attachment carries the rotation.
+  const base = rig.skeleton.skins[0].attachments;
+  for (const p of gear) if (p.rotation) base[p.name][p.name].rotation = p.rotation;
   return rig;
 }
 

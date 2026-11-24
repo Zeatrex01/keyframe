@@ -9,7 +9,7 @@
 //       names.json maps piece numbers to side-view part names ({ "1": "head", "2": "torso", ... }), or
 //       { "parts": {...}, "gear": { "<n>": { "name", "on": head|hand|offhand|back|hip, "offset"?, "rotate"? } },
 //       "gearHeadRef": "<n>" } with the gear sheet cut into <out>/gear (cut <gear.png> <out>/gear);
-//       gear goes in skins (one per piece, and "full")
+//       each gear piece is its own slot, worn in the setup pose
 //       writes <out>/<name>.json, .atlas and .png: a project the studio opens, ready for
 //       paint_weights, write_animation, check_skeleton and the exports
 //   node tools/raster-trial.js puppet <picture.png> <out-folder> <name> <bones.json> [--scale 0.5]

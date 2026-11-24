@@ -118,7 +118,7 @@ test('the head goes on the collar: the neck rises from its front and tucks under
   assert.ok(drawn.indexOf('head') < drawn.indexOf('torso'), 'the collar is drawn over the neck');
 });
 
-test('gear goes on the bone that carries it, in the hand at the grip, and into its own skin', () => {
+test('gear goes on the bone that carries it, in the hand at the grip, in its own slot', () => {
   const solid = (w, h) => {
     const data = new Uint8Array(w * h * 4);
     for (let i = 0; i < w * h; i++) data.set([90, 90, 90, 255], i * 4);
@@ -144,10 +144,11 @@ test('gear goes on the bone that carries it, in the hand at the grip, and into i
   assert.equal(order.indexOf('sword') + 1, order.indexOf('forearmFront'), 'the fingers close over the grip');
   assert.ok(order.indexOf('hat') > order.indexOf('torso'));
   const rig = rasterRig({ name: 'kit', parts, images: { ...images, hat: gear[0].image, sword: gear[1].image, cape: gear[2].image } });
-  const skins = Object.fromEntries(rig.skeleton.skins.map(k => [k.name, Object.keys(k.attachments)]));
-  assert.ok(!skins.default.includes('sword'), 'the bare body has no gear');
-  assert.deepEqual(skins.full.sort(), ['cape', 'hat', 'sword']);
-  assert.deepEqual(skins.sword, ['sword']);
+  const slots = Object.fromEntries(rig.skeleton.slots.map(sl => [sl.name, sl]));
+  assert.equal(slots.sword.bone, 'sword');
+  assert.equal(slots.sword.attachment, 'sword', 'gear is worn in the setup pose');
+  assert.deepEqual(Object.keys(rig.skeleton.skins[0].attachments.sword), ['sword']);
+  assert.equal(rig.skeleton.bones.find(bn => bn.name === 'sword').parent, 'forearmFront');
   assert.throws(() => placeGear(body, named, [{ name: 'x', on: 'tail', image: solid(4, 4) }]), /one of/);
   const [bow] = placeGear(body, named, [{ name: 'bow', on: 'hand', grip: 0.5, image: solid(10, 200) }], { scale: 1 }).filter(p => p.name === 'bow');
   assert.ok(Math.abs(bow.at[1] - bow.pivot[1]) < 1, 'a bow is held at its middle');
