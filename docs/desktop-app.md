@@ -22,6 +22,13 @@ updates itself when you say so.
   Gemini CLI); install and sign in to it separately. MCP clients start the studio's server with
   `cmd /c "<install folder>\keyframe-mcp.cmd"` (Settings shows the exact line), which keeps
   working across updates.
+- **The `keyframe` command:** the setup (and `Install.cmd`) puts the install folder on your user
+  PATH, so a new terminal has `keyframe`: `keyframe <folder>` opens the studio on a folder and
+  `keyframe setup` in a project folder makes `claude` started there use the studio on it.
+  Uninstalling takes the folder off the PATH again. An install updated from an earlier version
+  gets the command the next time the setup runs.
+- **Opening a project:** **Open a folder** shows Windows' own folder window; you can also paste a
+  path.
 - **Unsigned:** until the app is signed, SmartScreen may warn on the first start: choose
   **More info**, then **Run anyway**.
 

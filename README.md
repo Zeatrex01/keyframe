@@ -73,29 +73,48 @@ checked and critiqued it, and exported it as one HTML file
   </tr>
 </table>
 
+<p align="center">
+  <img src="docs/screenshots/warrior-outfits.png" alt="The Warrior example in five outfits from one skeleton: plain clothes, leather with a bow, plate with a sword, plate with a spear, leather with an axe" width="900">
+</p>
+<p align="center">
+  <img src="docs/screenshots/warrior-run.png" alt="Seven frames of the Warrior's run with a sword, feet planted on each contact" width="900">
+</p>
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/ui-components.png" alt="A game UI pack drawn in the studio: buttons with hover, pressed and disabled states, a progress bar, a toggle, a reward window and a gem, assembled on top"></td>
+    <td width="50%" valign="top">
+      <b>One skeleton, every look.</b> The Warrior above changes armour and weapon at run time, with a
+      stance and an attack for each weapon, and runs with its feet planted. In Godot it is Godot's own
+      Skeleton2D and AnimationPlayer.<br><br>
+      <b>UI and props too.</b> The game UI pack on the left was drawn in the studio from components,
+      every state included, and exported as trimmed PNGs and a sprite sheet.
+    </td>
+  </tr>
+</table>
+
 ## Quick start
 
-**Windows app.** Download `Keyframe-Studio-<version>-win-x64-setup.exe` from the
-[releases](https://github.com/Zeatrex01/keyframe/releases) and run it, or unzip
-`Keyframe-Studio-<version>-win-x64.zip` and start `Keyframe Studio.exe` from the folder (portable).
-Node is bundled and the studio opens in your default browser; it stops by itself a few minutes
-after its last tab is closed. The app is
-not signed yet, so on the first start SmartScreen may say "Windows protected your PC": choose
-**More info**, then **Run anyway**. Settings → About tells you when a new version is out and
-installs it when you say so; your projects and settings are kept. Details:
-[`docs/desktop-app.md`](docs/desktop-app.md).
+**Windows app**
 
-**From source** (any system). You need [Node.js](https://nodejs.org) 18 or newer. There is nothing to install: the studio has no
-runtime dependencies.
+1. Download `Keyframe-Studio-<version>-win-x64-setup.exe` from the
+   [releases](https://github.com/Zeatrex01/keyframe/releases) and run it (or unzip the `.zip` and
+   start `Keyframe Studio.exe`: portable). Node is bundled.
+2. The studio opens in your default browser. Pick an example (Mika is a good first one) or press
+   **Open a folder**.
+3. Connect your AI (below) and describe a motion.
 
-```bash
-git clone https://github.com/Zeatrex01/keyframe.git
-cd keyframe
-npm start
-```
+The app is not signed yet, so on the first start SmartScreen may say "Windows protected your PC":
+choose **More info**, then **Run anyway**. It stops by itself a few minutes after its last tab is
+closed. Settings → About tells you when a new version is out and installs it when you say so; your
+projects and settings are kept. Details: [`docs/desktop-app.md`](docs/desktop-app.md).
 
-On Windows you can double-click `Start Studio.cmd` instead. The studio opens in your default browser.
-Pick an example (Mika is a good first one), connect your AI, and describe a motion.
+**From source** (Windows, macOS, Linux; [Node.js](https://nodejs.org) 18 or newer, nothing else to install)
+
+1. `git clone https://github.com/Zeatrex01/keyframe.git && cd keyframe`
+2. `npm start` (on Windows you can double-click `Start Studio.cmd`). Optional: `npm link` puts the
+   `keyframe` command on your PATH.
+3. Pick an example or open a folder, connect your AI, and describe a motion.
 
 ### The `keyframe` command
 
@@ -115,11 +134,12 @@ bar): the system's own folder window opens. You can also paste the folder's path
 
 ## Connect your AI
 
-There are two ways, and you can use both.
+You don't have to use the built-in agent: your own Claude Code, Claude Desktop or any MCP client
+drives the studio just as well. Pick one, or use several.
 
 **The built-in Director.** If you have [Claude Code](https://claude.com/claude-code) installed and
 signed in, open **Settings → AI connection** and choose it for the Director. You then talk to it in
-the studio's own chat panel: it streams what it is doing, shows each step, and has a Stop button.
+the studio's own chat panel: it streams what it is doing, shows each step, and has a Stop button for the turn at work (Settings → **Turn off** switches it off).
 It runs with only the studio's tools, in the project folder, and never sees your personal
 instruction files, hooks or memory. Codex CLI and Gemini CLI work the same way (best effort).
 Each slot picks its model (Claude Code runs Sonnet unless you choose another). The Director can
@@ -225,7 +245,7 @@ Command-line flags win over environment variables.
 |---|---|---|---|
 | `--project <folder>` | `studio.js`, `mcp-server.js` | the project open last | the folder to work on |
 | `--port <n>` / `KS_PORT` | `studio.js` | `8731` | the page's port (always on 127.0.0.1) |
-| `--open` | `studio.js` | off | open the page in its own app window |
+| `--open` | `studio.js` | off | open the page in your default browser |
 | `--all` | `mcp-server.js` | off | also serve the shelf tools |
 | `--only <tool,tool>` | `mcp-server.js` | off | serve exactly these tools (the built-in Director uses it) |
 | `KS_LOG_LEVEL` | both | `info` | `error`, `warn`, `info`, `debug` or `silent` |
@@ -248,8 +268,10 @@ install it.
 ## Troubleshooting
 
 - **Another program uses port 8731**: the studio moves to the next free port by itself and prints the address. With `--port` (or `KS_PORT`) it uses exactly that port.
-- **The page says no AI is connected**: the AI's MCP server must point at this checkout's
-  `tools/mcp-server.js`. Settings shows the exact line and a connection check.
+- **The page says no AI is connected**: the top bar names your AI on its first tool call. If it
+  never does, its MCP server does not point at this studio: Settings shows the exact line and a
+  connection check, and `keyframe setup` in a project folder sets up Claude Code for that folder.
+  If a line under the bar says the AI works on another folder, press **Open it**.
 - **The Director does not start**: install Claude Code and run `claude` once in a terminal to sign
   in. Settings says what it found.
 - **A reference video does not play or measure**: install `ffmpeg` and restart the studio.
@@ -264,7 +286,7 @@ drawing and effects, and the app itself. All five are in this beta.
 
 **In 0.0.1-beta:** everything above: the tools, the engine, the Director and its team, drawing and
 art export, effects, reference learning, Godot import and runtime API, the HTML player, versions,
-six examples, and the Windows app (portable or installed, with updates).
+six examples, the Windows app (portable or installed, with updates), and the `keyframe` command.
 **Later:** a signed Windows build, macOS and Linux app packages, an editor panel inside Godot with the embedded agent, a studio that runs fully in the
 browser, open 2D asset packs, Codex and Gemini proven as the Director. The plan:
 [`docs/roadmap.md`](docs/roadmap.md).
