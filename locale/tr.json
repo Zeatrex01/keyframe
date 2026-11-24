@@ -55,6 +55,8 @@
   "delivery.bad": "Açılmıyor: {reason}",
   "delivery.checkFailed": "Bu dosya kontrol edilemedi: {reason}",
   "delivery.current": "Güncel sürüm",
+  "delivery.player": "HTML oynatıcı",
+  "delivery.playerHint": "Bunu internetsiz, her tarayıcıda oynatan tek bir HTML dosyası indir",
   "delivery.noHistory": "Henüz eski sürüm yok.",
   "delivery.goBack": "Buna dön",
   "delivery.confirm": "Bu sürüme dönülsün mü? Şimdiki sürüm önce saklanır.",

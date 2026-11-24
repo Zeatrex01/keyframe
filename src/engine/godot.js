@@ -141,7 +141,8 @@ export function godotScene(json, { atlasText, fps = 30, skin, name } = /** @type
     for (const table of [setup.skin, model.defaultSkin]) {
       for (const [, att] of table?.get(index) ?? []) {
         if (attachments.some(a => a.name === att.name) || (att.type !== 'region' && att.type !== 'mesh')) {
-          if (att.type === 'clipping') report.skipped.push(`clipping:${s.name}/${att.name}`);
+          // A clipping mask the slot shows in the setup pose becomes the slot's `clip` (below).
+          if (att.type === 'clipping' && !(setup.slots[index].attachment === att && !att.vertices.weighted)) report.skipped.push(`clipping:${s.name}/${att.name}`);
           continue;
         }
         const region = regionOf(att.path);
@@ -178,8 +179,12 @@ export function godotScene(json, { atlasText, fps = 30, skin, name } = /** @type
     }
     if (s.blend === 3) report.approximated.push(`blend screen:${s.name}`);
     if (s.dark) report.skipped.push(`tint-black:${s.name}`);
+    // A clipping mask: its polygon in bone space, and the last slot it clips (the next slots in draw order up to it).
+    const shown = setup.slots[index].attachment;
+    const clip = shown?.type === 'clipping' && !shown.vertices.weighted
+      ? { polygon: flipPairs(shown.vertices.data).map(round), end: shown.end ?? model.slots[model.slots.length - 1].name } : null;
     return { name: s.name, bone: model.bones[s.bone].name, z: setup.drawOrder.indexOf(setup.slots[index]), color: color(s.color),
-      blend: BLEND_NAMES[s.blend] ?? 'normal', attachment: setup.slots[index].attachment?.name ?? null, attachments };
+      blend: BLEND_NAMES[s.blend] ?? 'normal', attachment: shown?.name ?? null, attachments, ...(clip ? { clip } : {}) };
   });
 
   const animations = [...model.animations.values()].map(animation => sceneAnimation(model, animation, { fps, skin, blocked, slots, report }));

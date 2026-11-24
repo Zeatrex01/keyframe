@@ -55,6 +55,8 @@
   "delivery.bad": "Does not open: {reason}",
   "delivery.checkFailed": "Could not check this file: {reason}",
   "delivery.current": "Current version",
+  "delivery.player": "HTML player",
+  "delivery.playerHint": "Download one HTML file that plays this offline, in any browser",
   "delivery.noHistory": "No earlier versions yet.",
   "delivery.goBack": "Go back to this",
   "delivery.confirm": "Go back to this version? The current one is saved first.",

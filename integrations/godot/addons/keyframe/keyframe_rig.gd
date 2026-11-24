@@ -134,6 +134,8 @@ func play_layer(clip: String) -> bool:
 		add_child(layer)                          # after the AnimationPlayer: its tracks are applied last
 		layer.root_node = base.root_node
 		layer.add_animation_library("", base.get_animation_library(""))
+	layer.callback_mode_process = base.callback_mode_process   # a manual base stays manual
+	layer.speed_scale = base.speed_scale
 	layer.stop()
 	layer.play(clip)
 	return true

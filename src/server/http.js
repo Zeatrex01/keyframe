@@ -32,6 +32,7 @@ import { zipFolder } from '../core/zip.js';
 import { resolvePaths } from '../core/app-paths.js';
 import { silentLogger } from '../core/log.js';
 import { findSkeletons } from '../deliver/write.js';
+import { standalonePlayerFor } from '../deliver/standalone.js';
 import { SECURITY_HEADERS, send, refuse, refuseError, statusFor, readBody, readJson, sendFile } from './respond.js';
 import { createStateReader, REFERENCE_TYPES } from './state.js';
 import { createAgentHub } from '../agent/hub.js';
@@ -226,6 +227,16 @@ export function createStudioServer({ projectDir, version, configFile, maxUpload 
       res.writeHead(200, { ...SECURITY_HEADERS, 'content-type': 'application/zip', 'content-length': zip.length, 'cache-control': 'no-store',
         'content-disposition': `attachment; filename="keyframe-studio-${String(version).replace(/[^\w.-]/g, '')}.zip"` });
       res.end(zip);
+    } },
+    // One HTML file that plays the skeleton offline (the same as `npm run player`), as a download.
+    'GET /api/player': { project: true, raw: true, run: ({ res, url }) => {
+      const rel = url.searchParams.get('file') ?? '';
+      if (!/\.json$/i.test(rel)) throw new StudioError('bad-file', 'The player is made from a skeleton .json in the project.');
+      const html = standalonePlayerFor(insideProjectReal(() => dir, rel), { title: path.basename(rel).replace(/(\.keyframe)?\.json$/i, '') });
+      const name = path.basename(rel).replace(/(\.keyframe)?\.json$/i, '').replace(/[^\w.-]/g, '_') || 'player';
+      res.writeHead(200, { ...SECURITY_HEADERS, 'content-type': 'text/html; charset=utf-8', 'content-length': Buffer.byteLength(html), 'cache-control': 'no-store',
+        'content-disposition': `attachment; filename="${name}.player.html"` });
+      res.end(html);
     } },
     'GET /api/health': { run: () => ({ ok: true, version, project: dir !== null }) },
 

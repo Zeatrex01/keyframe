@@ -200,3 +200,24 @@ test('the launcher moves to the next free port when another program holds the us
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('the HTML player button: GET /api/player downloads one offline HTML file of a skeleton in the project', async () => {
+  const root = temp('kf-player-'), dir = spineFolder(root, 'alpha');
+  const studio = createStudioServer({ version: 'test', configFile: path.join(root, 'config.json') });
+  const port = await studio.listen(0);
+  try {
+    await request(port, 'POST', '/api/projects/open', { dir });
+    const r = await request(port, 'GET', '/api/player?file=ident.json');
+    assert.equal(r.status, 200);
+    assert.match(r.headers['content-type'], /^text\/html/);
+    assert.match(r.headers['content-disposition'], /attachment; filename="ident\.player\.html"/);
+    const html = r.raw.toString();
+    assert.match(html, /<html/i);
+    assert.ok(!/https?:\/\/(?!www\.w3\.org)/.test(html.replace(/xmlns(:\w+)?="[^"]*"/g, '')), 'nothing is fetched from the network');
+    assert.equal((await request(port, 'GET', '/api/player?file=../config.json')).status >= 400, true, 'only inside the project');
+    assert.equal((await request(port, 'GET', '/api/player?file=ident.png')).json.error.code, 'bad-file');
+    const page = fs.readFileSync(new URL('../web/index.html', import.meta.url), 'utf8');
+    assert.match(page, /id="deliveryPlayer" download/);
+    assert.match(fs.readFileSync(new URL('../web/delivery.js', import.meta.url), 'utf8'), /deliveryPlayer\.href = `\/api\/player\?file=/);
+  } finally { await new Promise(done => studio.server.close(done)); fs.rmSync(root, { recursive: true, force: true }); }
+});

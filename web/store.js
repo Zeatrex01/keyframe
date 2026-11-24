@@ -12,7 +12,7 @@ for (const id of ['app', 'projectName', 'projectSwitch', 'projectThumb', 'barSep
   'stageNote', 'stageNoteTitle', 'stageNoteBody', 'stageFlipWrap', 'flipSource', 'flipResult', 'stageFile', 'refPaneName', 'clip', 'play', 'playIcon', 'time', 'loop', 'speed',
   'ruler', 'laneLabels', 'lanes', 'laneRange', 'playhead', 'markTools', 'markToggle', 'markStart', 'markEnd', 'markRange', 'markClear', 'markLearn', 'markHint', 'libraryEmpty', 'moves',
   'refCard', 'refThumb', 'refEmpty', 'refName', 'refSync', 'refCompare', 'refAdd', 'refList', 'refStatus', 'refFile', 'refLinkForm', 'refLink', 'refLinkGo', 'refLinkHint', 'refFrom', 'refTo',
-  'deliveryEmpty', 'deliveryTop', 'deliveryFile', 'deliveryCheck', 'deliveryNote', 'deliveryActs', 'deliveryFlip', 'deliveryVersions',
+  'deliveryEmpty', 'deliveryTop', 'deliveryFile', 'deliveryCheck', 'deliveryNote', 'deliveryActs', 'deliveryFlip', 'deliveryVersions', 'deliveryPlayer',
   'versions', 'versionsEmpty', 'versionsNote', 'deliveryStatus', 'inspectorTabs', 'tabbar', 'keysPanel', 'timeline', 'keysEmpty', 'clipList', 'clipsEmpty', 'clipCount', 'refCount',
   'msgs', 'chatEmpty', 'live', 'liveName', 'livePhase', 'liveSecs', 'liveText', 'stopAgent', 'steps', 'compose', 'suggest', 'text', 'attach', 'send', 'chatHint',
   'navProjects', 'navSettings', 'hub', 'settings', 'openForm', 'openPath', 'createForm', 'createParent', 'createName', 'hubStatus', 'hubEmpty',

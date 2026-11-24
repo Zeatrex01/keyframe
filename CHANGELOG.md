@@ -6,6 +6,9 @@ All notable changes to this project. The format follows
 ## Unreleased
 
 ### Added
+- The delivery card has an HTML player button: one self-contained page that plays the delivered skeleton in any browser (`GET /api/player`).
+- Godot export keeps clipping masks: a clipping attachment becomes a `Polygon2D` mask that shows only the slots it clips (Pip's eyes stay inside their whites).
+- The Godot rig's `play_layer` copies the AnimationPlayer's process mode and speed, so a game that advances the player by hand advances the layer the same way.
 - Live drawing: `draw_rig` can draw a rig part by part (`merge: true`), and the Draw board shows each part being drawn as it arrives: outlines traced, then fills, with the part's name and the view following it. Replay, a speed menu and an instant mode (also used when the system asks for reduced motion).
 - The drawing side, as deep as the animation side (`docs/drawing.md`):
   - `style_guide`: a per-project art direction (palette by role, outline weights, radii, light, grid, type, sizes) with three presets.

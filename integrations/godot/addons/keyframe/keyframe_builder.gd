@@ -51,6 +51,7 @@ static func build(data: Dictionary, base_dir: String) -> Node2D:
 
 	# Slots and attachments.
 	var slot_paths := {}
+	var slot_nodes := {}
 	for slot in data.get("slots", []):
 		var skinned := false
 		for att in slot.attachments:
@@ -66,7 +67,7 @@ static func build(data: Dictionary, base_dir: String) -> Node2D:
 		node.set_meta("keyframe_default", String(slot.attachment) if slot.attachment != null else "")
 		# A skinned mesh is drawn in skeleton space, so its slot sits beside the skeleton.
 		_adopt(root, root if skinned else bone_nodes[slot.bone], node)
-		slot_paths[slot.name] = String(root.get_path_to(node))
+		slot_nodes[slot.name] = node
 		for att in slot.attachments:
 			var polygon := Polygon2D.new()
 			polygon.name = _node_name(att.name)
@@ -88,6 +89,10 @@ static func build(data: Dictionary, base_dir: String) -> Node2D:
 				polygon.skeleton = polygon.get_path_to(skeleton)
 				for bone_name in att.weights:
 					polygon.add_bone(NodePath(bone_paths[bone_name]), PackedFloat32Array(att.weights[bone_name]))
+
+	_clip(root, data.get("slots", []), slot_nodes)
+	for slot_name in slot_nodes:
+		slot_paths[slot_name] = String(root.get_path_to(slot_nodes[slot_name]))
 
 	# Animations.
 	var player := AnimationPlayer.new()
@@ -234,6 +239,48 @@ static func _material(blend: String, premultiplied: bool) -> CanvasItemMaterial:
 				return null
 			material.blend_mode = CanvasItemMaterial.BLEND_MODE_PREMULT_ALPHA
 	return material
+
+
+## Clipping masks (an eye that keeps its pupil inside): the clipping slot gets a Polygon2D in its
+## shape that clips its children, and every slot it clips (the next ones in draw order up to its
+## end slot) moves under it, in draw order, while a RemoteTransform2D on its own bone still moves it.
+static func _clip(root: Node, slots: Array, slot_nodes: Dictionary) -> void:
+	var by_z := slots.duplicate()
+	by_z.sort_custom(func(a, b): return int(a.z) < int(b.z))
+	for slot in slots:
+		var clip = slot.get("clip")
+		if clip == null:
+			continue
+		var mask := Polygon2D.new()
+		mask.name = _node_name("%s (mask)" % slot.name)
+		mask.polygon = _points(clip.polygon)
+		mask.clip_children = CanvasItem.CLIP_CHILDREN_ONLY
+		mask.z_index = int(slot.z)
+		mask.z_as_relative = false
+		_adopt(root, slot_nodes[slot.name], mask)
+		var end_z := int(slot.z)
+		for other in slots:
+			if other.name == clip.end:
+				end_z = int(other.z)
+		for other in by_z:
+			if int(other.z) <= int(slot.z) or int(other.z) > end_z:
+				continue
+			var node: Node2D = slot_nodes[other.name]
+			var carrier: Node = node.get_parent()
+			node.reparent(mask, false)
+			node.z_as_relative = true
+			node.z_index = 0
+			_own(root, node)
+			var follow := RemoteTransform2D.new()
+			follow.name = _node_name("%s (moves)" % other.name)
+			_adopt(root, carrier, follow)
+			follow.remote_path = follow.get_path_to(node)
+
+
+static func _own(root: Node, node: Node) -> void:
+	node.owner = root
+	for child in node.get_children():
+		_own(root, child)
 
 
 static func _adopt(root: Node, parent: Node, child: Node) -> void:

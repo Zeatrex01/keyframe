@@ -89,6 +89,8 @@ export function renderDelivery() {
   el.deliveryFlip.hidden = !other;
   el.deliveryFlip.querySelector('span').textContent = t(delivery ? 'stage.showSource' : 'stage.showResult');
   el.deliveryVersions.hidden = !delivery;
+  // One HTML file that plays what the stage shows, offline: for a web page, a review, a phone.
+  el.deliveryPlayer.href = `/api/player?file=${encodeURIComponent(shown.file)}`;
 
   if (!delivery) {
     el.versionsNote.hidden = false;

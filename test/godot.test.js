@@ -262,6 +262,7 @@ test('the dressable warrior reaches Godot with every look and weapon, each stanc
   // The add-on's rig finds slots by name and swaps looks and weapons.
   const rig = fs.readFileSync(path.join(ROOT, 'integrations/godot/addons/keyframe/keyframe_rig.gd'), 'utf8');
   for (const api of ['func play_layer(clip: String) -> bool', 'func set_attachment(slot_name: String, attachment: String) -> bool', 'func set_look(new_look: String) -> void', 'func get_attachments(slot_name: String) -> PackedStringArray']) assert.ok(rig.includes(api), api);
+  assert.match(rig, /layer\.callback_mode_process = base\.callback_mode_process/, 'the layer keeps the process mode of the base player');
   const builder = fs.readFileSync(path.join(ROOT, 'integrations/godot/addons/keyframe/keyframe_builder.gd'), 'utf8');
   assert.match(builder, /set_meta\("keyframe_slot", String\(slot\.name\)\)/);
   // A slot drawn empty (the arrow) stores "", since Godot keeps no meta for null, and the rig asks before it reads.
@@ -279,4 +280,20 @@ test('the dressable warrior reaches Godot with every look and weapon, each stanc
   const shipped = JSON.parse(fs.readFileSync(path.join(dir, 'godot', 'warrior.kfscene'), 'utf8'));
   assert.deepEqual(shipped, JSON.parse(JSON.stringify(godotScene(json, { atlasText: fs.readFileSync(path.join(dir, 'warrior_v2.atlas'), 'utf8'), name: 'warrior' }))));
   assert.ok(fs.existsSync(path.join(dir, 'godot', 'warrior.png')));
+});
+
+test('a clipping mask reaches Godot: the eye keeps its pupil inside (a Polygon2D that clips the slots after it)', () => {
+  const dir = path.join(ROOT, 'examples/showcase/pip');
+  const json = JSON.parse(fs.readFileSync(path.join(dir, 'pip_v2.json'), 'utf8'));
+  const scene = godotScene(json, { atlasText: fs.readFileSync(path.join(dir, 'pip_v2.atlas'), 'utf8') });
+  const clip = scene.slots.find(s => s.name === 'eyeClipL').clip;
+  assert.equal(clip.end, 'pupilL');
+  const raw = Object.values(json.skins[0].attachments.eyeClipL)[0];
+  assert.equal(clip.polygon.length, raw.vertexCount * 2);
+  assert.deepEqual(clip.polygon.slice(0, 2), [Math.round(raw.vertices[0] * 1000) / 1000, Math.round(-raw.vertices[1] * 1000) / 1000], 'in bone space, y down');
+  assert.ok(!scene.report.skipped.some(s => s.startsWith('clipping:eyeClip')), 'no longer skipped');
+  const builder = fs.readFileSync(path.join(ROOT, 'integrations/godot/addons/keyframe/keyframe_builder.gd'), 'utf8');
+  assert.match(builder, /mask\.clip_children = CanvasItem\.CLIP_CHILDREN_ONLY/);
+  assert.match(builder, /var follow := RemoteTransform2D\.new\(\)/, 'a clipped slot still moves with its own bone');
+  assert.match(builder, /_clip\(root, data\.get\("slots", \[\]\), slot_nodes\)\n\tfor slot_name in slot_nodes:\n\t\tslot_paths\[slot_name\]/, 'track paths are taken after the move');
 });
