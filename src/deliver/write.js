@@ -70,8 +70,9 @@ export function atlasBeside(jsonAbs) {
  * @param {string} options.name     animation name
  * @param {object} options.animation native Spine 4.2 animation JSON
  * @param {boolean} [options.replace] @param {number} [options.fps] @param {boolean} [options.holdFromStart]
+ * @param {Array<string|object>} [options.plant]  feet that stay where they stand (deliver/plant.js)
  */
-export async function prepareDelivery({ projectDir, from, into, name, animation, replace = false, fps, holdFromStart = true }) {
+export async function prepareDelivery({ projectDir, from, into, name, animation, replace = false, fps, holdFromStart = true, plant }) {
   const dir = () => projectDir;
   const opened = openSkeleton(dir, from, { findSkeletons: d => findSkeletons(d) });
   const base = opened.sk;
@@ -99,7 +100,7 @@ export async function prepareDelivery({ projectDir, from, into, name, animation,
         { into: intoRel });
     }
   }
-  const { skeleton, report } = await composeDelivery({ base, previous, name, animation, replace, fps, holdFromStart,
+  const { skeleton, report } = await composeDelivery({ base, previous, name, animation, replace, fps, holdFromStart, plant,
     deliveryInfo: { base: path.basename(opened.abs) } });
   return {
     projectDir, base: { rel: opened.rel, abs: opened.abs, hash: hash(baseBytes) },

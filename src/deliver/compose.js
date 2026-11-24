@@ -10,6 +10,7 @@
 // did not already have, and the official runtime must parse the result (or have refused
 // the base for the same reason already).
 
+import { plantFeet } from './plant.js';
 import { StudioError } from '../shared/errors.js';
 import { checkSkeleton } from '../spine/check.js';
 import { splitFatals, describe, identity } from '../spine/findings.js';
@@ -96,7 +97,7 @@ export function keysOnPhysicsBones(base, clip) {
   return out;
 }
 
-export async function composeDelivery({ base, previous = null, name, animation, replace = false, fps, holdFromStart = true, deliveryInfo = {} }) {
+export async function composeDelivery({ base, previous = null, name, animation, replace = false, fps, holdFromStart = true, plant, deliveryInfo = {} }) {
   if (typeof name !== 'string' || !name.length) throw new StudioError('bad-argument', 'The animation name must be a non-empty string.');
   if (!base || typeof base !== 'object') throw new StudioError('bad-argument', 'A base skeleton is required.');
   const normalized = normalizeAnimation(animation, { fps, holdFromStart });
@@ -109,11 +110,18 @@ export async function composeDelivery({ base, previous = null, name, animation, 
   const out = structuredClone(base);
   const merged = mergeAnimations({ ...(base.animations ?? {}), [name]: clip }, previous?.animations, name);
   out.animations = merged.animations;
+  // Planted feet are solved on the clip as composed, and baked to rotate keys (src/deliver/plant.js).
+  const baked = plant ? plantFeet(out, name, plant, { fps: fps ?? 30 }) : null;
+  const planted = baked?.planted ?? null;
+  // Which bones of which clip the solver wrote: critique judges the rhythm the author wrote, not the bake.
+  const plantedBones = Object.fromEntries(Object.entries(previous?.[DELIVERY_MARKER]?.planted ?? {})
+    .filter(([clipName]) => out.animations?.[clipName] && !(clipName === name && (replace || baked))));
+  if (baked) plantedBones[name] = baked.bones;
 
   const weights = previous ? carryWeightRepairs(out, previous) : { kept: [], dropped: [] };
   const paints = previous ? carryPaints(out, previous) : { kept: [], dropped: [] };
   const droppedMarkers = previous ? UNCARRIED_MARKERS.filter(m => previous[m] !== undefined && base[m] === undefined) : [];
-  out[DELIVERY_MARKER] = { ...deliveryInfo, baseHash: base.skeleton?.hash ?? null };
+  out[DELIVERY_MARKER] = { ...deliveryInfo, baseHash: base.skeleton?.hash ?? null, ...(Object.keys(plantedBones).length ? { planted: plantedBones } : {}) };
 
   const baseFindings = checkSkeleton(base);
   const outFindings = checkSkeleton(out);
@@ -142,6 +150,8 @@ export async function composeDelivery({ base, previous = null, name, animation, 
       snapped: normalized.snapped,
       presets: normalized.presets,
       ...(normalized.followed.length ? { followed: normalized.followed } : {}),
+      ...(planted ? { planted } : {}),
+      ...(planted?.some(p => p.reach > 1) ? { plantWarning: `${planted.filter(p => p.reach > 1).map(p => p.bone).join(', ')}: the leg is too short to stay on its point at times (reach above 1), so the foot lifts there. Move the hips less far, or bend the knees more.` } : {}),
       ...(onPhysics.length ? { onPhysicsBones: onPhysics } : {}),
       replacedFromBase: replace && targetClip !== undefined,
       carriedInClip,

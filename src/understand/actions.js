@@ -170,3 +170,46 @@ export function actionFindings(sk, name, { action } = {}) {
   }
   return out;
 }
+
+const FOOT = /foot|feet|toe/i;
+
+/**
+ * Feet that slide: a foot on the ground (at its lowest, give or take 2% of the height) that moves
+ * along it while it stands there. Walks and runs in place move their feet along the ground on
+ * purpose and are not judged.
+ * @param {object} sk  skeleton JSON
+ * @param {string} name  the clip
+ * @param {{ action?: string }} [options]
+ * @returns {Array<{ foot: string, slide: number, from: number, to: number }>}  slide in units
+ */
+export function footSlides(sk, name, { action } = {}) {
+  if ((action && ACTIONS[action] ? action : actionOf(name, action)) === 'locomotion') return [];
+  let model;
+  try { model = compileSkeleton(sk); } catch { return []; }
+  const anim = model.animations.get(name);
+  if (!anim || !(anim.duration > 0)) return [];
+  const feet = sk.bones.map(b => b.name).filter(n => FOOT.test(n) && !/target|ik/i.test(n));
+  if (!feet.length) return [];
+  const count = Math.max(2, Math.min(600, Math.round(anim.duration * FPS) + 1));
+  const times = Array.from({ length: count }, (_, i) => Math.min(anim.duration, i / FPS));
+  const frames = sample(model, name, times);
+  const setup = sample(model, name, [0])[0];
+  const H = Math.max(1, Number(sk.skeleton?.height) > 0 ? Number(sk.skeleton.height) : range(setup.bones.map(b => b.worldY)));
+  const out = [];
+  for (const foot of feet) {
+    const track = frames.map(f => f.bones.find(b => b.name === foot)).filter(Boolean);
+    if (track.length < 3) continue;
+    const ground = Math.min(...track.map(b => b.worldY)), tol = Math.max(1.5, H * 0.02);
+    let worst = null;
+    for (let i = 0; i < track.length;) {
+      if (track[i].worldY > ground + tol) { i++; continue; }
+      let j = i;
+      while (j + 1 < track.length && track[j + 1].worldY <= ground + tol) j++;
+      const xs = track.slice(i, j + 1).map(b => b.worldX), slide = range(xs);
+      if (j - i >= 2 && (!worst || slide > worst.slide)) worst = { foot, slide: r2(slide), from: r2(times[i]), to: r2(times[j]) };
+      i = j + 1;
+    }
+    if (worst && worst.slide > Math.max(2, H * 0.03)) out.push(worst);
+  }
+  return out;
+}

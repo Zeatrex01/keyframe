@@ -24,7 +24,7 @@ import { finding } from '../spine/findings.js';
 import { StudioError } from '../shared/errors.js';
 import { principleFindings } from './principle-checks.js';
 import { conventionFindings } from './conventions.js';
-import { actionFindings } from './actions.js';
+import { actionFindings, footSlides } from './actions.js';
 import { jointSeparations } from './joints.js';
 
 const round3 = v => Math.round(v * 1000) / 1000;
@@ -211,6 +211,12 @@ export function critiqueAnimation(sk, name, options = {}) {
     throw new StudioError('unknown-animation', `No animation named "${name}".`,
       { animation: name, available: Object.keys(sk?.animations ?? {}) });
   }
+  // Rotate keys baked by planted feet (src/deliver/plant.js, listed in the delivery marker) are the
+  // solver's, sampled every frame: the rhythm is judged on what the author wrote.
+  const baked = new Set(sk?._kfDelivery?.planted?.[name] ?? []);
+  const authored = baked.size ? { ...animation, bones: Object.fromEntries(Object.entries(animation.bones ?? {})
+    .map(([bone, t]) => [bone, baked.has(bone) ? Object.fromEntries(Object.entries(t ?? {}).filter(([channel]) => channel !== 'rotate')) : t])) } : animation;
+  const judged = baked.size ? { ...sk, animations: { ...sk.animations, [name]: authored } } : sk;
   const at = `animations/${name}`;
   const findings = [];
   const add = (severity, code, where, message, measure, fix) =>
@@ -221,7 +227,7 @@ export function critiqueAnimation(sk, name, options = {}) {
   const evenlySpaced = [];
   let hold = 0;
 
-  for (const [bone, timelines] of Object.entries(animation.bones ?? {})) {
+  for (const [bone, timelines] of Object.entries(authored.bones ?? {})) {
     for (const [channel, keys] of Object.entries(timelines ?? {})) {
       if (!Array.isArray(keys) || keys.length < 2) continue;
       const series = fieldSeries(channel, keys);
@@ -381,7 +387,7 @@ export function critiqueAnimation(sk, name, options = {}) {
 
   // 10. The animation principles (roadmap Phase 1): overlap, ease variety, squash, loops,
   // twinning, readability. All `look`: they inform, they never change the verdict.
-  for (const p of principleFindings(sk, name, options)) {
+  for (const p of principleFindings(judged, name, options)) {
     findings.push(finding('warn', p.code, p.where, p.message, { severity: p.severity, measure: p.measure, fix: p.fix, principle: p.principle, estimate: p.estimate }));
   }
 
@@ -391,6 +397,13 @@ export function critiqueAnimation(sk, name, options = {}) {
   if (!NOT_A_BODY.has(options.subject)) {
     for (const a of actionFindings(sk, name, { action: options.action })) {
       findings.push(finding('warn', a.code, at, a.message, { severity: a.severity, measure: a.measure, fix: a.fix, principle: a.principle }));
+    }
+    // A foot that slides along the ground while it stands on it: nothing holds the body up.
+    for (const f of footSlides(sk, name, { action: options.action })) {
+      add('weak', 'foot-slide', `${at}/bones/${f.foot}`,
+        `${f.foot} slides ${f.slide} units along the ground between ${f.from} s and ${f.to} s while it stands on it: the body is not carried by its feet.`,
+        { foot: f.foot, slide: f.slide, from: f.from, to: f.to },
+        `Keep the foot where it stands: write the clip again with plant: ["${f.foot}"] (or { bone, from, to } for the time it is on the ground), so the legs bend to carry the body; lift the foot to step.`);
     }
     // A limb that comes off the part it hangs from is broken whatever the motion means.
     for (const j of jointSeparations(sk, name)) {
