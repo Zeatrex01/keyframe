@@ -210,6 +210,11 @@ animator. At run time the rig swaps looks and weapons (`look`, `weapon`, `set_at
 plays upper-body clips over the running one (`play_layer`). A demo project is included. See
 [`docs/godot.md`](docs/godot.md).
 
+<p align="center">
+  <img src="docs/screenshots/godot-platformer.png" alt="The Warrior in plate armour with a spear, running in a small Godot 4 platformer test scene built with the add-on" width="760"><br>
+  <sub>The Warrior as Godot's own Skeleton2D in a small platformer test scene built with the add-on (the scene itself is not part of the repository; the add-on's own demo is).</sub>
+</p>
+
 ## Spine
 
 The studio reads and writes the Spine 4.2 JSON format for everyone, with no Spine code. The

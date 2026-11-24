@@ -54,6 +54,21 @@ export function outsideNote(state) {
   return open ? null : { key: 'outside.noProject', name: outside.name, dir: null, folder: null };
 }
 
+/**
+ * Settings' connection line for the open project: the built-in Director at work there, an outside
+ * client that called lately, or nobody. Stamps the Director left behind do not count once it is off.
+ * @returns {{ on: boolean, key: string, params: object }}
+ */
+export function connectionCheck(state) {
+  const project = state?.project ?? null;
+  if (!project) return { on: false, key: 'settings.noProject', params: {} };
+  const director = directorOf(state?.agent);
+  if (director && director.status !== 'error') return { on: true, key: 'settings.directorHere', params: { name: project.name, agent: agentName(director.agent) } };
+  const agent = state?.agent;
+  if (agent?.connected && !agent.embedded) return { on: true, key: 'settings.connected', params: { name: project.name, agent: agent.name ?? 'MCP', lastSeen: agent.lastSeen } };
+  return { on: false, key: 'settings.waiting', params: { name: project.name } };
+}
+
 // ---------- the embedded agent's slots (Settings → AI connection) ----------
 
 /** The roles a slot can have: the Director first, then the helpers the owner can add. */

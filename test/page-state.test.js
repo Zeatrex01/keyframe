@@ -11,8 +11,8 @@ test('the chat says no AI is connected only when the pill waits (no Director and
   const chat = web('chat.js');
   assert.match(chat, /pill\.tone === 'wait' \? t\('chat\.noAgent'\)/);
   assert.doesNotMatch(chat, /!agent\?\.connected \? t\('chat\.noAgent'\)/, 'an MCP-only check ignores the Director');
-  // Settings' connection check counts the Director too.
-  assert.match(web('views.js'), /directorOf\(S\.state\?\.agent\)[\s\S]{0,400}settings\.directorHere/);
+  // Settings' connection check counts the Director too, and is redrawn on every poll.
+  assert.match(web('chat.js'), /renderCheck\(\);/);
 });
 
 test('the first run leads with the built-in Director; the MCP lines come second, folded', () => {

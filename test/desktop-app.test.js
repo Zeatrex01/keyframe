@@ -71,7 +71,7 @@ test('agent clients of the packaged app start through the shim, which survives u
   assert.deepEqual(JSON.parse(text('claude-desktop')).mcpServers['keyframe-studio'], { command: 'cmd', args: ['/c', 'C:\\Apps\\Keyframe Studio\\keyframe-mcp.cmd'] });
   assert.match(text('codex'), /command = "cmd"\nargs = \["\/c", "C:\\\\Apps/);
   assert.ok(!JSON.stringify(clients).includes('app-0.0.1-beta'), 'no version folder in a client\'s setting');
-  assert.match(connectionFor('/repo').clients[0].text, /-- node "\/repo\/tools\/mcp-server\.js"$/);
+  assert.ok(connectionFor('/repo').clients[0].text.endsWith(`-- node "${path.join('/repo', 'tools', 'mcp-server.js')}"`));
 });
 
 test('the icon holds the mark at every size Windows asks for', () => {

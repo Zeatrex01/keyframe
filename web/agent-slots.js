@@ -3,10 +3,10 @@
 // Researcher), each with its own agent and brief. One agent per slot. When the studio has no
 // embedded agent (GET /api/agent answers 404), only the external MCP instructions show.
 
-import { agentName, changeSlots, isRunning, orderSlots, slotAction, rolesToAdd, slotsForSave, slotsOf } from './agent-rules.js';
+import { agentName, changeSlots, connectionCheck, isRunning, orderSlots, slotAction, rolesToAdd, slotsForSave, slotsOf } from './agent-rules.js';
 import { whenText } from './chat-view.js';
 import { S, el } from './store.js';
-import { api, button, icon, node, t } from './ui.js';
+import { api, button, formatTime, icon, node, t } from './ui.js';
 
 let data = null;      // { slots, agents } from GET /api/agent, or null when there is no embedded agent
 let busy = false;
@@ -154,4 +154,12 @@ export function renderAgentSlots() {
   });
   const help = missing.length ? [node('p', 't-caption slot-install', missing.map(a => t('agent.install', { name: a.name ?? agentName(a.id), install: a.install, signIn: a.signIn ?? '' })).join(' '))] : [];
   el.slotAdd.replaceChildren(...adds, ...help);
+}
+
+/** Settings' connection line, redrawn on every state poll so it follows Turn off at once. */
+export function renderCheck() {
+  if (!el.checkText) return;
+  const check = connectionCheck(S.state);
+  el.checkDot.classList.toggle('on', check.on);
+  el.checkText.textContent = t(check.key, check.params.lastSeen !== undefined ? { ...check.params, time: formatTime(check.params.lastSeen) } : check.params);
 }

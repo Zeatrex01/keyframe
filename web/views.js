@@ -5,10 +5,9 @@ import { loadDesktop } from './connect.js';
 import { disposePlayer } from './stage.js';
 import { S, el } from './store.js';
 import { loadProjects, placeProjects } from './projects.js';
-import { loadAgentSlots } from './agent-slots.js';
-import { agentName, directorOf } from './agent-rules.js';
+import { loadAgentSlots, renderCheck } from './agent-slots.js';
 import { showDraw } from './draw.js';
-import { api, formatTime, icon, node, setLang, setTheme, t } from './ui.js';
+import { api, icon, node, setLang, setTheme, t } from './ui.js';
 import { KeyframePlayer, loadSpineAddon } from './keyframe-player.js';
 
 // ---------- projects, settings and the opening ----------
@@ -81,15 +80,7 @@ export function renderSettings() {
   el.aboutTitle.textContent = t('settings.aboutName', { version: s.version });
   el.aboutFolder.textContent = s.root;
   el.aboutData.textContent = s.data ?? '';
-  const agent = s.project?.agent;
-  // The built-in Director counts as connected, as the bar's pill says (not only an MCP client).
-  const director = directorOf(S.state?.agent);
-  const here = director && director.status !== 'error';
-  el.checkDot.classList.toggle('on', !!(here || agent?.connected));
-  el.checkText.textContent = !s.project ? t('settings.noProject')
-    : here ? t('settings.directorHere', { name: s.project.name, agent: agentName(director.agent) })
-    : agent?.connected ? t('settings.connected', { name: s.project.name, agent: agent.name ?? 'MCP', time: formatTime(agent.lastSeen) })
-      : t('settings.waiting', { name: s.project.name });
+  renderCheck();
 }
 
 // The Spine add-on: off by default, with the license stated before anything is downloaded.

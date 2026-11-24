@@ -14,7 +14,7 @@ import { EventEmitter } from 'node:events';
 import { clientLabel, presenceStamper, readPresence, STAMP_EVERY_MS, PRESENT_MS } from '../src/core/presence.js';
 import { readAgent } from '../src/core/chat.js';
 import { createServer } from '../src/mcp/server.js';
-import { outsideNote, pillState } from '../web/agent-rules.js';
+import { outsideNote, pillState, connectionCheck } from '../web/agent-rules.js';
 import { touchAgent } from '../src/core/chat.js';
 import { ADAPTERS } from '../src/agent/adapters.js';
 import { planCommand } from '../tools/keyframe.js';
@@ -84,7 +84,7 @@ test('the keyframe command reads its line the way its help says', () => {
 test('keyframe setup writes the folder\'s .mcp.json pinned to it, keeping what was there', () => {
   const dir = tmp('kf-setup-');
   const entry = projectEntry('/repo', dir, { execPath: '/opt/node' });
-  assert.deepEqual(entry, { command: '/opt/node', args: ['/repo/tools/mcp-server.js'], env: { KS_PROJECT: dir } });
+  assert.deepEqual(entry, { command: '/opt/node', args: [path.join('/repo', 'tools', 'mcp-server.js')], env: { KS_PROJECT: dir } });
   assert.deepEqual(projectEntry('/x', 'C:\\My Games\\Hero', { appRoot: 'C:\\Apps\\Keyframe Studio' }).args, ['/c', 'C:\\Apps\\Keyframe Studio\\keyframe-mcp.cmd'],
     'the folder rides in env: cmd /c cannot carry a second quoted argument');
   const file = path.join(dir, '.mcp.json');
@@ -161,4 +161,14 @@ test('install hints are commands only; the words around them come from the page\
     const dict = JSON.parse(fs.readFileSync(`locale/${lang}.json`, 'utf8'));
     for (const key of ['agent.install', 'first.directorMissing']) assert.match(dict[key], /\{signIn\}/, `${lang} ${key}`);
   }
+});
+
+test('Settings\' connection line follows Turn off at once, and still names an outside client', () => {
+  const project = { name: 'hero', dir: '/p/hero' };
+  const director = { id: 'director', role: 'director', agent: 'claude-code', status: 'ready' };
+  assert.equal(connectionCheck({ project, agent: { connected: true, embedded: true, slots: [director] } }).key, 'settings.directorHere');
+  const off = connectionCheck({ project, agent: { connected: true, embedded: true, slots: [{ ...director, agent: null, status: 'off' }] } });
+  assert.deepEqual([off.on, off.key], [false, 'settings.waiting']);
+  assert.equal(connectionCheck({ project, agent: { connected: true, embedded: false, name: 'Claude Code', slots: [] } }).key, 'settings.connected');
+  assert.equal(connectionCheck({ project: null }).key, 'settings.noProject');
 });

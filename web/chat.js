@@ -7,7 +7,7 @@ import { messageView, SUGGESTIONS, whenText, liveView, elapsedText, phaseText } 
 import { askUndo } from './delivery.js';
 import { showPanel } from './panels.js';
 import { renderFirst } from './projects.js';
-import { updateSlotStatus } from './agent-slots.js';
+import { renderCheck, updateSlotStatus } from './agent-slots.js';
 import { flipStage } from './sync.js';
 import { api, button, icon, node, t } from './ui.js';
 
@@ -66,6 +66,7 @@ export function renderAgent() {
   renderLive(pill.name);
   renderFirst();
   updateSlotStatus();
+  renderCheck();
 }
 
 /** The studio's mark, for a project with no picture of its own. */
