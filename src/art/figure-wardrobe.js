@@ -5,7 +5,7 @@
 //   { component: 'figure', build: 'side', bare: true, wear: ['hair', 'shirt', 'trousers', 'boots', 'cuirass'] }
 //
 // Items (`wear` lists the ones worn; the rest are drawn too, hidden, for the game to show):
-//   cloth   hair, shirt (body and both sleeves), trousers (waist and both legs), boots
+//   cloth   hair (`hairStyle`: short, spiky, long, swept), shirt (body and both sleeves), trousers (waist and both legs), boots
 //   armour  helmet, cuirass, pauldrons (shoulder plate and upper-arm tube), vambraces, cuisses, greaves, sabatons
 // Every piece covers the whole of its body part, a little wider all round, so nothing under it shows
 // at its edges. Armour hides the cloth on its own part (a worn cuirass hides the shirt and waist, a
@@ -35,15 +35,25 @@ function tube(name, parent, [joint, len, w1, w2], m, fill, extra = () => []) {
       fill, sw: 'regular', bbox: [0, 0, W, H] }, ...extra(W, H, top, bot)] };
 }
 
+/** The lower `f` of a limb: [joint, length, width at the joint, width at the end]. */
+const lower = ([joint, len, w1, w2], f) => [[joint[0], joint[1] - len * (1 - f)], len * f, w1 + (w2 - w1) * (1 - f), w2];
+
 /** The torso's outline in a W x H box (the chest to the front, +x). */
 export function torsoPath(W, H, sw) {
   const x0 = sw / 2, x1 = W - sw / 2;
   return `M${r2(x0 + W * 0.12)} ${r2(sw / 2)} L${r2(x1 - W * 0.3)} ${r2(sw / 2)} Q${r2(x1)} ${r2(H * 0.06)} ${r2(x1)} ${r2(H * 0.4)} L${r2(x1 - W * 0.04)} ${r2(H - sw / 2)} L${r2(x0 + W * 0.04)} ${r2(H - sw / 2)} L${r2(x0)} ${r2(H * 0.25)} Q${r2(x0)} ${r2(sw / 2)} ${r2(x0 + W * 0.12)} ${r2(sw / 2)} Z`;
 }
 
-/** The hair over the top and the back of the head, in the head's box. */
-export function hairPath(hw, hh) {
+export const HAIR_STYLES = Object.freeze(['short', 'spiky', 'long', 'swept']);
+
+/** The hair over the top and the back of the head, in the head's box, in one of HAIR_STYLES. */
+export function hairPath(hw, hh, style = 'short') {
   const hx = v => r2(v * hw), hy = v => r2(v * hh);
+  // Spiky: tufts standing up over the crown. Long: down the back to the nape, a fringe in front.
+  // Swept: a high quiff swept back.
+  if (style === 'spiky') return `M${hx(0.1)} ${hy(0.64)} L${hx(0.04)} ${hy(0.3)} L${hx(0.16)} ${hy(0.2)} L${hx(0.14)} ${hy(0.02)} L${hx(0.32)} ${hy(0.1)} L${hx(0.42)} ${hy(-0.04)} L${hx(0.54)} ${hy(0.08)} L${hx(0.7)} ${hy(0)} L${hx(0.74)} ${hy(0.14)} L${hx(0.94)} ${hy(0.16)} L${hx(0.86)} ${hy(0.3)} Q${hx(0.7)} ${hy(0.26)} ${hx(0.6)} ${hy(0.32)} Q${hx(0.48)} ${hy(0.4)} ${hx(0.4)} ${hy(0.36)} Q${hx(0.3)} ${hy(0.5)} ${hx(0.24)} ${hy(0.72)} Q${hx(0.14)} ${hy(0.74)} ${hx(0.1)} ${hy(0.64)} Z`;
+  if (style === 'long') return `M${hx(0.18)} ${hy(0.98)} Q${hx(0.0)} ${hy(0.8)} ${hx(0.04)} ${hy(0.4)} Q${hx(0.06)} ${hy(0.0)} ${hx(0.55)} ${hy(0.01)} Q${hx(0.94)} ${hy(0.04)} ${hx(0.92)} ${hy(0.42)} Q${hx(0.84)} ${hy(0.3)} ${hx(0.74)} ${hy(0.3)} Q${hx(0.6)} ${hy(0.36)} ${hx(0.44)} ${hy(0.36)} Q${hx(0.3)} ${hy(0.5)} ${hx(0.32)} ${hy(0.98)} Z`;
+  if (style === 'swept') return `M${hx(0.1)} ${hy(0.6)} Q${hx(0.0)} ${hy(0.1)} ${hx(0.4)} ${hy(-0.02)} Q${hx(0.82)} ${hy(-0.1)} ${hx(1.0)} ${hy(0.12)} Q${hx(0.9)} ${hy(0.14)} ${hx(0.86)} ${hy(0.24)} Q${hx(0.7)} ${hy(0.22)} ${hx(0.58)} ${hy(0.3)} Q${hx(0.44)} ${hy(0.36)} ${hx(0.4)} ${hy(0.34)} Q${hx(0.3)} ${hy(0.46)} ${hx(0.24)} ${hy(0.68)} Q${hx(0.14)} ${hy(0.7)} ${hx(0.1)} ${hy(0.6)} Z`;
   return `M${hx(0.1)} ${hy(0.62)} Q${hx(0.02)} ${hy(0.02)} ${hx(0.55)} ${hy(0.02)} Q${hx(0.9)} ${hy(0.04)} ${hx(0.9)} ${hy(0.3)} Q${hx(0.72)} ${hy(0.24)} ${hx(0.6)} ${hy(0.32)} Q${hx(0.5)} ${hy(0.4)} ${hx(0.42)} ${hy(0.36)} Q${hx(0.3)} ${hy(0.48)} ${hx(0.24)} ${hy(0.7)} Q${hx(0.14)} ${hy(0.72)} ${hx(0.1)} ${hy(0.62)} Z`;
 }
 
@@ -73,10 +83,12 @@ export function wardrobeParts(g, c, hex) {
     arm: (s, tone) => ({
       upper: [
         part(tube(`sleeve${s}`, `upperArm${s}`, g.limbs[`upperArm${s}`], m, tone(shirt)), shown('shirt', 'pauldrons')),
-        part(tube(`rerebrace${s}`, `upperArm${s}`, g.limbs[`upperArm${s}`], mA, tone(metal), band(0.75, tone(line))), wear.has('pauldrons')),
+        part(tube(`rerebrace${s}`, `upperArm${s}`, g.limbs[`upperArm${s}`], mA, tone(metal), (W, H) => [...band(0.5, tone(line))(W, H), ...band(0.7, tone(line))(W, H),
+          { line: [r2(W * 0.1), r2(H * 0.88), r2(W * 0.9), r2(H * 0.88)], stroke: tone(trim), sw: 'thin' }]), wear.has('pauldrons')),
       ],
       lower: [
-        part(tube(`cuff${s}`, `forearm${s}`, g.limbs[`forearm${s}`], m, tone(shirt)), shown('shirt', 'vambraces')),
+        part(tube(`cuff${s}`, `forearm${s}`, g.limbs[`forearm${s}`], m, tone(shirt), (W, H) => [
+          { rect: [r2(W * 0.06), r2(H * 0.8), r2(W * 0.88), r2(H * 0.12)], r: 'sm', fill: tone(darken(shirt, 0.12)), sw: 'thin', shade: false }]), shown('shirt', 'vambraces')),
         part(tube(`vambrace${s}`, `forearm${s}`, g.limbs[`forearm${s}`], mA, tone(metal), (W, H) => [
           { line: [r2(W * 0.14), r2(H * 0.3), r2(W * 0.86), r2(H * 0.3)], stroke: tone(trim), sw: 'thin' },
           { line: [r2(W * 0.16), r2(H * 0.78), r2(W * 0.84), r2(H * 0.78)], stroke: tone(line), sw: 'thin' }]), wear.has('vambraces')),
@@ -85,17 +97,23 @@ export function wardrobeParts(g, c, hex) {
     }),
     leg: (s, tone) => ({
       thigh: [
-        part(tube(`trouser${s}`, `thigh${s}`, g.limbs[`thigh${s}`], m, tone(pants)), shown('trousers', 'cuisses')),
+        part(tube(`trouser${s}`, `thigh${s}`, g.limbs[`thigh${s}`], m, tone(pants), (W, H) => [
+          { path: `M${r2(W * 0.62)} ${r2(H * 0.55)} Q${r2(W * 0.74)} ${r2(H * 0.7)} ${r2(W * 0.66)} ${r2(H * 0.84)}`, fill: 'none', stroke: tone(darken(pants, 0.2)), sw: 'thin' }]), shown('trousers', 'cuisses')),
         part(tube(`cuisse${s}`, `thigh${s}`, g.limbs[`thigh${s}`], mA, tone(metal), (W, H) => [
-          { line: [r2(W * 0.1), r2(H * 0.34), r2(W * 0.9), r2(H * 0.34)], stroke: tone(line), sw: 'thin' },
-          { line: [r2(W * 0.1), r2(H * 0.62), r2(W * 0.9), r2(H * 0.62)], stroke: tone(trim), sw: 'thin' }]), wear.has('cuisses')),
+          // a tasset flaring over the top of the thigh
+          { path: `M${r2(-W * 0.06)} ${r2(H * 0.02)} L${r2(W * 1.06)} ${r2(H * 0.02)} L${r2(W * 0.98)} ${r2(H * 0.3)} Q${r2(W * 0.5)} ${r2(H * 0.36)} ${r2(W * 0.02)} ${r2(H * 0.3)} Z`, fill: tone(metal), sw: 'regular', bbox: [0, 0, W, H * 0.36] },
+          { line: [r2(W * 0.04), r2(H * 0.16), r2(W * 0.96), r2(H * 0.16)], stroke: tone(trim), sw: 'thin' },
+          { line: [r2(W * 0.12), r2(H * 0.62), r2(W * 0.88), r2(H * 0.62)], stroke: tone(line), sw: 'thin' }]), wear.has('cuisses')),
       ],
       shin: [
         part(tube(`legging${s}`, `shin${s}`, g.limbs[`shin${s}`], m, tone(pants)), shown('trousers', 'greaves')),
+        // the boot's shaft up the lower shin, its cuff turned over
+        part(tube(`bootShaft${s}`, `shin${s}`, lower(g.limbs[`shin${s}`], 0.45), m * 1.6, tone(shoes), (W, H, top) => [
+          { rect: [0, 0, r2(W), r2(top * 1.6)], r: 'sm', fill: tone(darken(shoes, 0.12)), sw: 'regular', shade: false }]), shown('boots', 'greaves')),
         part(tube(`greave${s}`, `shin${s}`, g.limbs[`shin${s}`], mA, tone(metal), (W, H, top) => [
-          { ellipse: [r2(W / 2), r2(top * 1.1), r2(W * 0.4), r2(top * 0.62)], fill: tone(metal), sw: 'regular' },
+          { path: `M${r2(W * 0.08)} ${r2(top * 1.2)} Q${r2(W * 0.5)} ${r2(top * 0.1)} ${r2(W * 1.04)} ${r2(top * 0.9)} Q${r2(W * 0.6)} ${r2(top * 2.1)} ${r2(W * 0.08)} ${r2(top * 1.2)} Z`, fill: tone(metal), sw: 'regular', bbox: [0, 0, W, top * 2] },
           { line: [r2(W * 0.16), r2(top * 1.9), r2(W * 0.84), r2(top * 1.9)], stroke: tone(trim), sw: 'thin' },
-          { line: [r2(W * 0.5), r2(top * 2), r2(W * 0.5), r2(H * 0.9)], stroke: tone(line), sw: 'thin' }]), wear.has('greaves')),
+          { path: `M${r2(W * 0.7)} ${r2(top * 2.1)} Q${r2(W * 0.8)} ${r2(H * 0.55)} ${r2(W * 0.68)} ${r2(H * 0.92)}`, fill: 'none', stroke: tone(line), sw: 'thin' }]), wear.has('greaves')),
       ],
       foot: [
         part(shoe(`boot${s}`, `foot${s}`, g.feet[s], m, tone(shoes)), shown('boots', 'sabatons')),
@@ -120,18 +138,20 @@ export function wardrobeParts(g, c, hex) {
           (BW, BH) => ({ path: `M${r2(BW * 0.52)} ${r2(BH * 0.12)} Q${r2(BW * 0.84)} ${r2(BH * 0.32)} ${r2(BW * 0.8)} ${r2(BH * 0.62)}`, fill: 'none', stroke: line, sw: 'thin' }),
           (BW, BH) => ({ rect: [r2(BW * 0.03), r2(BH * 0.7), r2(BW * 0.94), r2(BH * 0.1)], r: 'sm', fill: darken(pants, 0.1), sw: 'regular', shade: false }),
           (BW, BH) => ({ rect: [r2(BW * 0.74), r2(BH * 0.68), r2(BW * 0.13), r2(BH * 0.14)], r: 'sm', fill: trim, sw: 'thin', shade: false }),
-          (BW, BH) => ({ path: `M${r2(BW * 0.06)} ${r2(BH * 0.82)} L${r2(BW * 0.94)} ${r2(BH * 0.82)} L${r2(BW * 0.9)} ${r2(BH * 0.98)} L${r2(BW * 0.1)} ${r2(BH * 0.98)} Z`, fill: metal, sw: 'regular', bbox: [0, 0, BW, BH] }),
+          (BW, BH) => ({ path: `M${r2(BW * 0.02)} ${r2(BH * 0.8)} L${r2(BW * 0.98)} ${r2(BH * 0.8)} L${r2(BW * 1.0)} ${r2(BH * 0.9)} L${r2(BW * 0.0)} ${r2(BH * 0.9)} Z`, fill: metal, sw: 'regular', bbox: [0, 0, BW, BH] }),
+          (BW, BH) => ({ path: `M${r2(BW * 0.0)} ${r2(BH * 0.89)} L${r2(BW * 1.0)} ${r2(BH * 0.89)} L${r2(BW * 1.03)} ${r2(BH * 1.0)} L${r2(BW * -0.03)} ${r2(BH * 1.0)} Z`, fill: metal, sw: 'regular', bbox: [0, 0, BW, BH] }),
         ]), wear.has('cuirass')),
       ];
     },
     head: () => {
       const { hw, hh, offset } = g.head;
-      const k = 1.06, HW = hw * k, HH = hh * k, x = v => r2(v * HW), y = v => r2(v * HH);
+      const k = 1.03, HW = hw * k, HH = hh * k, x = v => r2(v * HW), y = v => r2(v * HH);
       return [
-        part({ name: 'hair', parent: 'head', box: [r2(hw), r2(hh)], offset, shapes: [{ path: hairPath(hw, hh), fill: hair, sw: 'regular', bbox: [0, 0, hw * 0.9, hh * 0.72] }] }, shown('hair', 'helmet')),
+        part({ name: 'hair', parent: 'head', box: [r2(hw), r2(hh)], offset, shapes: [{ path: hairPath(hw, hh, HAIR_STYLES.includes(c.hairStyle) ? c.hairStyle : 'short'), fill: hair, sw: 'regular', bbox: [0, 0, hw, hh] }] }, shown('hair', 'helmet')),
         // Over the whole skull, the back of the head and the nape; the face stays open.
         part({ name: 'helmet', parent: 'head', box: [r2(HW), r2(HH)], offset: [offset[0], r2(offset[1] + (HH - hh) / 2)], shapes: [
-          { path: `M${x(0.05)} ${y(0.8)} Q${x(-0.01)} ${y(0.01)} ${x(0.52)} ${y(0.01)} Q${x(0.96)} ${y(0.03)} ${x(0.95)} ${y(0.44)} L${x(0.52)} ${y(0.44)} Q${x(0.44)} ${y(0.5)} ${x(0.44)} ${y(0.8)} Z`, fill: metal, sw: 'regular', bbox: [0, 0, HW, HH * 0.8] },
+          { path: `M${x(0.06)} ${y(0.74)} Q${x(0.0)} ${y(0.02)} ${x(0.52)} ${y(0.02)} Q${x(0.96)} ${y(0.04)} ${x(0.94)} ${y(0.42)} L${x(0.52)} ${y(0.42)} Q${x(0.43)} ${y(0.46)} ${x(0.42)} ${y(0.74)} Z`, fill: metal, sw: 'regular', bbox: [0, 0, HW, HH * 0.74] },
+          { path: `M${x(0.07)} ${y(0.7)} L${x(0.41)} ${y(0.7)}`, fill: 'none', stroke: trim, sw: 'regular' },
           { path: `M${x(0.93)} ${y(0.41)} L${x(0.5)} ${y(0.41)}`, fill: 'none', stroke: trim, sw: 'regular' },
           { path: `M${x(0.5)} ${y(0.03)} Q${x(0.72)} ${y(0.16)} ${x(0.7)} ${y(0.38)}`, fill: 'none', stroke: line, sw: 'thin' },
         ] }, wear.has('helmet')),
@@ -146,6 +166,7 @@ function pauldron(name, parent, [joint, , w1], m, fill, trim) {
   return { name, parent, box: [r2(W), r2(H)], offset: [r2(joint[0]), r2(joint[1] - w1 * 0.1)], pivot: [0, r2(w1 * 0.1)], shapes: [
     { path: `M${r2(W * 0.05)} ${r2(H * 0.8)} Q${r2(W * 0.03)} ${r2(H * 0.05)} ${r2(W * 0.5)} ${r2(H * 0.05)} Q${r2(W * 0.97)} ${r2(H * 0.05)} ${r2(W * 0.95)} ${r2(H * 0.8)} Q${r2(W * 0.5)} ${r2(H * 0.98)} ${r2(W * 0.05)} ${r2(H * 0.8)} Z`, fill, sw: 'regular', bbox: [0, 0, W, H] },
     { path: `M${r2(W * 0.12)} ${r2(H * 0.58)} Q${r2(W * 0.5)} ${r2(H * 0.76)} ${r2(W * 0.88)} ${r2(H * 0.58)}`, fill: 'none', stroke: trim, sw: 'regular' },
+    { path: `M${r2(W * 0.2)} ${r2(H * 0.36)} Q${r2(W * 0.5)} ${r2(H * 0.5)} ${r2(W * 0.8)} ${r2(H * 0.36)}`, fill: 'none', stroke: darken(fill, 0.25), sw: 'thin' },
   ] };
 }
 
@@ -154,6 +175,7 @@ function shoe(name, parent, { x, fw, fh, heel, legW }, m, fill, plates) {
   const W = fw + 2 * m, H = fh + 2 * m;
   return { name, parent, box: [r2(W), r2(H)], offset: [r2(x - heel + fw / 2), r2(fh / 2)], pivot: [r2(heel - fw / 2), r2(fh / 2 - legW * 0.3)], shapes: [
     { path: shoePath(W, H, 0), fill, sw: 'regular', bbox: [0, 0, W, H] },
-    ...(plates ? [{ line: [r2(W * 0.5), r2(H * 0.1), r2(W * 0.62), r2(H * 0.9)], stroke: plates, sw: 'thin' }, { line: [r2(W * 0.7), r2(H * 0.2), r2(W * 0.8), r2(H * 0.9)], stroke: plates, sw: 'thin' }] : []),
+    ...(plates ? [0.42, 0.58, 0.74].map(f => ({ path: `M${r2(W * f)} ${r2(H * 0.06)} Q${r2(W * (f + 0.08))} ${r2(H * 0.5)} ${r2(W * (f + 0.06))} ${r2(H * 0.94)}`, fill: 'none', stroke: plates, sw: 'thin' }))
+      : [{ rect: [r2(W * 0.02), r2(H * 0.82), r2(W * 0.96), r2(H * 0.16)], r: 'sm', fill: darken(fill, 0.25), sw: 'thin', shade: false }]),
   ] };
 }
