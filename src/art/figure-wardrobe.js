@@ -68,7 +68,7 @@ export function wardrobeParts(g, c, hex) {
   const wear = new Set(Array.isArray(c.wear) ? c.wear : []);
   // A cloth part is shown when its item is worn and no armour worn on the same part hides it.
   const shown = (item, over) => wear.has(item) && !(over && wear.has(over) && (HIDES[over] ?? []).includes(item));
-  const m = g.sw + g.H * 0.004, mA = m + g.H * 0.008;   // cloth sits close, armour stands off it by its thickness
+  const m = g.sw + g.H * 0.004, mA = m + g.H * 0.005;   // cloth sits close, armour stands off it by its thickness
   const shirt = hex(c.shirt ?? '#e9dfc9'), pants = hex(c.pants ?? '#6b4a33'), shoes = hex(c.shoes ?? '#7a4e2e'), hair = hex(c.hair ?? '#5a3a24');
   const metal = hex(c.metal ?? '#b9c2cd'), trim = hex(c.trim ?? 'reward'), leather = hex(c.leather ?? '#6b4428');
   const part = (p, show) => (show ? p : { ...p, hidden: true });
@@ -88,8 +88,7 @@ export function wardrobeParts(g, c, hex) {
         upper: [
           part(piece(`sleeve${s}`, `upperArm${s}`, up, m, tone(shirt), 'cloth', f => [
             { path: f.side(-1, 0.72, 0.96, 0.55), fill: shadowOf(tone(shirt), 'cloth'), ...flat }]), shown('shirt', 'pauldrons')),
-          part(piece(`rerebrace${s}`, `upperArm${s}`, up, mA, M, 'metal', f => [...lame(f, 0.42, M), ...lame(f, 0.7, M),
-            ...(s === 'Front' ? rivets(f, [[0.55, 0.2], [0.86, 0.26]], M, rv) : [])]), wear.has('pauldrons')),
+          part(piece(`rerebrace${s}`, `upperArm${s}`, up, mA, M, 'metal', f => [...lame(f, 0.42, M), ...lame(f, 0.7, M)]), wear.has('pauldrons')),
         ],
         lower: [
           part(piece(`cuff${s}`, `forearm${s}`, fore, m, tone(shirt), 'cloth', f => [
@@ -100,8 +99,7 @@ export function wardrobeParts(g, c, hex) {
             return [...lame(f, 0.3, M), ...strap(f, 0.66, tone),
               { path: `M${r2(ex - r * 1.25)} ${r2(ey + r * 0.2)} Q${r2(ex - r * 1.1)} ${r2(ey - r * 1.1)} ${r2(ex)} ${r2(ey - r * 0.6)} L${r2(ex)} ${r2(ey + r * 0.6)} Z`, fill: shadowOf(M, 'metal'), sw: 'thin', shade: false },
               { circle: [r2(ex), r2(ey), r2(r)], fill: M, sw: 'regular', shade: false },
-              { circle: [r2(ex + r * 0.18), r2(ey - r * 0.18), r2(r * 0.55)], fill: lighten(M, 0.3), ...flat },
-              { circle: [r2(ex + r * 0.3), r2(ey - r * 0.3), r2(r * 0.2)], fill: lighten(M, 0.75), ...flat }];
+              { circle: [r2(ex + r * 0.18), r2(ey - r * 0.18), r2(r * 0.55)], fill: lighten(M, 0.14), ...flat }];
           }), wear.has('vambraces')),
         ],
         top: [part(pauldron(`pauldron${s}`, `upperArm${s}`, up, mA, M, tone(trim)), wear.has('pauldrons'))],
@@ -118,8 +116,7 @@ export function wardrobeParts(g, c, hex) {
           part(piece(`cuisse${s}`, `thigh${s}`, th, mA, M, 'metal', f => [...lame(f, 0.62, M),
             // the tassets: two plates hanging over the top of the thigh, wider than it, the upper over the lower
             { path: f.across(0.16, 0.4, -0.1), fill: M, sw: 'regular', shade: false }, ...lame(f, 0.4, M, 0.04),
-            { path: f.across(-0.06, 0.2, -0.14), fill: M, sw: 'regular', shade: false }, ...lame(f, 0.2, M, 0.04),
-            ...(s === 'Front' ? rivets(f, [[0.06, 0.12], [0.28, 0.16]], M, rv) : [])]), wear.has('cuisses')),
+            { path: f.across(-0.06, 0.2, -0.14), fill: M, sw: 'regular', shade: false }, ...lame(f, 0.2, M, 0.04)]), wear.has('cuisses')),
         ],
         shin: [
           part(piece(`legging${s}`, `shin${s}`, sh, m, P, 'cloth'), shown('trousers', 'greaves')),
@@ -133,8 +130,7 @@ export function wardrobeParts(g, c, hex) {
             return [...lame(f, 0.3, M), ...lame(f, 0.84, M, 0.04),
               { path: `M${r2(kx - r * 1.3)} ${r2(ky + r * 0.1)} Q${r2(kx - r)} ${r2(ky + r * 1.3)} ${r2(kx + r * 0.2)} ${r2(ky + r * 0.9)} L${r2(kx)} ${r2(ky)} Z`, fill: shadowOf(M, 'metal'), sw: 'thin', shade: false },
               { circle: [r2(kx), r2(ky), r2(r)], fill: M, sw: 'regular', shade: false },
-              { circle: [r2(kx + r * 0.18), r2(ky - r * 0.2), r2(r * 0.55)], fill: lighten(M, 0.3), ...flat },
-              { circle: [r2(kx + r * 0.32), r2(ky - r * 0.32), r2(r * 0.18)], fill: lighten(M, 0.75), ...flat }];
+              { circle: [r2(kx + r * 0.18), r2(ky - r * 0.2), r2(r * 0.55)], fill: lighten(M, 0.14), ...flat }];
           }), wear.has('greaves')),
         ],
         foot: [
@@ -159,8 +155,8 @@ export function wardrobeParts(g, c, hex) {
         part({ ...over('waist', m, pants, 'cloth'), shapes: [] }, shown('trousers', 'cuirass')),
         part(over('cuirass', mA, M, 'metal', f => [
           // the gorget's rolled rim at the neck, a lame at the bottom of the breastplate
-          { path: f.across(-0.04, 0.06, 0.08), fill: lighten(M, 0.3), sw: 'thin', shade: false },
-          ...lame(f, 0.58, M, 0.04), ...rivets(f, [[0.2, 0.14], [0.42, 0.1]], M, rv),
+          { path: f.across(-0.04, 0.06, 0.08), fill: lighten(M, 0.12), sw: 'thin', shade: false },
+          ...lame(f, 0.58, M, 0.04), ...rivets(f, [[0.3, 0.12]], M, rv),
           // the belt, its buckle, then the faulds hanging below it, each lame over the next
           ...strap(f, 0.7, c => c),
           { path: f.tail(0.86), fill: M, sw: 'regular', shade: false }, ...lame(f, 0.86, M, 0.04),
@@ -180,14 +176,13 @@ export function wardrobeParts(g, c, hex) {
           { path: `M${x(0.5)} ${y(0.43)} L${x(0.98)} ${y(0.43)} L${x(0.98)} ${y(0.5)} L${x(0.5)} ${y(0.52)} Z`, fill: '#000000', opacity: 0.22, ...flat },   // the brim's shadow on the face
           { path: `M${x(0.06)} ${y(0.76)} Q${x(0.0)} ${y(0.02)} ${x(0.52)} ${y(0.02)} Q${x(0.96)} ${y(0.04)} ${x(0.94)} ${y(0.38)} L${x(0.52)} ${y(0.42)} Q${x(0.43)} ${y(0.46)} ${x(0.42)} ${y(0.76)} Z`, fill: M, sw: 'regular', shade: false, bbox: [0, 0, HW, HH * 0.76] },
           { path: `M${x(0.07)} ${y(0.72)} Q${x(0.02)} ${y(0.12)} ${x(0.4)} ${y(0.05)} Q${x(0.14)} ${y(0.24)} ${x(0.2)} ${y(0.74)} Z`, fill: shadowOf(M, 'metal'), ...flat },
-          { path: `M${x(0.56)} ${y(0.07)} Q${x(0.84)} ${y(0.1)} ${x(0.88)} ${y(0.3)} Q${x(0.76)} ${y(0.16)} ${x(0.56)} ${y(0.07)} Z`, fill: lighten(M, 0.75), ...flat },
-          { path: `M${x(0.52)} ${y(0.03)} Q${x(0.24)} ${y(0.06)} ${x(0.14)} ${y(0.3)}`, fill: 'none', stroke: lighten(M, 0.4), sw: 'regular' },   // the comb's ridge
+          { path: `M${x(0.56)} ${y(0.07)} Q${x(0.84)} ${y(0.1)} ${x(0.88)} ${y(0.3)} Q${x(0.76)} ${y(0.16)} ${x(0.56)} ${y(0.07)} Z`, fill: lighten(M, 0.2), ...flat },
+          { path: `M${x(0.52)} ${y(0.03)} Q${x(0.24)} ${y(0.06)} ${x(0.14)} ${y(0.3)}`, fill: 'none', stroke: lighten(M, 0.15), sw: 'thin' },   // the comb's ridge
           // the brim, standing out over the brow, and the rolled rim round the nape
           { path: `M${x(0.5)} ${y(0.37)} L${x(0.93)} ${y(0.36)} Q${x(0.99)} ${y(0.38)} ${x(0.97)} ${y(0.42)} L${x(0.52)} ${y(0.44)} Z`, fill: M, sw: 'regular', shade: false },
           { path: `M${x(0.52)} ${y(0.41)} L${x(0.97)} ${y(0.4)} L${x(0.96)} ${y(0.42)} L${x(0.52)} ${y(0.44)} Z`, fill: shadowOf(M, 'metal'), ...flat },
-          { path: `M${x(0.06)} ${y(0.7)} L${x(0.42)} ${y(0.7)} L${x(0.42)} ${y(0.76)} L${x(0.06)} ${y(0.76)} Z`, fill: lighten(M, 0.25), sw: 'thin', shade: false },
+          { path: `M${x(0.06)} ${y(0.7)} L${x(0.42)} ${y(0.7)} L${x(0.42)} ${y(0.76)} L${x(0.06)} ${y(0.76)} Z`, fill: lighten(M, 0.1), sw: 'thin', shade: false },
           { path: `M${x(0.08)} ${y(0.68)} L${x(0.42)} ${y(0.68)}`, fill: 'none', stroke: trim, sw: 'thin' },
-          ...[[0.6, 0.3], [0.78, 0.3], [0.2, 0.62], [0.32, 0.62]].map(([a, b]) => ({ circle: [x(a), y(b), r2(rv)], fill: lighten(M, 0.5), ...flat })),
         ] }, wear.has('helmet')),
       ];
     },
@@ -208,10 +203,10 @@ function pauldron(name, parent, [joint, , w1], m, fill, trim) {
     { path: `M${p(0.08, 0.92)} Q${p(0.5, 1.02)} ${p(0.92, 0.92)} L${p(0.9, 0.99)} Q${p(0.5, 1.06)} ${p(0.1, 0.99)} Z`, fill: '#000000', opacity: 0.22, ...flatS },   // its shadow on the arm
     { path: `M${p(0.04, 0.6)} Q${p(0.5, 0.7)} ${p(0.96, 0.6)} L${p(0.94, 0.9)} Q${p(0.5, 0.98)} ${p(0.06, 0.9)} Z`, fill, sw: 'regular', shade: false },
     { path: `M${p(0.06, 0.62)} Q${p(0.5, 0.72)} ${p(0.94, 0.62)} L${p(0.94, 0.72)} Q${p(0.5, 0.82)} ${p(0.06, 0.72)} Z`, fill: shadowOf(fill, 'metal'), ...flatS },
-    { path: `M${p(0.07, 0.84)} Q${p(0.5, 0.92)} ${p(0.93, 0.84)} L${p(0.93, 0.88)} Q${p(0.5, 0.96)} ${p(0.07, 0.88)} Z`, fill: lighten(fill, 0.35), ...flatS },
+    { path: `M${p(0.07, 0.84)} Q${p(0.5, 0.92)} ${p(0.93, 0.84)} L${p(0.93, 0.88)} Q${p(0.5, 0.96)} ${p(0.07, 0.88)} Z`, fill: lighten(fill, 0.14), ...flatS },
     { path: `M${p(0.04, 0.62)} Q${p(0.0, 0.04)} ${p(0.5, 0.04)} Q${p(1.0, 0.04)} ${p(0.96, 0.62)} Q${p(0.5, 0.72)} ${p(0.04, 0.62)} Z`, fill, sw: 'regular', shade: false, bbox: [0, 0, W, H] },
     { path: `M${p(0.07, 0.6)} Q${p(0.03, 0.1)} ${p(0.36, 0.07)} Q${p(0.18, 0.3)} ${p(0.24, 0.65)} Z`, fill: shadowOf(fill, 'metal'), ...flatS },
-    { path: `M${p(0.56, 0.1)} Q${p(0.86, 0.12)} ${p(0.9, 0.42)} Q${p(0.76, 0.22)} ${p(0.56, 0.1)} Z`, fill: lighten(fill, 0.75), ...flatS },
+    { path: `M${p(0.56, 0.1)} Q${p(0.86, 0.12)} ${p(0.9, 0.42)} Q${p(0.76, 0.22)} ${p(0.56, 0.1)} Z`, fill: lighten(fill, 0.2), ...flatS },
     { path: `M${p(0.08, 0.58)} Q${p(0.5, 0.67)} ${p(0.92, 0.58)}`, fill: 'none', stroke: trim, sw: 'regular' },
   ] };
 }
@@ -226,7 +221,7 @@ function shoe(name, parent, { x, fw, fh, heel, legW }, m, fill, plates = false) 
     // metal: overlapping lames down the instep; leather: a light toe cap
     ...(plates ? [0.5, 0.64, 0.78].flatMap(f => [
       { path: `M${p(f, 0.12 + (f - 0.5) * 0.9)} Q${p(f + 0.07, 0.5)} ${p(f + 0.04, 0.8)} L${p(f + 0.07, 0.8)} Q${p(f + 0.1, 0.5)} ${p(f + 0.03, 0.14 + (f - 0.5) * 0.9)} Z`, fill: shadowOf(fill, 'metal'), ...flatS },
-      { path: `M${p(f - 0.03, 0.14 + (f - 0.5) * 0.9)} Q${p(f + 0.03, 0.5)} ${p(f, 0.8)} L${p(f + 0.03, 0.8)} Q${p(f + 0.06, 0.5)} ${p(f, 0.13 + (f - 0.5) * 0.9)} Z`, fill: lighten(fill, 0.45), ...flatS }])
+      { path: `M${p(f - 0.03, 0.14 + (f - 0.5) * 0.9)} Q${p(f + 0.03, 0.5)} ${p(f, 0.8)} L${p(f + 0.03, 0.8)} Q${p(f + 0.06, 0.5)} ${p(f, 0.13 + (f - 0.5) * 0.9)} Z`, fill: lighten(fill, 0.16), ...flatS }])
       : [{ path: `M${p(0.7, 0.42)} Q${p(0.92, 0.46)} ${p(0.95, 0.66)} Q${p(0.82, 0.54)} ${p(0.7, 0.42)} Z`, fill: lighten(fill, 0.2), ...flatS }]),
     { path: solePath(W, H), fill: darken(fill, 0.35), ...flatS },
   ] };

@@ -108,9 +108,8 @@ export function shade(f, fill, mat = 'cloth') {
   const s = [{ path: f.path, fill, sw: 'regular', shade: false, ...box },
     { path: f.side(-1, f.from, 1, mat === 'metal' ? 0.36 : mat === 'skin' ? 0.3 : 0.4), fill: shadowOf(fill, mat), ...flat }];
   if (mat === 'metal') {
-    s.push({ path: f.side(1, f.from + 0.04, 0.9, 0.26), fill: lighten(fill, 0.22), ...flat },
-      { path: f.side(1, f.from + 0.08, 0.78, 0.07, 0.14), fill: lighten(fill, 0.7), ...flat },
-      { path: f.side(-1, f.from + 0.06, 0.94, 0.05), fill: lighten(fill, 0.18), opacity: 0.8, ...flat });   // rim off the back edge
+    // one restrained highlight band down the lit side; no glints
+    s.push({ path: f.side(1, f.from + 0.06, 0.86, 0.24, 0.08), fill: lighten(fill, 0.16), ...flat });
   } else {
     s.push({ path: f.side(1, f.from + 0.06, 0.8, 0.16), fill: lighten(fill, mat === 'skin' ? 0.06 : 0.12), ...flat });
   }
@@ -122,15 +121,15 @@ export function shade(f, fill, mat = 'cloth') {
  * plate below, so each lame reads as overlapping the next.
  */
 export function lame(f, t, fill, h = 0.05) {
-  return [{ path: f.across(t, t + h), fill: shadowOf(fill, 'metal'), stroke: false, shade: false },
-    { path: f.across(t - h * 0.55, t), fill: lighten(fill, 0.35), stroke: false, shade: false }];
+  return [{ path: f.across(t, t + h * 0.7), fill: darken(fill, 0.12), stroke: false, shade: false },
+    { path: f.across(t - h * 0.4, t), fill: lighten(fill, 0.14), stroke: false, shade: false }];
 }
 
 /** Rivets: small light domes with a dark side, at [t, inset-from-front] points. */
 export function rivets(f, points, fill, r) {
   return points.flatMap(([t, inset]) => { const [x, y] = f.edge(t, 1, inset); return [
     { circle: [r2(x), r2(y), r2(r)], fill: shadowOf(fill, 'metal'), stroke: false, shade: false },
-    { circle: [r2(x - r * 0.25), r2(y - r * 0.25), r2(r * 0.6)], fill: lighten(fill, 0.6), stroke: false, shade: false }]; });
+    { circle: [r2(x - r * 0.2), r2(y - r * 0.2), r2(r * 0.55)], fill: lighten(fill, 0.2), stroke: false, shade: false }]; });
 }
 
 /** A bare foot or a shoe pointing forward in a fw x fh box: heel, instep, toe box, and an arch under the sole. */

@@ -52,7 +52,8 @@ export function sideParts(c, style) {
 
   // Heights from the ground up.
   // `bulk` (0.75-1.4) makes the build slimmer or broader: the torso, arms and legs widen, the bones stay.
-  const bulk = Number.isFinite(c.bulk) ? Math.min(1.4, Math.max(0.75, c.bulk)) : 1;
+  // The bare body is leaner than the plain figure: a slim hero the wardrobe dresses up.
+  const bulk = (Number.isFinite(c.bulk) ? Math.min(1.4, Math.max(0.75, c.bulk)) : 1) * (bare ? 0.8 : 1);
   const footH = k(0.05), shin = k(0.14), thigh = k(0.15), legW = r2(k(0.085) * bulk);
   const hip = footH + shin + thigh;
   const torsoH = k(0.29), torsoW = r2(k(0.19) * bulk);
