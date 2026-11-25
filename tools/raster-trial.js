@@ -10,7 +10,8 @@
 //       { "parts": {...}, "gear": { "<n>": { "name", "on": head|hand|offhand|back|hip, "offset"?, "rotate"? } },
 //       "gearHeadRef": "<n>", "hands"?: { "<n>": "forearmFront"|"forearmBack" } } with the grip sheet cut
 //       into <out>/grip (gripping or relaxed forearms that replace the drawn ones), and the gear sheet cut into <out>/gear (cut <gear.png> <out>/gear);
-//       each gear piece is its own slot, worn in the setup pose
+//       each gear piece is its own slot, worn in the setup pose; "variants": { "<name>": "<folder>" }
+//       adds another character's body pieces (its folder and names.json) as looks in the same slots
 //       writes <out>/<name>.json, .atlas and .png: a project the studio opens, ready for
 //       paint_weights, write_animation, check_skeleton and the exports
 //   node tools/raster-trial.js puppet <picture.png> <out-folder> <name> <bones.json> [--scale 0.5]
@@ -78,7 +79,19 @@ if (cmd === 'cut') {
     for (const g of gear) images[g.name] = g.image;
     parts = placeGear(parts, named, gear, { scale, ratio });
   }
-  const rig = rasterRig({ name, parts, images });
+  // Variants: another character cut the same way ({ "variants": { "mage": "../mage" } }, a folder with
+  // its own names.json); its body pieces become "<part>_<variant>" looks in the same slots.
+  /** @type {Record<string, Record<string, { width: number, height: number, data: Uint8Array }>>} */
+  const variants = {};
+  for (const [v, dir] of Object.entries(spec.variants ?? {})) {
+    const at = path.resolve(path.dirname(namesFile), dir);
+    const other = JSON.parse(fs.readFileSync(path.join(at, 'names.json'), 'utf8'));
+    const own = (sub, n) => decodePng(fs.readFileSync(path.join(at, sub, 'pieces', `${n}.png`)));
+    variants[v] = {};
+    for (const [n, part] of Object.entries(other.parts ?? other)) variants[v][part] = own('', n);
+    for (const [n, part] of Object.entries(other.hands ?? {})) variants[v][part] = own('grip', n);
+  }
+  const rig = rasterRig({ name, parts, images, variants });
   fs.writeFileSync(path.join(out, `${name}.json`), JSON.stringify(rig.skeleton, null, 2));
   fs.writeFileSync(path.join(out, `${name}.atlas`), rig.atlasText);
   fs.writeFileSync(path.join(out, rig.page), rig.png);

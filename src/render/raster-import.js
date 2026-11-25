@@ -265,11 +265,25 @@ export function placeGear(parts, named, gear, { scale = 0.5, ratio = 1 } = {}) {
 /**
  * Raster parts become a rig: an atlas page with every part and a skeleton whose setup pose is the
  * assembled figure.
- * @param {{ name: string, parts: Array<{ name: string, at: number[], pivot: number[], parent: string|null, size: number[], gear?: boolean, rotation?: number }>, images: Record<string, { width: number, height: number, data: Uint8Array }> }} input
+ * @param {{ name: string, variants?: Record<string, Record<string, { width: number, height: number, data: Uint8Array }>>, parts: Array<{ name: string, at: number[], pivot: number[], parent: string|null, size: number[], gear?: boolean, rotation?: number }>, images: Record<string, { width: number, height: number, data: Uint8Array }> }} input
  */
-export function rasterRig({ name, parts, images }) {
+export function rasterRig({ name, parts, images, variants = {} }) {
   if (typeof name !== 'string' || !/^[A-Za-z0-9_-]{1,64}$/.test(name)) throw new StudioError('bad-argument', 'The rig name is 1-64 letters, digits, _ or -.', { name });
-  const rig = rigFromImages({ name, parts, regions: parts.map(p => p.name), images: parts.map(p => images[p.name]) });
+  // Variants: other drawings of a body part (another character's sleeve, torso, boots or head) that
+  // go in the same slot as "<part>_<variant>", so any mix of them dresses the one skeleton.
+  const looks = Object.entries(variants).flatMap(([v, byPart]) => Object.entries(byPart).map(([part, image]) => ({ v, part, image })));
+  for (const l of looks) {
+    if (!/^[A-Za-z0-9-]{1,32}$/.test(l.v)) throw new StudioError('bad-argument', `Variant "${l.v}" is 1-32 letters, digits or -.`, { variant: l.v });
+    if (!parts.some(p => p.name === l.part && !p.gear)) throw new StudioError('bad-argument', `Variant "${l.v}": "${l.part}" is not a body part of this rig.`, { variant: l.v, part: l.part });
+  }
+  const withStates = parts.map(p => {
+    const mine = looks.filter(l => l.part === p.name);
+    return mine.length ? { ...p, states: Object.fromEntries(mine.map(l => [l.v, true])) } : p;
+  });
+  const regions = [...parts.map(p => p.name), ...looks.map(l => `${l.part}_${l.v}`)];
+  const rig = rigFromImages({ name, parts: withStates, regions, images: [...parts.map(p => images[p.name]), ...looks.map(l => l.image)] });
+  const table = rig.skeleton.skins[0].attachments;
+  for (const l of looks) fitVariant(table[l.part][l.part], table[l.part][`${l.part}_${l.v}`], images[l.part], l.image, l.part);
   const gear = parts.filter(p => p.gear);
   if (!gear.length) return rig;
   // Gear stays in the default skin, worn in the setup pose: each piece is its own slot, so a game
@@ -279,6 +293,21 @@ export function rasterRig({ name, parts, images }) {
   const base = rig.skeleton.skins[0].attachments;
   for (const p of gear) if (p.rotation) base[p.name][p.name].rotation = p.rotation;
   return rig;
+}
+
+/**
+ * Size and place a variant drawing on its base attachment: scaled evenly to the base's height, its
+ * joint end on the base's (the neck at the bottom of a head, the top end of every other part).
+ */
+function fitVariant(base, att, baseImg, img, part) {
+  const k = base.height / img.height, kb = base.width / baseImg.width;
+  const fy = part === 'head' ? 0.97 : part === 'torso' ? 0.1 : 0.2;
+  const b = rowRun(baseImg, fy), v = rowRun(img, fy);
+  const left = base.x - base.width / 2 + b.x * kb - v.x * k;
+  att.width = +(img.width * k).toFixed(2);
+  att.height = base.height;
+  att.x = +(left + att.width / 2).toFixed(2);
+  att.y = base.y;
 }
 
 /** The opaque bounds of an image: [x, y, width, height], or null when it is all clear. */

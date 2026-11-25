@@ -161,3 +161,31 @@ test('gear goes on the bone that carries it, in the hand at the grip, in its own
   assert.ok(up.indexOf('shield') > up.indexOf('torso') && up.indexOf('shield') > up.indexOf('head'), 'a raised shield is over the body');
   assert.ok(up.indexOf('shield') < up.indexOf('forearmFront'), 'and under the near arm');
 });
+
+test('another character\'s pieces become looks in the same slots, fitted to the base part', () => {
+  /** A w x h picture, opaque only in columns [x0, x1). */
+  const strip = (w, h, x0 = 0, x1 = w) => {
+    const data = new Uint8Array(w * h * 4);
+    for (let y = 0; y < h; y++) for (let x = x0; x < x1; x++) data.set([90, 90, 90, 255], (y * w + x) * 4);
+    return { width: w, height: h, data };
+  };
+  const sizes = { head: [80, 90], torso: [90, 160], upperArmFront: [30, 90], forearmFront: [28, 90], upperArmBack: [30, 90],
+    forearmBack: [28, 90], thighFront: [40, 110], shinFront: [36, 110], thighBack: [40, 110], shinBack: [36, 110] };
+  const images = Object.fromEntries(Object.entries(sizes).map(([k, [w, h]]) => [k, strip(w, h)]));
+  const parts = assembleSideBiped(Object.fromEntries(Object.entries(images).map(([k, image]) => [k, { image }])), { scale: 1 });
+  // The mage's torso is drawn twice as big with empty room on its left; its sleeve is wider.
+  const variants = { mage: { torso: strip(200, 320, 20, 200), upperArmFront: strip(40, 90) } };
+  const rig = rasterRig({ name: 'kit', parts, images, variants });
+  const table = rig.skeleton.skins[0].attachments;
+  assert.deepEqual(Object.keys(table.torso).sort(), ['torso', 'torso_mage']);
+  assert.equal(rig.skeleton.slots.find(s => s.name === 'torso').attachment, 'torso', 'the base look is worn');
+  const base = table.torso.torso, look = table.torso.torso_mage;
+  assert.equal(look.height, base.height, 'scaled to the base height');
+  assert.equal(look.width, 100, 'scaled evenly: 200 x 320 to 160 high is 100 wide');
+  const leftOf = a => a.x - a.width / 2;
+  assert.ok(Math.abs(leftOf(look) + 10 - leftOf(base)) < 0.5, 'its drawn collar starts where the base collar does');
+  assert.equal(table.upperArmFront.upperArmFront_mage.width, 40);
+  assert.ok(rig.atlasText.includes('torso_mage'), 'the look is packed on the page');
+  assert.throws(() => rasterRig({ name: 'kit', parts, images, variants: { mage: { tail: strip(4, 4) } } }), /not a body part/);
+  assert.throws(() => rasterRig({ name: 'kit', parts, images, variants: { 'a b': { torso: strip(4, 4) } } }), /Variant/);
+});
