@@ -63,3 +63,18 @@ test('hair comes in several shapes, all on the head\'s box and under the helmet'
   assert.ok(figure(['hair', 'helmet'], { hairStyle: 'long' }).hair.hidden, 'the helmet hides even long hair');
   assert.ok(figure(['hair', 'trousers', 'boots']).bootShaftFront && !figure(['boots']).bootShaftFront.hidden, 'boots come up the shin');
 });
+
+test('the bare body is shaped, shaded from one light, and armour has plates', async () => {
+  const { PROFILES, taper } = await import('../src/art/figure-form.js');
+  for (const n of Object.keys(PROFILES)) assert.ok(taper(n) >= 1.3, `${n} tapers (${taper(n).toFixed(2)})`);
+  const calf = PROFILES.shin.reduce((a, s) => (s[2] > a[2] ? s : a));
+  assert.ok(calf[0] > 0 && calf[0] < 0.5 && calf[2] > calf[1], 'the calf bulges at the back of the upper shin');
+  const t = PROFILES.torso, waist = t.find(s => s[0] > 0.5 && s[0] < 0.8), chest = t.find(s => s[0] > 0.3 && s[0] < 0.5);
+  assert.ok(chest[1] > waist[1] * 1.15, 'the chest stands in front of the waist');
+  const f = figure(all), fills = p => new Set(p.shapes.map(s => s.fill).filter(c => c && c !== 'none'));
+  for (const n of ['thighFront', 'shinFront', 'upperArmFront', 'body']) assert.ok(fills(f[n]).size >= 3, `${n} has light, base and shadow`);
+  for (const n of ['cuirass', 'rerebraceFront', 'vambraceFront', 'cuisseFront', 'greaveFront', 'pauldronFront', 'helmet', 'sabatonFront']) {
+    assert.ok(fills(f[n]).size >= 4, `${n} has base, shadow, light and a specular`);
+  }
+  assert.ok(f.body.box[1] === figure([]).body.box[1], 'the torso keeps its height');
+});
