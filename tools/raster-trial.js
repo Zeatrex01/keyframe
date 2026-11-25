@@ -8,6 +8,7 @@
 //   node tools/raster-trial.js rig <out-folder> <name> <names.json> [--scale 0.5]
 //       names.json maps piece numbers to side-view part names ({ "1": "head", "2": "torso", ... }), or
 //       { "parts": {...}, "gear": { "<n>": { "name", "on": head|hand|offhand|back|hip, "offset"?, "rotate"? } },
+//       (or worn over a body part: { "name", "on": "<part>", "at": [x, y] corner from the part's corner, "ratio"? }),
 //       "gearHeadRef": "<n>", "hands"?: { "<n>": "forearmFront"|"forearmBack" } } with the grip sheet cut
 //       into <out>/grip (gripping or relaxed forearms that replace the drawn ones), and the gear sheet cut into <out>/gear (cut <gear.png> <out>/gear);
 //       each gear piece is its own slot, worn in the setup pose; "variants": { "<name>": "<folder>" }

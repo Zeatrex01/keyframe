@@ -189,3 +189,29 @@ test('another character\'s pieces become looks in the same slots, fitted to the 
   assert.throws(() => rasterRig({ name: 'kit', parts, images, variants: { mage: { tail: strip(4, 4) } } }), /not a body part/);
   assert.throws(() => rasterRig({ name: 'kit', parts, images, variants: { 'a b': { torso: strip(4, 4) } } }), /Variant/);
 });
+
+test('a worn piece rides its body part, drawn right over it, placed by its corner on the overlay sheet', () => {
+  const solid = (w, h) => {
+    const data = new Uint8Array(w * h * 4);
+    for (let i = 0; i < w * h; i++) data.set([90, 90, 90, 255], i * 4);
+    return { width: w, height: h, data };
+  };
+  const sizes = { head: [80, 90], torso: [90, 160], upperArmFront: [30, 90], forearmFront: [28, 90], upperArmBack: [30, 90],
+    forearmBack: [28, 90], thighFront: [40, 110], shinFront: [36, 110], thighBack: [40, 110], shinBack: [36, 110] };
+  const named = Object.fromEntries(Object.entries(sizes).map(([k, [w, h]]) => [k, { image: solid(w, h) }]));
+  const body = assembleSideBiped(named, { scale: 1 });
+  // A pauldron 50 wide reaching 10 past the arm's left edge and 6 above its top.
+  const parts = placeGear(body, named, [{ name: 'pauldron', on: 'upperArmFront', at: [-10, -6], image: solid(50, 40) },
+    { name: 'greave', on: 'shinFront', at: [0, 20], image: solid(36, 90) }, { name: 'helm', on: 'head', at: [-5, -5], image: solid(90, 60) }], { scale: 1 });
+  const by = Object.fromEntries(parts.map(p => [p.name, p])), arm = by.upperArmFront, pd = by.pauldron;
+  assert.equal(pd.parent, 'upperArmFront', 'it rides the arm bone');
+  assert.deepEqual(pd.pivot, arm.pivot);
+  assert.equal(pd.at[0] - 25, arm.at[0] - 15 - 10, 'its left edge reaches past the arm');
+  assert.equal(pd.at[1] + 20, arm.at[1] + 45 + 6, 'its top sits above the arm top');
+  const order = parts.map(p => p.name);
+  assert.equal(order.indexOf('pauldron'), order.indexOf('upperArmFront') + 1, 'drawn right over its part');
+  assert.equal(order.indexOf('greave'), order.indexOf('shinFront') + 1);
+  assert.equal(order.indexOf('helm'), order.indexOf('torso') + 1, 'a helmet goes over the collar the head tucks under');
+  assert.equal(by.helm.parent, 'head');
+  assert.throws(() => placeGear(body, named, [{ name: 'torso', on: 'thighFront', at: [0, 0], image: solid(4, 4) }]), /name of a body part/);
+});

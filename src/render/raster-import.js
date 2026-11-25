@@ -215,17 +215,27 @@ export const GEAR_KINDS = Object.freeze(Object.keys(GEAR_ON));
  *   back    the gear's box centre on the upper back of the torso; hip: on the front of the hip
  * `offset` ([dx, dy] in body-sheet pixels, y down) and `rotate` (degrees, counter-clockwise) fine-tune
  * each piece after looking at it; `ratio` is gear-sheet pixels to body-sheet pixels.
- * @param {Array<{ name: string, at: number[], pivot: number[], parent: string|null, size: number[] }>} parts  from assembleSideBiped
+ * A body part's name in `on` with `at` wears the piece over that part (see worn).
+ * @param {Array<{ name: string, at: number[], pivot: number[], parent: string|null, size: number[], gear?: boolean }>} parts  from assembleSideBiped
  * @param {Record<string, { image: { width: number, height: number, data: Uint8Array } }>} named  the body pieces
- * @param {Array<{ name: string, on: string, image: { width: number, height: number, data: Uint8Array }, offset?: number[], rotate?: number, grip?: number, over?: boolean, front?: boolean }>} gear
+ * @param {Array<{ name: string, on: string, image: { width: number, height: number, data: Uint8Array }, offset?: number[], rotate?: number, grip?: number, over?: boolean, front?: boolean, at?: number[], ratio?: number }>} gear
  * @param {{ scale?: number, ratio?: number }} [options]
  */
 export function placeGear(parts, named, gear, { scale = 0.5, ratio = 1 } = {}) {
   const byName = new Map(parts.map(p => [p.name, p]));
   const out = [...parts];
   for (const g of gear) {
+    const body = byName.get(g.on);
+    if (body && !body.gear && g.at) {
+      if (byName.has(g.name)) throw new StudioError('bad-argument', `Gear "${g.name}" has the name of a body part.`, { gear: g.name });
+      const piece = worn(g, body, scale, g.ratio ?? ratio);
+      // The head is drawn under the collar; what is worn on it goes over the collar, like a hat.
+      out.splice(out.indexOf(byName.get(body.name === 'head' ? GEAR_ON.head.drawAfter : body.name)) + 1, 0, piece);
+      byName.set(g.name, piece);
+      continue;
+    }
     const on = GEAR_ON[g.on];
-    if (!on) throw new StudioError('bad-argument', `Gear "${g.name}": "on" is one of ${GEAR_KINDS.join(', ')}.`, { gear: g.name });
+    if (!on) throw new StudioError('bad-argument', `Gear "${g.name}": "on" is one of ${GEAR_KINDS.join(', ')}, or a body part with "at".`, { gear: g.name });
     if (byName.has(g.name)) throw new StudioError('bad-argument', `Gear "${g.name}" has the name of a body part.`, { gear: g.name });
     const k = scale * ratio, w = g.image.width * k, h = g.image.height * k;
     const [dx, dy] = g.offset ?? [0, 0], off = [dx * scale, -dy * scale];
@@ -308,6 +318,18 @@ function fitVariant(base, att, baseImg, img, part) {
   att.height = base.height;
   att.x = +(left + att.width / 2).toFixed(2);
   att.y = base.y;
+}
+
+/**
+ * A worn piece (armour or clothing over one body part): drawn on an overlay sheet laid out like the
+ * body sheet, so `at` is its top-left corner from the body piece's top-left corner, in gear-sheet
+ * pixels. It rides the part's bone and is drawn right over it; it may reach past the part's outline.
+ */
+function worn(g, body, scale, ratio) {
+  const k = scale * ratio, w = g.image.width * k, h = g.image.height * k;
+  const left = body.at[0] - body.size[0] / 2, top = body.at[1] + body.size[1] / 2;
+  const centre = [left + g.at[0] * k + w / 2, top - g.at[1] * k - h / 2];
+  return { name: g.name, at: centre, pivot: [...body.pivot], parent: body.name, size: [w, h], rotation: 0, gear: true };
 }
 
 /** The opaque bounds of an image: [x, y, width, height], or null when it is all clear. */
