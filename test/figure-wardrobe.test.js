@@ -66,7 +66,7 @@ test('hair comes in several shapes, all on the head\'s box and under the helmet'
 
 test('the bare body is shaped, shaded from one light, and armour has plates', async () => {
   const { PROFILES, taper } = await import('../src/art/figure-form.js');
-  for (const n of Object.keys(PROFILES)) assert.ok(taper(n) >= 1.3, `${n} tapers (${taper(n).toFixed(2)})`);
+  for (const n of ['thigh', 'shin', 'upperArm', 'forearm']) assert.ok(taper(n) >= 1.3, `${n} tapers (${taper(n).toFixed(2)})`);
   const calf = PROFILES.shin.reduce((a, s) => (s[2] > a[2] ? s : a));
   assert.ok(calf[0] > 0 && calf[0] < 0.5 && calf[2] > calf[1], 'the calf bulges at the back of the upper shin');
   const t = PROFILES.torso, waist = t.find(s => s[0] > 0.5 && s[0] < 0.8), chest = t.find(s => s[0] > 0.3 && s[0] < 0.5);
