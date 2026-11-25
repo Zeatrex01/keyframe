@@ -57,7 +57,8 @@ export function sideParts(c, style) {
   const hip = footH + shin + thigh;
   const torsoH = k(0.29), torsoW = r2(k(0.19) * bulk);
   const torsoBottom = hip - legW * 0.5, torsoTop = torsoBottom + torsoH;
-  const headH = k(0.3), headW = k(0.28), headY = torsoTop + headH * 0.42;
+  // The bare body's head is a little smaller, so the body reads as a hero rather than a toy.
+  const headH = k(bare ? 0.245 : 0.3), headW = k(bare ? 0.23 : 0.28), headY = torsoTop + headH * 0.42;
   const armW = r2(k(0.07) * bulk), upperArm = k(0.13), forearm = k(0.12), handD = k(0.065);
   // The bare body hangs its arms a little behind the middle, so the chest line shows in front of them.
   const shoulder = [bare ? -k(0.012) : k(0.0), torsoTop - armW * 0.7];

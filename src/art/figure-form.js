@@ -19,7 +19,7 @@ export const PROFILES = Object.freeze({
   upperArm: [[0, 0.55, 0.55], [0.3, 0.5, 0.52], [0.75, 0.4, 0.4], [1, 0.38, 0.37]],
   forearm: [[0, 0.43, 0.45], [0.24, 0.48, 0.46], [0.85, 0.31, 0.3], [1, 0.31, 0.31]],
   // The torso, top (shoulders) to bottom (hips): rib cage tipped back, a waist, the pelvis.
-  torso: [[0, 0.3, 0.44], [0.2, 0.46, 0.5], [0.42, 0.52, 0.45], [0.66, 0.41, 0.36], [0.86, 0.45, 0.47], [1, 0.44, 0.44]],
+  torso: [[0, 0.3, 0.44], [0.2, 0.44, 0.5], [0.42, 0.47, 0.46], [0.66, 0.4, 0.37], [0.86, 0.45, 0.47], [1, 0.44, 0.44]],
 });
 
 /** The width ratio, widest to narrowest, of a profile: the taper the eye reads as a shaped limb. */
@@ -96,7 +96,7 @@ export function formPart(name, parent, limb, grow, shapes) {
 
 /** Shadow colours shift hue: skin and leather warmer, metal cooler, cloth a little cool. */
 export const shadowOf = (c, mat) => mat === 'metal' ? mix(darken(c, 0.24), '#24365e', 0.2)
-  : mat === 'skin' ? mix(darken(c, 0.14), '#9c3c40', 0.14) : mix(darken(c, 0.2), '#2e2950', 0.1);
+  : mat === 'skin' ? mix(darken(c, 0.09), '#9c3c40', 0.08) : mix(darken(c, 0.2), '#2e2950', 0.1);
 
 /**
  * The fill of a form, lit from the upper front: base, a cel shadow down the back, a light down the
@@ -106,13 +106,13 @@ export function shade(f, fill, mat = 'cloth') {
   const box = { bbox: [0, 0, f.W, f.H] }, flat = { stroke: false, shade: false };
   /** @type {any[]} */
   const s = [{ path: f.path, fill, sw: 'regular', shade: false, ...box },
-    { path: f.side(-1, f.from, 1, mat === 'metal' ? 0.36 : 0.4), fill: shadowOf(fill, mat), ...flat }];
+    { path: f.side(-1, f.from, 1, mat === 'metal' ? 0.36 : mat === 'skin' ? 0.3 : 0.4), fill: shadowOf(fill, mat), ...flat }];
   if (mat === 'metal') {
     s.push({ path: f.side(1, f.from + 0.04, 0.9, 0.26), fill: lighten(fill, 0.22), ...flat },
       { path: f.side(1, f.from + 0.08, 0.78, 0.07, 0.14), fill: lighten(fill, 0.7), ...flat },
       { path: f.side(-1, f.from + 0.06, 0.94, 0.05), fill: lighten(fill, 0.18), opacity: 0.8, ...flat });   // rim off the back edge
   } else {
-    s.push({ path: f.side(1, f.from + 0.06, 0.8, 0.16), fill: lighten(fill, mat === 'skin' ? 0.1 : 0.12), ...flat });
+    s.push({ path: f.side(1, f.from + 0.06, 0.8, 0.16), fill: lighten(fill, mat === 'skin' ? 0.06 : 0.12), ...flat });
   }
   return s;
 }
