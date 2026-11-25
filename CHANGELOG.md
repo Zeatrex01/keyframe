@@ -5,6 +5,13 @@ All notable changes to this project. The format follows
 
 ## Unreleased
 
+### Added
+
+- Animation events: a clip can fire named moments (a hit's contact frame, a footstep) through
+  `events` keys; `write_animation` defines every fired event in the delivery (with defaults given
+  in its new `events` argument, the base's own definitions winning). Events reach Godot (the
+  rig's `keyframe_event` signal), the web player (`on('event')`, with the defaults) and Spine JSON.
+
 ## 0.0.1-beta - 2026-11-24
 
 The first public release: an open-source, AI-assisted 2D skeletal animation studio. You describe

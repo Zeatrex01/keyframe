@@ -73,8 +73,9 @@ export function atlasBeside(jsonAbs) {
  * @param {object} options.animation native Spine 4.2 animation JSON
  * @param {boolean} [options.replace] @param {number} [options.fps] @param {boolean} [options.holdFromStart]
  * @param {Array<string|object>} [options.plant]  feet that stay where they stand (deliver/plant.js)
+ * @param {object} [options.events]  event definitions with their defaults (deliver/events.js)
  */
-export async function prepareDelivery({ projectDir, from, into, name, animation, replace = false, fps, holdFromStart = true, plant }) {
+export async function prepareDelivery({ projectDir, from, into, name, animation, replace = false, fps, holdFromStart = true, plant, events }) {
   const dir = () => projectDir;
   // With no base in the folder, its deliveries are what there is to write onto (below).
   const opened = openSkeleton(dir, from, { findSkeletons: d => { const bases = findSkeletons(d); return bases.length ? bases : findSkeletons(d, { includeDeliveries: true }); } });
@@ -86,7 +87,7 @@ export async function prepareDelivery({ projectDir, from, into, name, animation,
     const bytes = readBytes(opened.abs);
     const source = structuredClone(base);
     delete source[DELIVERY_MARKER];
-    const { skeleton, report } = await composeDelivery({ base: source, previous: base, name, animation, replace, fps, holdFromStart, plant,
+    const { skeleton, report } = await composeDelivery({ base: source, previous: base, name, animation, replace, fps, holdFromStart, plant, events,
       deliveryInfo: { ...base[DELIVERY_MARKER] } });
     return {
       projectDir, base: null,
@@ -119,7 +120,7 @@ export async function prepareDelivery({ projectDir, from, into, name, animation,
         { into: intoRel });
     }
   }
-  const { skeleton, report } = await composeDelivery({ base, previous, name, animation, replace, fps, holdFromStart, plant,
+  const { skeleton, report } = await composeDelivery({ base, previous, name, animation, replace, fps, holdFromStart, plant, events,
     deliveryInfo: { base: path.basename(opened.abs) } });
   return {
     projectDir, base: { rel: opened.rel, abs: opened.abs, hash: hash(baseBytes) },
