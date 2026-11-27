@@ -7,6 +7,19 @@ All notable changes to this project. The format follows
 
 ### Added
 
+- Aseprite import: `draw_rig` with `aseprite: { file }` builds a rig from an `.aseprite` or `.ase`
+  file in the project, read with the standard library from the published file format (RGBA,
+  grayscale and indexed sprites, linked cels, groups, both palette chunks). Each visible layer
+  becomes a part drawn pixel for pixel (one rig unit is one pixel); a layer whose cels change
+  becomes a flipbook of its distinct cels; every tag becomes a clip that plays its frames forward,
+  reverse or ping-pong at the file's own frame durations, hiding a layer where it has no cel.
+  Layer and cel opacity and the multiply, screen and addition blends are kept; hidden, reference
+  and tilemap layers are left out and listed. `layers` places bones on layers (pivot, parent,
+  physics) so pixel parts can be animated with bones too. Importing again keeps the clips
+  written since. The source file is only read.
+- Pixel-sharp display: an atlas page whose filter magnifies with `Nearest` is drawn without
+  smoothing wherever it is blown up, on the stage, in the standalone player, in rendered frames
+  and in Godot (`texture_filter` nearest), as the runtimes draw it. Imported pixel art uses it.
 - Pixel art: `export_art` with `pixel` writes the parts, the sprite sheet and clips as pixel art
   into `<name>-export/pixel/`: every pixel one colour of a palette (found from the drawing, 16
   colours by default, or given), fully opaque or clear, no anti-aliasing; a pixel takes the colour

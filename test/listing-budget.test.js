@@ -19,7 +19,9 @@ import { compactSchema } from '../src/mcp/describe.js';
 // its library sprite, with the rest of its settings in `tune`.
 // 2026-11-27: raised to 30,700 for export_art's `pixel` (pixel-art parts, sheets and clips), one
 // object whose fields the description explains.
-const BUDGET_BYTES = 30700;
+// 2026-11-27: raised to 30,850 for draw_rig's `aseprite` (a rig from an Aseprite file), one
+// object whose fields the description explains.
+const BUDGET_BYTES = 30850;
 const SUMMARY_MAX = 220;      // one or two sentences
 
 test('the compact listing of the real tool set stays under budget', async () => {

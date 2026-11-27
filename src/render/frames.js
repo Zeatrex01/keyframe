@@ -145,12 +145,12 @@ export async function renderFrames({ json, atlasText, pages, animation, times, w
   const cx = box.x + box.width / 2, cy = box.y + box.height / 2;
 
   const textures = new Map();
-  const textureFor = (page, pma) => {
-    const key = `${page}|${pma}`;
+  const textureFor = (page, pma, nearest) => {
+    const key = `${page}|${pma}|${nearest}`;
     if (!textures.has(key)) {
       const image = pageOf(page);
       if (!image) throw new StudioError('missing-page', `The atlas page "${page}" was not provided.`, { page });
-      textures.set(key, prepareTexture(image, pma));
+      textures.set(key, prepareTexture(image, pma, nearest));
     }
     return textures.get(key);
   };
@@ -163,7 +163,7 @@ export async function renderFrames({ json, atlasText, pages, animation, times, w
         positions[i] = W / 2 + (d.positions[i] - cx) * scale;
         positions[i + 1] = H / 2 - (d.positions[i + 1] - cy) * scale; // Spine is y-up, images are y-down
       }
-      drawTriangles(canvas, { positions, uvs: d.uvs, indices: d.indices, texture: textureFor(d.page, d.pma),
+      drawTriangles(canvas, { positions, uvs: d.uvs, indices: d.indices, texture: textureFor(d.page, d.pma, d.nearest),
         light: d.light, dark: d.dark, blend: d.blend ?? BLEND.normal });
     }
     return { time: times[index], image: toImage(canvas, supersample, background) };

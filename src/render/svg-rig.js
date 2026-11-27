@@ -144,10 +144,11 @@ export function packImages(images) {
 
 /**
  * Build a rig from parts.
- * @param {{ name: string, parts: any[], resolution?: number }} input  resolution: atlas pixels per rig unit (default 2)
+ * @param {{ name: string, parts: any[], resolution?: number, filter?: 'linear'|'nearest' }} input  resolution: atlas pixels
+ *   per rig unit (default 2); filter: how the page is magnified, nearest for pixel art (default linear)
  * @returns {{ skeleton: object, atlasText: string, png: Uint8Array, page: string, document: object, skipped: string[] }}
  */
-export function buildSvgRig({ name, parts, resolution = 2 }) {
+export function buildSvgRig({ name, parts, resolution = 2, filter = 'linear' }) {
   if (typeof name !== 'string' || !/^[A-Za-z0-9_-]{1,64}$/.test(name)) throw new StudioError('bad-argument', 'The rig name is 1-64 letters, digits, _ or -.', { name });
   const res = Math.max(0.25, Math.min(8, Number(resolution) || 2));
   const clean = validateParts(parts);
@@ -167,7 +168,8 @@ export function buildSvgRig({ name, parts, resolution = 2 }) {
     for (let y = 0; y < img.height; y++) data.set(img.data.subarray(y * img.width * 4, (y + 1) * img.width * 4), ((oy + y) * width + ox) * 4);
   });
   const page = `${name}.png`;
-  let atlasText = `${page}\nsize:${width},${height}\nfilter:Linear,Linear\npma:false\n`;
+  const nearest = filter === 'nearest';
+  let atlasText = `${page}\nsize:${width},${height}\nfilter:${nearest ? 'Nearest,Nearest' : 'Linear,Linear'}\npma:false\n`;
   regions.forEach((r, i) => { atlasText += `${r.region}\nbounds:${at[i][0]},${at[i][1]},${images[i].width},${images[i].height}\n`; });
 
   // Bones parents first; slots keep the drawing order. A part that swings on its own points its
@@ -210,6 +212,6 @@ export function buildSvgRig({ name, parts, resolution = 2 }) {
     ...(physicsList.length ? { physics: physicsList } : {}),
     animations: {},
   };
-  const document = { format: PARTS_FORMAT, version: 1, name, resolution: res, parts: clean.map(({ parent, ...p }) => (parent ? { ...p, parent } : p)) };
+  const document = { format: PARTS_FORMAT, version: 1, name, resolution: res, ...(nearest ? { filter: 'nearest' } : {}), parts: clean.map(({ parent, ...p }) => (parent ? { ...p, parent } : p)) };
   return { skeleton, atlasText, png: encodePng({ width, height, data }), page, document, skipped };
 }

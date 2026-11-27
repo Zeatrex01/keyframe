@@ -4,7 +4,8 @@
 // Each triangle is drawn as the affine map of its texture triangle, clipped to itself (a
 // region's quad is one parallelogram, drawn in one go, so no seam crosses it). Clipping attachments clip with a path.
 // Tint multiplies a cached copy of the page; alpha is the context's global alpha; blend modes
-// map to composite operations.
+// map to composite operations. A page whose atlas filter magnifies with Nearest (pixel art) is
+// drawn without smoothing wherever it is blown up, as the runtimes draw it.
 //
 // Pure and isomorphic: the caller passes the context and the decoded page images.
 
@@ -50,8 +51,8 @@ export function createCanvasRenderer({ makeCanvas }) {
   }
 
   // Draw the image under an affine map, clipped to a polygon grown by `extra` pixels so
-  // neighbouring pieces leave no seam.
-  function drawPiece(ctx, image, m, xs, ys, extra) {
+  // neighbouring pieces leave no seam. `nearest`: no smoothing where a texel covers a pixel or more.
+  function drawPiece(ctx, image, m, xs, ys, extra, nearest = false) {
     const n = xs.length;
     let cx = 0, cy = 0;
     for (let i = 0; i < n; i++) { cx += xs[i] / n; cy += ys[i] / n; }
@@ -65,6 +66,7 @@ export function createCanvasRenderer({ makeCanvas }) {
     ctx.closePath();
     ctx.clip();
     ctx.transform(m[0], m[1], m[2], m[3], m[4], m[5]);
+    ctx.imageSmoothingEnabled = !(nearest && Math.abs(m[0] * m[3] - m[1] * m[2]) >= 1);
     ctx.drawImage(image, 0, 0);
     ctx.restore();
   }
@@ -105,7 +107,7 @@ export function createCanvasRenderer({ makeCanvas }) {
           // Around the centre, so the clip is the quad's outline whatever the vertex order.
           const mx = (X(0) + X(1) + X(2) + X(3)) / 4, my = (Y(0) + Y(1) + Y(2) + Y(3)) / 4;
           const order = [0, 1, 2, 3].sort((p, q) => Math.atan2(Y(p) - my, X(p) - mx) - Math.atan2(Y(q) - my, X(q) - mx));
-          drawPiece(ctx, source, m, order.map(X), order.map(Y), 0.35);
+          drawPiece(ctx, source, m, order.map(X), order.map(Y), 0.35, d.nearest);
           ctx.restore();
           continue;
         }
@@ -113,7 +115,7 @@ export function createCanvasRenderer({ makeCanvas }) {
       for (let t = 0; t < I.length; t += 3) {
         const i0 = I[t], i1 = I[t + 1], i2 = I[t + 2];
         const m = affine(X(i0), Y(i0), X(i1), Y(i1), X(i2), Y(i2), Uu(i0), Vv(i0), Uu(i1), Vv(i1), Uu(i2), Vv(i2));
-        if (m) drawPiece(ctx, source, m, [X(i0), X(i1), X(i2)], [Y(i0), Y(i1), Y(i2)], 0.35);
+        if (m) drawPiece(ctx, source, m, [X(i0), X(i1), X(i2)], [Y(i0), Y(i1), Y(i2)], 0.35, d.nearest);
       }
       ctx.restore();
     }

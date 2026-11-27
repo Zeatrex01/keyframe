@@ -78,7 +78,7 @@ export function atlasRegions(atlas) {
     const r = byName.get(path);
     if (!r) return null;
     const p = pageOf.get(r.page);
-    return { ...r, pageWidth: p.width, pageHeight: p.height, pma: p.pma };
+    return { ...r, pageWidth: p.width, pageHeight: p.height, pma: p.pma, nearest: p.magFilter === 'Nearest' };
   };
 }
 

@@ -42,12 +42,15 @@ static func build(data: Dictionary, base_dir: String) -> Node2D:
 	# Pages.
 	var textures := {}
 	var pma := {}
+	var nearest := {}
 	for page in data.get("pages", []):
 		var texture = ResourceLoader.load(base_dir.path_join(page.name))
 		if texture == null:
 			push_warning("Keyframe: the atlas page %s is missing beside the scene." % page.name)
 		textures[page.name] = texture
 		pma[page.name] = bool(page.get("pma", false))
+		# Pixel art: the atlas magnifies without smoothing.
+		nearest[page.name] = String(page.get("filter", "")) == "nearest"
 	# A flipbook's texture track names its page; the tracks find the loaded texture here.
 	data["_textures"] = textures
 
@@ -74,6 +77,8 @@ static func build(data: Dictionary, base_dir: String) -> Node2D:
 			var polygon := Polygon2D.new()
 			polygon.name = _node_name(att.name)
 			polygon.texture = textures.get(att.page)
+			if nearest.get(att.page, false):
+				polygon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 			polygon.polygon = _points(att.polygon)
 			polygon.uv = _points(att.uv)
 			polygon.color = _color(att.color)

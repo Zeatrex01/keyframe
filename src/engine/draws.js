@@ -47,7 +47,7 @@ export function meshUVs(regionUVsIn, r) {
 /**
  * @param {import('./pose.js').Pose} pose   posed and with updateWorld() done
  * @param {(path: string) => object|null} regionOf  texture source (src/engine/atlas.js)
- * @returns {{ draws: Array<{ slot: string, positions: Float64Array, uvs: Float64Array, indices: number[], page: string, pma: boolean,
+ * @returns {{ draws: Array<{ slot: string, positions: Float64Array, uvs: Float64Array, indices: number[], page: string, pma: boolean, nearest: boolean,
  *   blend: number, light: {r:number,g:number,b:number,a:number}, dark: {r:number,g:number,b:number}|null, clip: Float64Array|null }>,
  *   missing: string[] }}
  */
@@ -74,7 +74,7 @@ export function collectDraws(pose, regionOf) {
         const positions = att.type === 'region' ? regionVertices(bone, att, region) : meshVertices(pose, slot, att);
         const uvs = att.type === 'region' ? regionUVs(region) : meshUVs(att.uvs, region);
         draws.push({ slot: slot.data.name, positions, uvs, indices: att.type === 'region' ? QUAD : Array.from(att.triangles),
-          page: region.page, pma: !!region.pma, blend: slot.data.blend, light,
+          page: region.page, pma: !!region.pma, nearest: !!region.nearest, blend: slot.data.blend, light,
           dark: slot.dark ? { r: slot.dark.r, g: slot.dark.g, b: slot.dark.b } : null, clip });
       }
     }

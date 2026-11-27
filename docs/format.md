@@ -63,6 +63,11 @@ units with y up; `size` defaults to the SVG's viewBox. `resolution` is atlas pix
 The SVG subset it draws: rect, circle, ellipse, line, polyline, polygon, path, groups with
 transforms, solid and gradient fills, strokes, opacity. Anything else is named in `skipped`.
 
+A drawing imported from Aseprite (`draw_rig` `aseprite`) has `"filter": "nearest"`: its atlas page
+says `filter:Nearest,Nearest` and is magnified without smoothing. Each part's SVG is the layer's
+pixels as one path per colour, every corner on a whole unit, and its `source` names the file and
+layer it came from: `{ "aseprite": "art/hero.aseprite", "layer": "arm" }`.
+
 ## Brief (`.keyframe/brief.json`)
 
 Keyed by the skeleton's project-relative path:
@@ -82,8 +87,9 @@ skips the checks that do not apply to the subject.
 `{ "format": "keyframe-godot", "version": 1, name, fps, pages, bones, slots, animations, report }`:
 bones with their rest transform in Godot's coordinates (y down, radians), slots with their
 attachments as polygons with UVs in page pixels (and weights when skinned), and clips as tracks
-the add-on turns into Godot tracks one to one. `report` lists what was baked, approximated or
-skipped. See [godot.md](godot.md).
+the add-on turns into Godot tracks one to one. A page whose atlas filter is Nearest carries
+`"filter": "nearest"` and its polygons draw with `texture_filter` nearest. `report` lists what was
+baked, approximated or skipped. See [godot.md](godot.md).
 
 ## Asset pack (`pack.json`)
 

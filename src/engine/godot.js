@@ -207,7 +207,7 @@ export function godotScene(json, { atlasText, fps = 30, skin, name, loops } = /*
 
   const animations = [...model.animations.values()].map(animation => sceneAnimation(model, animation, { fps, skin, blocked, slots, report, asked: loopAnswer(animation.name, loops, json) }));
   return { format: GODOT_FORMAT, version: 1, name: name ?? model.name ?? 'skeleton', fps,
-    pages: atlas.pages.map(p => ({ name: p.name, width: p.width, height: p.height, pma: p.pma })), bones, slots, animations,
+    pages: atlas.pages.map(p => ({ name: p.name, width: p.width, height: p.height, pma: p.pma, ...(p.magFilter === 'Nearest' ? { filter: 'nearest' } : {}) })), bones, slots, animations,
     report: { baked: [...new Set(report.baked)], approximated: [...new Set(report.approximated)], skipped: [...new Set(report.skipped)].sort() } };
 }
 
