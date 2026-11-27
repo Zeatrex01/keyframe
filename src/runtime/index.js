@@ -6,8 +6,9 @@
 //             owner enabled the Spine add-on.
 //
 // `parseSkeleton` picks the backend: the engine, unless the file uses something the engine does
-// not evaluate yet (path constraints, skin-only bones and constraints) and the add-on is on. Without the add-on such a file still poses on the engine, and `data.limits`
-// names what was left out, so every tool can say so instead of pretending.
+// not evaluate and the add-on is on. Since the engine evaluates every Spine 4.2 constraint, skin
+// and timeline, nothing does today: `LIMIT` is kept empty, and `data.limits` would name what was
+// left out, so every tool can say so instead of pretending.
 //
 // Callers get the same shapes from both: `data.animations[]`, `findAnimation(name).duration`,
 // `findSkin`, `bones[]`, `physicsConstraints[]`; snapshots with bones, slots and draw order.
@@ -25,7 +26,7 @@ export { RUNTIME_VERSION, MAX_SAMPLE_SECONDS, majorMinor, assertRuntimeVersion, 
 import { MAX_SAMPLE_SECONDS, assertRuntimeVersion, spineRuntimeAvailable } from './spine.js';
 
 /** What the engine leaves out of a pose: the rule that sends a file to the add-on when it is on. */
-const LIMIT = /^(path|skin-required-bone|skin-required-constraint):/;
+const LIMIT = /^$^/;   // matches no entry: nothing sends a file to the add-on today
 
 /** The engine's compiled skeleton, dressed in the shape callers read from spine.SkeletonData. */
 class EngineData {

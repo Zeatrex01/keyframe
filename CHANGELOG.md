@@ -7,6 +7,16 @@ All notable changes to this project. The format follows
 
 ### Added
 
+- Path constraints on the studio's own engine: bones laid along a path attachment (open or
+  closed, constant speed or not, weighted and deformed too), every position, spacing and rotate
+  mode of Spine 4.2, keyed by path timelines. Inherit timelines and skin-only bones and
+  constraints are evaluated as well, so no Spine 4.2 file needs the Spine add-on to pose or bake
+  any more. Godot bakes the bones a path or an inherit key moves.
+- Onion skin on the stage: faint ghosts of the clip a few instants before and after the moment
+  shown (the Onion skin switch in the transport).
+- A curve view under the key ruler: click a bone lane's name to see that channel's values over
+  the clip, eases included, with its keys and the playhead. Read-only.
+
 - Live physics in Godot: `export_godot` with `physics: "live"` leaves the physics bones unbaked and
   the add-on's rig runs the studio engine's own spring every frame, after the AnimationPlayers, so
   a scarf, a ponytail or a cape also trails the game moving the character, not only the clips.

@@ -100,3 +100,35 @@ test('the page draws the lanes and the ruler replaces the old scrub bar', () => 
   assert.match(timeline, /lanesFromAnimation\(source\.json, S\.anim\)/);
   assert.match(fs.readFileSync(new URL('../web/sw.js', import.meta.url), 'utf8'), /'\/web\/lanes\.js'/);
 });
+
+test('laneCurve: a bone lane\'s keyed values over the clip, eases included, with its keys and range', async () => {
+  const { laneCurve } = await import('../web/lanes.js');
+  const json = { skeleton: { spine: '4.2.43' }, bones: [{ name: 'root' }, { name: 'arm', parent: 'root' }],
+    animations: { wave: { bones: { arm: {
+      rotate: [{ time: 0, value: 0, curve: [0.25, 0, 0.75, 40] }, { time: 1, value: 40 }],
+      translate: [{ time: 0, x: 0, y: 0 }, { time: 0.5, x: 10, y: -5 }],
+    } } } } };
+  const rot = laneCurve(json, 'wave', 'arm', 'rotate', 10);
+  assert.equal(rot.series.length, 1);
+  assert.equal(rot.series[0].points.length, 11);
+  assert.deepEqual(rot.keys, [0, 1]);
+  assert.equal(rot.min, 0); assert.equal(rot.max, 40);
+  assert.ok(rot.series[0].points[2][1] < 8, 'an ease in starts slower than a straight line (8 at 0.2 s)');
+  const move = laneCurve(json, 'wave', 'arm', 'move', 4);
+  assert.deepEqual(move.series.map(s => s.property), ['x', 'y']);
+  assert.equal(move.series[0].points.at(-1)[1], 10, 'holds after its last key');
+  assert.equal(laneCurve(json, 'wave', 'arm', 'image'), null, 'only bone channels draw a curve');
+  assert.equal(laneCurve(json, 'wave', 'nobody', 'rotate'), null);
+});
+
+test('ghostTimes: onion-skin instants around now, nearer ones stronger, wrapped when the clip loops', async () => {
+  const { ghostTimes } = await import('../web/lanes.js');
+  const g = ghostTimes(0.05, 1, { loop: true, count: 2, step: 0.1 });
+  assert.equal(g.length, 4);
+  const at = offset => g.find(x => x.offset === offset);
+  assert.ok(Math.abs(at(-1).time - 0.95) < 1e-9, 'wraps before the start');
+  assert.ok(Math.abs(at(2).time - 0.25) < 1e-9);
+  assert.ok(at(1).alpha > at(2).alpha, 'nearer is stronger');
+  assert.deepEqual(ghostTimes(0.05, 1, { loop: false, count: 2, step: 0.1 }).map(x => x.offset).sort(), [1, 2], 'a clip played once shows nothing before its start');
+  assert.deepEqual(ghostTimes(0, 0), []);
+});

@@ -9,8 +9,8 @@ export const PHYSICS_UPDATE = 2; // spine.Physics.update
 export const $ = id => document.getElementById(id);
 export const el = {};
 for (const id of ['app', 'projectName', 'projectSwitch', 'projectThumb', 'barSep', 'agentPill', 'agentDot', 'agentName', 'agentLabel', 'right', 'refPane', 'refPaneSlot', 'stage', 'player',
-  'stageNote', 'stageNoteTitle', 'stageNoteBody', 'stageFlipWrap', 'flipSource', 'flipResult', 'stageFile', 'refPaneName', 'clip', 'overlay', 'blend', 'play', 'playIcon', 'time', 'loop', 'speed',
-  'ruler', 'laneLabels', 'lanes', 'laneRange', 'playhead', 'markTools', 'markToggle', 'markStart', 'markEnd', 'markRange', 'markClear', 'markLearn', 'markHint', 'libraryEmpty', 'moves',
+  'stageNote', 'stageNoteTitle', 'stageNoteBody', 'stageFlipWrap', 'flipSource', 'flipResult', 'stageFile', 'refPaneName', 'clip', 'overlay', 'blend', 'onion', 'play', 'playIcon', 'time', 'loop', 'speed',
+  'ruler', 'laneLabels', 'lanes', 'curve', 'curveLabel', 'laneRange', 'playhead', 'markTools', 'markToggle', 'markStart', 'markEnd', 'markRange', 'markClear', 'markLearn', 'markHint', 'libraryEmpty', 'moves',
   'refCard', 'refThumb', 'refEmpty', 'refName', 'refSync', 'refCompare', 'refAdd', 'refList', 'refStatus', 'refFile', 'refLinkForm', 'refLink', 'refLinkGo', 'refLinkHint', 'refFrom', 'refTo',
   'deliveryEmpty', 'deliveryTop', 'deliveryFile', 'deliveryCheck', 'deliveryNote', 'deliveryActs', 'deliveryFlip', 'deliveryVersions', 'deliveryPlayer',
   'versions', 'versionsEmpty', 'versionsNote', 'deliveryStatus', 'inspectorTabs', 'tabbar', 'keysPanel', 'timeline', 'keysEmpty', 'clipList', 'clipsEmpty', 'clipCount', 'refCount',
@@ -36,6 +36,8 @@ export const S = {
   anim: null, loop: true, speed: 1,
   overlay: '',          // a clip played over the stage's clip (track 1), or ''
   blend: false,         // changing the clip crossfades from the one before
+  onion: false,         // the stage shows ghosts of the clip before and after the instant shown
+  curveLane: '',        // the lane whose curve is drawn under the lanes (target + channel), or ''
   player: null, token: 0, ready: false, stageError: null,
   refs: [], ref: null, media: null, wrap: null, layer: null, area: null, sync: true, compare: false, lastTime: 0,
   focus: null, focusStamp: null, focusEpoch: 0, marking: false, drag: null,

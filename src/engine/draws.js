@@ -58,6 +58,7 @@ export function collectDraws(pose, regionOf) {
   const sc = pose.color;
   for (const slot of pose.drawOrder) {
     const att = slot.attachment;
+    if (pose.active && !pose.active[slot.data.bone]) continue;   // a bone its skin does not switch on
     if (att?.type === 'clipping') {
       clip = meshVertices(pose, slot, att);
       clipEnd = att.endIndex ?? -1;

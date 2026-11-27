@@ -175,6 +175,21 @@ h1, h2, h3 { margin: 0; font-weight: var(--weight-strong); }
 .timeline .playhead { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--accent); pointer-events: none; z-index: 2; }
 .timeline .playhead::before { content: ""; position: absolute; top: 0; left: -5px; width: 12px; height: 10px; background: var(--accent); clip-path: polygon(0 0, 100% 0, 100% 55%, 50% 100%, 0 55%); }
 .timeline .range { position: absolute; top: 0; bottom: 0; background: var(--agent-soft); border-left: 2px solid var(--agent); border-right: 2px solid var(--agent); pointer-events: none; }
+.timeline .label.pick { cursor: pointer; }
+.timeline .label.pick:hover, .timeline .label.pick[aria-pressed="true"] { color: var(--text); background: var(--surface-2); }
+.timeline .label.pick:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.timeline .curve-label { grid-column: 1; display: flex; flex-direction: column; gap: 3px; padding: 8px 10px; border-bottom: 1px solid var(--line); color: var(--text-3); min-width: 0; }
+.timeline .curve-label .target { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.timeline .curve-label .range { position: static; background: none; border: 0; font: 500 10px var(--font-mono); }
+.timeline .curve-label .series { font: 500 10px var(--font-mono); }
+.timeline .curve-label .series::before { content: ""; display: inline-block; width: 14px; height: 0; margin-right: 6px; vertical-align: middle; border-top: 2px solid var(--text-2); }
+.timeline .curve-label .series.second::before { border-top-style: dashed; }
+.timeline .curve { grid-column: 2; position: relative; height: 96px; border-bottom: 1px solid var(--line); }
+.timeline .curve svg { position: absolute; top: 0; bottom: 0; left: 12px; width: calc(100% - 24px); height: 100%; overflow: visible; }
+.timeline .curve polyline { fill: none; stroke-width: 2; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+.timeline .curve polyline.second { stroke-dasharray: 5 4; opacity: .8; }
+.timeline .curve .zero { stroke: var(--line-strong); stroke-width: 1; vector-effect: non-scaling-stroke; stroke-dasharray: 2 3; }
+.timeline .curve .k { top: calc(100% * var(--y)); }
 .timeline .lanes { grid-column: 2; position: relative; }
 .timeline .labels { grid-column: 1; border-right: 1px solid var(--line); }
 
@@ -257,5 +272,5 @@ h1, h2, h3 { margin: 0; font-weight: var(--weight-strong); }
 @media (pointer: coarse) { .btn, .seg button, .tabs button { min-height: var(--hit-min); } }
 
 /* Keys and ticks are placed with --x (0..1) inside a 12px inset, so the first and last keys are never clipped. */
-.timeline .ruler > *, .timeline .lanes .k, .timeline .playhead { left: calc(12px + (100% - 24px) * var(--x)); }
+.timeline .ruler > *, .timeline .lanes .k, .timeline .curve .k, .timeline .playhead { left: calc(12px + (100% - 24px) * var(--x)); }
 .timeline .lanes .span, .timeline .range { left: calc(12px + (100% - 24px) * var(--x)); width: calc((100% - 24px) * var(--w)); }

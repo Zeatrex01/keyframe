@@ -7,7 +7,7 @@
 import { resizeText, sendMessage, stopAgent } from './chat.js';
 import { askToDraw } from './draw.js';
 import { clearMark, fetchLink, learnMove, pauseMedia, playMedia, renderMark, renderRef, seekMedia, setRangeEnd, upload } from './reference.js';
-import { clock, frame, renderTransport, setBlend, setClip, setLoop, setOverlay, setSpeed, togglePlay } from './stage.js';
+import { clock, frame, renderTransport, setBlend, setClip, setLoop, setOnion, setOverlay, setSpeed, togglePlay } from './stage.js';
 import { POLL_MS, S, el } from './store.js';
 import { flipStage, pickStage, poll } from './sync.js';
 import { setPhoneTab, setTab, showPanel } from './panels.js';
@@ -39,6 +39,7 @@ el.clip.addEventListener('change', () => { setClip(el.clip.value); renderTranspo
 el.loop.addEventListener('click', () => setLoop(!S.loop));
 el.overlay.addEventListener('change', () => setOverlay(el.overlay.value));
 el.blend.addEventListener('click', () => setBlend(!S.blend));
+el.onion.addEventListener('click', () => setOnion(!S.onion));
 el.speed.addEventListener('click', event => {
   const value = Number(event.target.closest('button')?.dataset.speed);
   if (value) setSpeed(value);

@@ -30,7 +30,7 @@ Spine Editor license), so it is off by default and never in the repository.
   user's app data (`<app data>/Keyframe Studio/addons/spine-runtime-4.2.119`, or the folder in
   `KS_SPINE_RUNTIME`). It is found on every use, so no restart is needed.
 - **Unlocks:** the official runtime's verdict beside the engine's in `check_skeleton` and
-  `scan_project`; posing and baking path constraints (IK, transform and physics constraints run on the studio's engine); binary `.skel`
+  `scan_project`; binary `.skel`
   export and import; the official player on the page.
 - **Without it:** everything else works on the studio's engine. A file that uses something the
   engine does not evaluate yet still plays, and the answer names what was left out

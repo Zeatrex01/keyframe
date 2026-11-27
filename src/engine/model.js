@@ -3,15 +3,15 @@
 //
 // Clean-room: written from the Spine JSON format documentation and checked number by number
 // against the official runtime by test/engine-parity.test.js when the Spine add-on is present.
-// What the engine does not evaluate (path constraints, inherit timelines, skin-only bones) is
-// listed in `unsupported`, never ignored in silence; where it evaluates something its own way
-// (physics) the model says so in `approximations`.
+// What the engine does not evaluate (timelines it does not know, deform on an attachment that
+// has no vertices) is listed in `unsupported`, never ignored in silence; where it evaluates
+// something its own way (physics) the model says so in `approximations`.
 //
 // Pure and isomorphic.
 
 import { StudioError } from '../shared/errors.js';
 import { compileChannel, resolveCurve, keyIndex, segmentPercent, segmentValue } from './curve.js';
-import { compileIk, compileIkTimelines, compileTransform, compileTransformTimelines, compilePhysics, compilePhysicsTimelines, constraintOrder } from './constraints.js';
+import { compileIk, compileIkTimelines, compileTransform, compileTransformTimelines, compilePhysics, compilePhysicsTimelines, compilePath, compilePathTimelines, constraintOrder } from './constraints.js';
 
 export const INHERIT = Object.freeze({ normal: 0, onlyTranslation: 1, noRotationOrReflection: 2, noScale: 3, noScaleOrReflection: 4 });
 export const BLEND = Object.freeze({ normal: 0, additive: 1, multiply: 2, screen: 3 });
@@ -60,6 +60,8 @@ function compileAttachment(raw, name, slotName, skinName, unsupported) {
       throw new StudioError('bad-skeleton', `Path attachment "${name}" on slot "${slotName}" has vertexCount ${count}, which is not a multiple of 3 (the studio's path repair fixes it).`,
         { slot: slotName, attachment: name, vertexCount: count });
     }
+    return { type, name, color, closed: !!raw.closed, constantSpeed: raw.constantSpeed !== false,
+      lengths: Float64Array.from(raw.lengths ?? []), vertices: compileVertices(raw.vertices ?? [], count) };
   }
   return { type, name, ignored: true };
 }
@@ -152,8 +154,7 @@ export function compileSkeleton(json) {
     boneIndex.set(b.name, index);
     const inheritName = b.inherit ?? b.transform ?? 'normal';
     if (!Object.hasOwn(INHERIT, inheritName)) throw new StudioError('bad-skeleton', `Bone "${b.name}" has an unknown inherit "${inheritName}".`, { bone: b.name });
-    if (b.skin) unsupported.add(`skin-required-bone:${b.name}`);
-    return { name: b.name, index, parent, x: num(b.x, 0), y: num(b.y, 0), rotation: num(b.rotation, 0), scaleX: num(b.scaleX, 1), scaleY: num(b.scaleY, 1),
+    return { name: b.name, skinRequired: !!b.skin, index, parent, x: num(b.x, 0), y: num(b.y, 0), rotation: num(b.rotation, 0), scaleX: num(b.scaleX, 1), scaleY: num(b.scaleY, 1),
       shearX: num(b.shearX, 0), shearY: num(b.shearY, 0), length: num(b.length, 0), inherit: INHERIT[inheritName] };
   });
   const slotIndex = new Map();
@@ -164,7 +165,6 @@ export function compileSkeleton(json) {
     const blend = Object.hasOwn(BLEND, s.blend ?? 'normal') ? BLEND[s.blend ?? 'normal'] : 0;
     return { name: s.name, index, bone, color: parseColor(s.color), dark: s.dark ? parseColor(s.dark) : null, attachmentName: s.attachment ?? null, blend };
   });
-  for (const c of json.path ?? []) unsupported.add(`path:${c.name}`);
   const approximations = new Set();
   const ik = compileIk(json, boneIndex);
   const ikByName = new Map(ik.map(c => [c.name, c]));
@@ -172,11 +172,17 @@ export function compileSkeleton(json) {
   const transformByName = new Map(transform.map(c => [c.name, c]));
   const physics = compilePhysics(json, boneIndex);
   const physicsByName = new Map(physics.map(c => [c.name, c]));
+  const path = compilePath(json, boneIndex, slotIndex);
+  const pathByName = new Map(path.map(c => [c.name, c]));
   for (const c of physics) approximations.add(`physics:${c.name}`);
-  for (const kind of ['ik', 'transform', 'physics']) for (const c of json[kind] ?? []) if (c.skin) unsupported.add(`skin-required-constraint:${c.name}`);
+  // A constraint marked `skin` acts only while the shown skin lists it, like a bone marked so.
+  for (const [kind, list] of [['ik', ik], ['transform', transform], ['path', path], ['physics', physics]]) {
+    list.forEach((c, i) => { c.skinRequired = !!json[kind][i]?.skin; });
+  }
 
   // Skins: 4.x is an array of { name, attachments: { slot: { name: attachment } } }.
   const skins = new Map();
+  const skinRequires = new Map();   // skin -> the bones and constraints it switches on
   const rawSkins = Array.isArray(json.skins) ? json.skins
     : Object.entries(json.skins ?? {}).map(([name, attachments]) => ({ name, attachments }));
   for (const skin of rawSkins) {
@@ -189,6 +195,9 @@ export function compileSkeleton(json) {
       table.set(si, map);
     }
     skins.set(skin.name, table);
+    const bonesOf = (skin.bones ?? []).map(name => boneIndex.get(name)).filter(i => i !== undefined);
+    const constraintsOf = ['ik', 'transform', 'path', 'physics'].flatMap(kind => skin[kind] ?? []);
+    skinRequires.set(skin.name, { bones: new Set(bonesOf), constraints: new Set(constraintsOf) });
   }
   // Linked meshes take the geometry of their parent mesh.
   for (const [, table] of skins) {
@@ -211,14 +220,14 @@ export function compileSkeleton(json) {
 
   const events = new Map(Object.entries(json.events ?? {}));
   const animations = new Map();
-  for (const [name, raw] of Object.entries(json.animations ?? {})) animations.set(name, compileAnimation(name, raw ?? {}, { boneIndex, slotIndex, slots, skins, events, unsupported, ikByName, transformByName, physicsByName, physics }));
+  for (const [name, raw] of Object.entries(json.animations ?? {})) animations.set(name, compileAnimation(name, raw ?? {}, { boneIndex, slotIndex, slots, skins, events, unsupported, ikByName, transformByName, physicsByName, physics, pathByName }));
 
   return {
     name: json.skeleton?.name ?? null,
     version: json.skeleton?.spine ?? null,
     referenceScale: num(json.skeleton?.referenceScale, 100),
-    bones, slots, ik, transform, physics, constraints: constraintOrder(ik, transform, physics),
-    boneIndex, slotIndex, skins, defaultSkin: skins.get('default') ?? null, animations, events,
+    bones, slots, ik, transform, physics, path, constraints: constraintOrder(ik, transform, physics, path),
+    boneIndex, slotIndex, skins, skinRequires, defaultSkin: skins.get('default') ?? null, animations, events,
     unsupported: [...unsupported].sort(),
     approximations: [...approximations].sort(),
     findAnimation: animationName => animations.get(animationName) ?? null,
@@ -238,7 +247,15 @@ function compileAnimation(name, raw, ctx) {
     for (const [channel, keys] of Object.entries(channels ?? {})) {
       if (!Array.isArray(keys) || !keys.length) continue;
       seen(keys);
-      if (channel === 'inherit') { ctx.unsupported.add(`inherit-timeline:${name}/${boneName}`); continue; }
+      if (channel === 'inherit') {
+        const modes = keys.map(k => {
+          const mode = k.inherit ?? 'normal';
+          if (!Object.hasOwn(INHERIT, mode)) throw new StudioError('bad-animation', `${where}/bones/${boneName}/inherit: unknown inherit "${mode}".`, { bone: boneName, inherit: mode });
+          return INHERIT[mode];
+        });
+        timelines.push({ kind: 'inherit', bone, times: Float32Array.from(keys.map(k => num(k.time, 0))), modes });
+        continue;
+      }
       const fields = BONE_CHANNELS[channel];
       if (!fields) { ctx.unsupported.add(`timeline:${name}/${boneName}/${channel}`); continue; }
       fields.forEach(([field, property, defaultValue], f) => {
@@ -292,7 +309,7 @@ function compileAnimation(name, raw, ctx) {
             continue;
           }
           if (kind !== 'deform') { ctx.unsupported.add(`timeline:${name}/${slotName}/${attName}/${kind}`); continue; }
-          if (!attachment || attachment.type !== 'mesh') { ctx.unsupported.add(`deform:${name}/${slotName}/${attName}`); continue; }
+          if (!attachment || (attachment.type !== 'mesh' && attachment.type !== 'path')) { ctx.unsupported.add(`deform:${name}/${slotName}/${attName}`); continue; }
           timelines.push({ kind: 'deform', slot, attachment, ...compileDeform(keys, attachment, `${where}/attachments/${skinName}/${slotName}/${attName}`) });
         }
       }
@@ -331,7 +348,7 @@ function compileAnimation(name, raw, ctx) {
     const section = raw[kind];
     if (!section || !Object.keys(section).length) continue;
     for (const k of Object.values(section)) if (Array.isArray(k)) seen(k); else if (k && typeof k === 'object') for (const v of Object.values(k)) if (Array.isArray(v)) seen(v);
-    if (kind === 'path') ctx.unsupported.add(`path-timeline:${name}`);
+    if (kind === 'path') timelines.push(...compilePathTimelines(section, ctx.pathByName, where));
     else if (kind === 'transform') timelines.push(...compileTransformTimelines(section, ctx.transformByName, where));
     else timelines.push(...compilePhysicsTimelines(section, ctx.physicsByName, ctx.physics, where));
   }

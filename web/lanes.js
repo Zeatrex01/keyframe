@@ -1,6 +1,10 @@
 // The key lanes under the stage, worked out from the animation itself: one lane per bone (or slot)
 // and channel that has keys in the clip, the key times on it, and the clip's events. Read-only; no
-// DOM here, so a test can load it. The page draws what this returns (web/timeline.js).
+// DOM here, so a test can load it. The page draws what this returns (web/timeline.js), and the
+// curve of a picked lane (`laneCurve`) and the onion-skin instants (`ghostTimes`) for the stage.
+
+import { compileSkeleton } from '../src/engine/model.js';
+import { channelValue } from '../src/engine/curve.js';
 
 /** What a timeline in a skeleton's animation changes, by the name the file gives it. */
 const BONE_CHANNELS = { rotate: 'rotate', translate: 'move', translatex: 'move', translatey: 'move',
@@ -88,3 +92,67 @@ export function rulerTicks(duration, labels = 6) {
 
 /** Where a time sits along the lanes, 0 to 1. */
 export const along = (time, duration) => (duration > 0 ? Math.max(0, Math.min(1, time / duration)) : 0);
+
+/** The bone properties a lane's channel draws as curves, with the unit each is read in. */
+const CURVE_PROPERTIES = { rotate: [['rotation', '°']], move: [['x', 'px'], ['y', 'px']], scale: [['scaleX', '×'], ['scaleY', '×']], shear: [['shearX', '°'], ['shearY', '°']] };
+const compiled = new WeakMap();
+
+/**
+ * The curve of one bone lane as the clip keys it: each property's value from the clip's start to
+ * its end (`samples` + 1 points, the eases included), the key times, and the range of the values.
+ * Rotation, move and shear are offsets from the setup pose and scale multiplies it, as in the file.
+ * Null for a lane that is not a bone channel with keys.
+ * @param {any} json a skeleton in Spine 4.2 JSON form
+ * @returns {null | { duration: number, keys: number[], min: number, max: number,
+ *   series: { property: string, unit: string, points: [number, number][] }[] }}
+ */
+export function laneCurve(json, clip, target, channel, samples = 120) {
+  const properties = CURVE_PROPERTIES[channel];
+  if (!properties || !json?.animations?.[clip]) return null;
+  let model = compiled.get(json);
+  if (!model) { model = compileSkeleton(json); compiled.set(json, model); }
+  const animation = model.animations.get(clip), bone = model.boneIndex.get(target);
+  if (!animation || bone === undefined) return null;
+  const duration = animation.duration;
+  const series = [];
+  const keys = new Set();
+  for (const [property, unit] of properties) {
+    const timeline = animation.timelines.find(t => t.kind === 'bone' && t.bone === bone && t.property === property);
+    if (!timeline) continue;
+    for (const k of timeline.channel.times) keys.add(Math.round(k * 1e4) / 1e4);
+    const rest = property.startsWith('scale') ? 1 : 0;
+    /** @type {[number, number][]} */
+    const points = [];
+    for (let i = 0; i <= samples; i++) {
+      const time = duration * i / samples;
+      const value = channelValue(timeline.channel, Math.fround(time));
+      points.push([time, value === undefined ? timeline.channel.values[0] ?? rest : value]);
+    }
+    series.push({ property, unit, points });
+  }
+  if (!series.length) return null;
+  let min = Infinity, max = -Infinity;
+  for (const s of series) for (const [, v] of s.points) { if (v < min) min = v; if (v > max) max = v; }
+  if (max - min < 1e-9) { min -= 1; max += 1; }
+  return { duration, keys: [...keys].sort((a, b) => a - b), min, max, series };
+}
+
+/**
+ * Onion skin: the instants around `time` shown as ghosts, nearest first, each with how strongly
+ * it is drawn. `count` before and after, `step` seconds apart; a looping clip wraps round its
+ * ends, a clip played once shows only instants inside it.
+ * @returns {{ time: number, offset: number, alpha: number }[]}
+ */
+export function ghostTimes(time, duration, { loop = true, count = 2, step = 0.1, strength = 0.35 } = {}) {
+  if (!(duration > 0) || !(step > 0)) return [];
+  const out = [];
+  for (let k = count; k >= 1; k--) {
+    for (const sign of [-1, 1]) {
+      let at = time + sign * k * step;
+      if (loop) at = ((at % duration) + duration) % duration;
+      else if (at < 0 || at > duration) continue;
+      out.push({ time: at, offset: sign * k, alpha: strength * (count - k + 1) / count });
+    }
+  }
+  return out;
+}
