@@ -16,6 +16,7 @@
 import { StudioError } from '../shared/errors.js';
 import { rasterizeSvg, svgSize } from '../engine/svg.js';
 import { encodePng } from './png.js';
+import { stackProblems } from './stack.js';
 
 export const PARTS_FORMAT = 'keyframe-parts';
 const NAME = /^[A-Za-z0-9_][A-Za-z0-9_ .-]{0,63}$/;
@@ -51,6 +52,7 @@ export function validateParts(parts) {
     else if (seen.has(p.name)) problems.push(`${where}.name "${p.name}" is used twice (or is "root").`);
     if (typeof p.svg !== 'string' || p.svg.length > 200000) problems.push(`${where}.svg must be one SVG document (at most 200 kB).`);
     if (p.name) seen.add(p.name);
+    problems.push(...stackProblems(p, where));
     try {
       const size = p.svg ? svgSize(p.svg) : null;
       return {
@@ -60,6 +62,8 @@ export function validateParts(parts) {
         size: p.size ? pair(p.size, `${where}.size`).map(Number) : size ? [size.width, size.height] : [0, 0],
         ...(p.blend === 'additive' || p.blend === 'multiply' || p.blend === 'screen' ? { blend: p.blend } : {}),
         ...(p.hidden ? { hidden: true } : {}),
+        ...(p.stack !== undefined ? { stack: p.stack } : {}),
+        ...(p.taper !== undefined ? { taper: p.taper } : {}),
         ...(states(p, where, problems)),
         ...(p.source && typeof p.source === 'object' ? { source: p.source } : {}),
       };

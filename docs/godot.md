@@ -62,6 +62,17 @@ the clip that is running, so the character punches while its legs keep running; 
 ends, the arms go back to the clip underneath. The layer copies the AnimationPlayer's process mode
 (a game that advances it by hand advances `LayerPlayer` the same way), not its speed.
 
+## Sprite stacks
+
+A drawing with height bands (`stack` on its parts, [drawing.md](drawing.md#sprite-stacks)) exports
+as a strip of slices. The add-on's `KeyframeStack` node draws it: set `map` to the exported
+`stack@2x.json` (its PNG sits beside it) and turn the node with its `rotation`, like any Node2D.
+It draws in rig units, so a 2x export under a Camera2D with zoom 2 is one slice per screen pixel.
+The pile always rises up the screen, also under a turning camera (a Camera2D with
+`ignore_rotation` off that follows a car's heading), and with `sort_on_screen` (on by default) the
+node keeps its `z_index` at its screen row so piles overlap right; keep the ground at `z_index` -1
+or below. `spacing` makes the pile taller or flatter, `tint` colours it.
+
 ## The runtime API in one place
 
 | On the rig's root | Does |

@@ -7,6 +7,11 @@ All notable changes to this project. The format follows
 
 ### Added
 
+- Sprite stacking: a part drawn with a height band (`stack: [from, to]`, optional
+  `taper: [bottom, top]`) is a cut through an object seen from above. `export_art` kind `stack`
+  cuts the drawing into one slice per pixel of height (smooth walls, a contact shade near the
+  ground), writes the strip with its pivot, a sheet pre-turned to `turns` angles (returned as an
+  image to look at) and the Godot add-on's new `KeyframeStack` node that piles the strip, turned with the node and under a turning camera.
 - Animation events: a clip can fire named moments (a hit's contact frame, a footstep) through
   `events` keys; `write_animation` defines every fired event in the delivery (with defaults given
   in its new `events` argument, the base's own definitions winning). Events reach Godot (the

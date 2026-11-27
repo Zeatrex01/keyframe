@@ -5,6 +5,8 @@
 //   <name>@<s>x.png + .json    one sprite sheet per scale with a frame map (the common "JSON hash"
 //                              sprite-sheet layout game engines and web libraries read)
 //   svg/<part>.svg, <name>.svg clean SVG: each part, and the whole drawing with a <g id> per part
+//   stack@<s>x.png + .json     a sprite stack: the slices of the parts with a height band, bottom
+//                              first, and turn@<s>x.png + .json, the stack pre-turned to N angles
 //   clip-<anim>/               an animation as a PNG sequence and a sheet with its frame times,
 //                              for engines without a skeletal runtime
 //
@@ -17,9 +19,10 @@ import { partSvg, drawingSvg } from './compose-svg.js';
 import { renderFrames } from './frames.js';
 import { StudioError } from '../shared/errors.js';
 import { clipLoops, loopAnswer } from '../engine/loops.js';
+import { stackSlices, turnFrames } from './stack.js';
 
 const r2 = v => Math.round(v * 100) / 100;
-export const EXPORT_KINDS = Object.freeze(['parts', 'sheet', 'svg', 'clip']);
+export const EXPORT_KINDS = Object.freeze(['parts', 'sheet', 'svg', 'stack', 'clip']);
 
 /** The box of the pixels that are not fully transparent, or null for an empty image. */
 export function alphaBounds(img) {
@@ -59,11 +62,11 @@ function packSheet(images, pad = 2) {
 /**
  * Export a drawing.
  * @param {{ name: string, kind?: string, parts: any[] }} doc  the parts document (svg-rig.js)
- * @param {{ scales?: number[], kinds?: string[], pixels?: number, padding?: number }} options  padding: clear pixels around each sprite in a sheet (default 2)
+ * @param {{ scales?: number[], kinds?: string[], pixels?: number, padding?: number, turns?: number }} options  padding: clear pixels around each sprite in a sheet (default 2); turns: angles of the pre-turned stack (default 16)
  *   scales: pixels per rig unit (1x, 2x, 3x); pixels: instead, the longest side of the whole drawing in pixels
  * @returns {{ files: Record<string, Uint8Array | string>, manifest: object }}
  */
-export function exportDrawing(doc, { scales = [1, 2], kinds = ['parts', 'sheet', 'svg'], pixels, padding = 2 } = {}) {
+export function exportDrawing(doc, { scales = [1, 2], kinds = ['parts', 'sheet', 'svg'], pixels, padding = 2, turns = 16 } = {}) {
   /** @type {Record<string, Uint8Array | string>} */
   const files = {};
   const manifest = { name: doc.name, kind: doc.kind ?? 'rig', units: 'rig units, y up; pixel boxes y down from the top left', scales: [], parts: {} };
@@ -77,6 +80,8 @@ export function exportDrawing(doc, { scales = [1, 2], kinds = ['parts', 'sheet',
   for (const s of list) {
     const tag = `${String(s).replace('.', '_')}x`;
     manifest.scales.push(s);
+    if (kinds.includes('stack')) Object.assign(files, stackFiles(doc, s, tag, turns, padding));
+    if (!kinds.includes('parts') && !kinds.includes('sheet')) continue;
     const images = looks.map(l => {
       const full = rasterizeSvg(l.svg, { width: Math.max(1, Math.round(l.part.size[0] * s)), height: Math.max(1, Math.round(l.part.size[1] * s)) });
       const box = alphaBounds(full) ?? { x: 0, y: 0, width: 1, height: 1 };
@@ -110,6 +115,34 @@ export function exportDrawing(doc, { scales = [1, 2], kinds = ['parts', 'sheet',
   }
   files['parts.json'] = `${JSON.stringify(manifest, null, 1)}\n`;
   return { files, manifest };
+}
+
+/**
+ * A sprite stack at one scale. The strip is what an engine stacks itself (the Godot add-on's
+ * KeyframeStack node draws it turned at any angle, each slice one pixel above the last); the turn
+ * sheet is the same stack pre-turned, for engines that only play frames.
+ */
+function stackFiles(doc, s, tag, turns, padding) {
+  const stack = stackSlices(doc, { scale: s });
+  const [w, h] = stack.size, n = stack.slices.length;
+  const strip = { width: n * w, height: h, data: new Uint8Array(n * w * h * 4) };
+  stack.slices.forEach((img, i) => { for (let y = 0; y < h; y++) strip.data.set(img.data.subarray(y * w * 4, (y + 1) * w * 4), (y * strip.width + i * w) * 4); });
+  const turned = turnFrames(stack, turns);
+  const cols = Math.ceil(Math.sqrt(turns));
+  const { at, image } = packSheetGrid(turned.frames.map(f => f.image), cols, padding);
+  const [fw, fh] = turned.frame;
+  const pivot = { x: r2(turned.origin[0] / fw), y: r2(turned.origin[1] / fh) };
+  return {
+    [`stack@${tag}.png`]: encodePng(strip),
+    [`stack@${tag}.json`]: `${JSON.stringify({
+      meta: { app: 'Keyframe Studio', kind: 'sprite-stack', image: `stack@${tag}.png`, slices: n, slice: { w, h }, layout: 'one row, bottom slice first', spacing: 1, pivot: { x: stack.pivot[0], y: stack.pivot[1] }, height: r2(stack.height), scale: s },
+    }, null, 1)}\n`,
+    [`turn@${tag}.png`]: encodePng(image),
+    [`turn@${tag}.json`]: `${JSON.stringify({
+      frames: Object.fromEntries(turned.frames.map((_, i) => [`${doc.name}_${String(i).padStart(2, '0')}`, { frame: { x: at[i][0], y: at[i][1], w: fw, h: fh }, rotated: false, trimmed: false, spriteSourceSize: { x: 0, y: 0, w: fw, h: fh }, sourceSize: { w: fw, h: fh }, pivot, angle: turned.degrees[i] }])),
+      meta: { app: 'Keyframe Studio', kind: 'sprite-stack-turns', image: `turn@${tag}.png`, size: { w: image.width, h: image.height }, turns, angle: 'degrees, clockwise on screen, 0 = as drawn', origin: { x: turned.origin[0], y: turned.origin[1] }, scale: s },
+    }, null, 1)}\n`,
+  };
 }
 
 /**

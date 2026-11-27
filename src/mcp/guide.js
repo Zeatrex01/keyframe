@@ -81,7 +81,7 @@ export const GUIDE = Object.freeze({
     next: ['draw_rig', 'write_animation', 'export_art'],
   },
   export_art: {
-    when: 'The drawing (or one of its clips) is needed outside the studio: PNGs at 1x/2x/3x for an engine, a sprite sheet with its map, clean SVG for the web, a clip as frames.',
+    when: 'The drawing (or one of its clips) is needed outside the studio: PNGs at 1x/2x/3x for an engine, a sprite sheet with its map, clean SVG for the web, a clip as frames, or a sprite stack (parts with a height band) for a top-down game.',
     notWhen: 'The animation goes to an engine with a skeletal runtime: deliver the skeleton itself (write_animation) instead of frames.',
     example: { file: 'ui/buttons.parts.json', scales: [1, 2, 3] },
     next: ['critique_art'],

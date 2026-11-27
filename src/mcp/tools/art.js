@@ -16,6 +16,10 @@ import { encodePng, decodePng } from '../../render/png.js';
 import { parseAtlas } from '../../engine/index.js';
 import { projectStyle } from '../style-file.js';
 import { webPlayerFiles } from '../../deliver/web-player.js';
+import { bandOf } from '../../render/stack.js';
+
+/** The Godot node that draws an exported sprite stack (shipped in the add-on, copied beside the export). */
+const STACK_NODE = new URL('../../../integrations/godot/addons/keyframe/keyframe_stack.gd', import.meta.url);
 
 const KINDS = [...EXPORT_KINDS, 'web'];
 
@@ -92,7 +96,7 @@ export const exportArtTool = {
   tier: 'core',
   writes: true,
   summary: 'Exports a drawing for engines and the web: trimmed PNGs per part and state with pivots at any scale, a sprite sheet with a JSON map, clean SVG, a clip as PNG frames, and an embeddable web player.',
-  description: `Writes new files into <folder>/<name>-export/ (never touches the drawing or the owner's files; a second export replaces the folder's files): \`parts\` png@<s>x/<part>.png, each part and each state at scale s (pixels per rig unit), transparent and trimmed, with parts.json listing for each its trim offset, source size and pivot in pixels so an engine places and turns it like the rig; \`sheet\` <name>@<s>x.png and .json, all of them packed into one sprite sheet with a frame map in the common JSON-hash layout (frame, spriteSourceSize, sourceSize, pivot) that game engines and web libraries read; \`svg\` svg/<part>.svg and <name>.svg, clean SVG with a <g id> per part for web pages and design tools; \`clip\` (with \`animation\`) clip-<anim>/frame_0000.png... and clip-<anim>@sheet.png/.json at \`fps\`, for engines without a skeletal runtime: every clip of the skeleton is framed alike (same size, feet on the same row), the map gives the origin in pixels (meta.origin, each frame's pivot) and whether the clip loops (a loop leaves out its closing copy of the first frame); \`web\` web/keyframe-player.js (the studio's engine as one script: a KeyframePlayer class with play, stop, pause, seek, setSpeed, setLook for drawn states, and start/complete/loop/event listeners, plus a <keyframe-player> element), the skeleton, its atlas and pages, and an index.html showing the snippet, for web games and pages. Kinds: ${KINDS.join(', ')}; default parts, sheet and svg. Scales default [1, 2]; \`pixels\` instead sets the longest side of the whole drawing.`,
+  description: `Writes new files into <folder>/<name>-export/ (never touches the drawing or the owner's files; a second export replaces the folder's files): \`parts\` png@<s>x/<part>.png, each part and each state at scale s (pixels per rig unit), transparent and trimmed, with parts.json listing for each its trim offset, source size and pivot in pixels so an engine places and turns it like the rig; \`sheet\` <name>@<s>x.png and .json, all of them packed into one sprite sheet with a frame map in the common JSON-hash layout (frame, spriteSourceSize, sourceSize, pivot) that game engines and web libraries read; \`svg\` svg/<part>.svg and <name>.svg, clean SVG with a <g id> per part for web pages and design tools; \`clip\` (with \`animation\`) clip-<anim>/frame_0000.png... and clip-<anim>@sheet.png/.json at \`fps\`, for engines without a skeletal runtime: every clip of the skeleton is framed alike (same size, feet on the same row), the map gives the origin in pixels (meta.origin, each frame's pivot) and whether the clip loops (a loop leaves out its closing copy of the first frame); \`web\` web/keyframe-player.js (the studio's engine as one script: a KeyframePlayer class with play, stop, pause, seek, setSpeed, setLook for drawn states, and start/complete/loop/event listeners, plus a <keyframe-player> element), the skeleton, its atlas and pages, and an index.html showing the snippet, for web games and pages. Kinds: ${KINDS.join(', ')}; default parts, sheet and svg, and stack when a part has a height band. Scales default [1, 2]; \`pixels\` instead sets the longest side of the whole drawing.`,
   inputSchema: {
     type: 'object', required: ['file'], additionalProperties: false,
     properties: {
@@ -104,18 +108,22 @@ export const exportArtTool = {
       fps: { type: 'number', minimum: 1, maximum: 60, short: 'clip frames per second (24)', description: 'Frames per second of the clip export; default 24.' },
       size: { type: 'number', minimum: 16, maximum: 2048, short: 'clip frame px (256)', description: 'Square frame size of the clip export in pixels; default 256.' },
       padding: { type: 'integer', minimum: 0, maximum: 32, short: 'clear px around each sprite (2)', description: 'Clear pixels around every sprite and clip frame in a sheet, so texture filtering never bleeds a neighbour in; default 2.' },
+      turns: { type: 'integer', minimum: 4, maximum: 64, short: 'angles of the pre-turned stack (16)', description: 'How many angles the turn sheet of a stack has (kind stack); default 16.' },
       loop: { type: 'boolean', short: 'clip loops or plays once (auto)', description: 'Whether the clip export cycles (idle, run) or plays once (jump, attack). Default: it loops when it ends where it starts.' },
     },
   },
-  async run({ file, kinds, scales, pixels, animation, fps, size, padding, loop }, { session }) {
+  async run({ file, kinds, scales, pixels, animation, fps, size, padding, loop, turns }, { session }) {
     const project = projectOf(session);
     const { doc, abs } = readDrawing(project, file);
-    const wanted = kinds?.length ? kinds : ['parts', 'sheet', 'svg', ...(animation ? ['clip'] : [])];
+    const stacked = doc.parts.some(p => bandOf(p));
+    const wanted = kinds?.length ? kinds : ['parts', 'sheet', 'svg', ...(stacked ? ['stack'] : []), ...(animation ? ['clip'] : [])];
+    if (wanted.includes('stack') && !stacked) throw new StudioError('bad-argument', 'kind stack needs parts drawn with a height band (draw_rig, stack: [from, to]).', {});
     const drawing = wanted.filter(k => EXPORT_KINDS.includes(k) && k !== 'clip');
     const outDir = path.join(path.dirname(abs), `${doc.name}-export`);
     const files = {};
-    const out = drawing.length ? exportDrawing(doc, { scales: scales?.length ? scales : [1, 2], kinds: drawing, pixels, padding: padding ?? 2 }) : { files: {}, manifest: { scales: [] } };
+    const out = drawing.length ? exportDrawing(doc, { scales: scales?.length ? scales : [1, 2], kinds: drawing, pixels, padding: padding ?? 2, turns: turns ?? 16 }) : { files: {}, manifest: { scales: [] } };
     Object.assign(files, out.files);
+    if (wanted.includes('stack')) files['godot/keyframe_stack.gd'] = fs.readFileSync(STACK_NODE);
     let clip = null, web = null;
     if (wanted.includes('clip') || wanted.includes('web')) {
       if ((doc.kind ?? 'rig') !== 'rig') throw new StudioError('bad-argument', 'An artboard has no skeleton; draw it as a rig to animate it or play it on a page.', {});
@@ -144,13 +152,17 @@ export const exportArtTool = {
       fs.writeFileSync(target, data);
     }
     const names = Object.keys(files);
-    return {
+    const turnSheet = names.find(n => n.startsWith('turn@') && n.endsWith('.png'));
+    const result = {
       folder: project.rel(outDir), files: names.length,
       scales: out.manifest.scales,
       written: names.filter(n => !n.includes('/')).concat([...new Set(names.filter(n => n.includes('/')).map(n => `${n.split('/')[0]}/`))]),
       ...(clip ? { clip } : {}),
       ...(web ? { web } : {}),
+      ...(turnSheet ? { stack: { strip: names.filter(n => n.startsWith('stack@') && n.endsWith('.png')), turns: turns ?? 16, godot: 'godot/keyframe_stack.gd' } } : {}),
       next: 'Engines: the sprite sheet and its JSON, or the per-part PNGs with parts.json (pivots in pixels). Web: the SVG files; for animation on a page, the standalone player.',
     };
+    // A stack is seen before it is called done: its turn sheet comes back as an image.
+    return turnSheet ? { image: { data: Buffer.from(files[turnSheet]).toString('base64'), mimeType: 'image/png' }, meta: result } : result;
   },
 };
