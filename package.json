@@ -1,6 +1,6 @@
 {
   "name": "keyframe-studio",
-  "version": "0.0.2-beta",
+  "version": "0.0.3-beta",
   "private": true,
   "description": "An agent-assisted 2D skeletal animation studio: describe the motion, the agent writes it, the studio shows it, proves it and delivers it (Spine 4.2 compatible, Godot 4 add-on).",
   "license": "MIT",

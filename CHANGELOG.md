@@ -5,6 +5,88 @@ All notable changes to this project. The format follows
 
 ## Unreleased
 
+## 0.0.3-beta - 2026-11-27
+
+The engine plays everything a game needs: layers and crossfades, physics and transform constraints, flipbooks; particle effects, pixel-art export and Aseprite import; Godot blends, live physics and eased layers.
+
+### Added
+
+- Live physics in Godot: `export_godot` with `physics: "live"` leaves the physics bones unbaked and
+  the add-on's rig runs the studio engine's own spring every frame, after the AnimationPlayers, so
+  a scarf, a ponytail or a cape also trails the game moving the character, not only the clips.
+  `reset_physics()`, `live_physics` and `step_physics(delta)` on the rig. The gate runs the
+  add-on's GDScript spring against the engine.
+- Godot layers ease in and out: `play_layer(clip, seconds, fade_out)` blends in from the clip
+  beneath and, for a clip that plays once, back out over its last `fade_out` seconds;
+  `stop_layer(seconds)` eases any layer off and stops it, so a looping overlay (a carry pose, a
+  wave) can end without a cut. The fades count the layer's own clock, so a player advanced by
+  hand, slowed or paused stays in step.
+- Aseprite import: `draw_rig` with `aseprite: { file }` builds a rig from an `.aseprite` or `.ase`
+  file in the project, read with the standard library from the published file format (RGBA,
+  grayscale and indexed sprites, linked cels, groups, both palette chunks). Each visible layer
+  becomes a part drawn pixel for pixel (one rig unit is one pixel); a layer whose cels change
+  becomes a flipbook of its distinct cels; every tag becomes a clip that plays its frames forward,
+  reverse or ping-pong at the file's own frame durations, hiding a layer where it has no cel.
+  Layer and cel opacity and the multiply, screen and addition blends are kept; hidden, reference
+  and tilemap layers are left out and listed. `layers` places bones on layers (pivot, parent,
+  physics) so pixel parts can be animated with bones too. Importing again keeps the clips
+  written since. The source file is only read.
+- Godot clips blend the way they do in the runtimes: every clip holds at rest the bones, colours,
+  draw order and flipbooks other clips move and it does not (a hand bent by a palm strike no
+  longer stays bent in the next clip), and `play_layer` plays a clip without those holds; each
+  rotation track starts within half a turn of rest, so a crossfade never spins a limb the long way
+  round; `crossfade` into the clip that is playing starts it again with a blend (a second jab).
+- Pixel-sharp display: an atlas page whose filter magnifies with `Nearest` is drawn without
+  smoothing wherever it is blown up, on the stage, in the standalone player, in rendered frames
+  and in Godot (`texture_filter` nearest), as the runtimes draw it. Imported pixel art uses it.
+- Pixel art: `export_art` with `pixel` writes the parts, the sprite sheet and clips as pixel art
+  into `<name>-export/pixel/`: every pixel one colour of a palette (found from the drawing, 16
+  colours by default, or given), fully opaque or clear, no anti-aliasing; a pixel takes the colour
+  most of it shows, and a clearly darker line keeps its share. Parts and frames share one palette
+  (`palette.hex`, `palette.png`); an optional one-pixel outline and a whole-number blow-up; pivots
+  stay true and the maps say `filter: nearest`.
+- Particle emitters: `add_effect` kind `emit` simulates particles once (launched from a point,
+  circle, ring, rectangle or line; pulled by gravity and slowed by drag; scaling, turning, tinting
+  and fading over their lives) and writes them as ordinary bones, slots and keys whose bezier
+  handles carry each particle's velocity, so the path is exact and every player shows the same.
+  Particles stay where they were let go (or ride the bone with `follow`), share slots when their
+  lives do not overlap, and a looping emitter wraps its lives around the loop with no seam.
+  Ready-made recipes: sparks, shockwave, smoke, dust, fire, embers, magic and confetti.
+- A bundled effects pack (`assets/library/keyframe-vfx`, MIT): white, tintable dots, glows,
+  sparks, streaks, puffs, rings, flares, slashes, shards, flames and confetti. An emitter that
+  draws one gets it on the delivery's own atlas page (`<delivery>_fx.png`) and a section in the
+  delivery's atlas; the base's atlas is never changed, and later writes keep the page.
+- Multi-track playback on the studio's own engine (`Mixer`): crossfades between clips, layers on
+  higher tracks with an alpha (a punch over a run keeps the legs running), additive layers, a
+  fade-out when a track is cleared, queued clips, and start, complete, end and event callbacks.
+  The web player gains `layer()` and `clearLayer()` and crossfades on `play(name, { mix })`; the
+  standalone player and the stage have a layer menu and a blend switch; `see_animation` renders
+  a planned crossfade (`then`) or layer (`layers`).
+- Physics constraints (hair, tails, capes), transform constraints and IK softness are evaluated by
+  the studio's engine, so they play, render and bake without the Spine add-on; only path
+  constraints still need it. Physics is the studio's own damped spring on Spine's parameters,
+  deterministic: the same instant gives the same pose however it is reached.
+- Sequences (flipbooks): a sequence attachment plays its frames in every mode (hold, once, loop,
+  ping-pong and reversed), in the engine, the players and Godot (texture tracks). `draw_rig`
+  parts take `frames` (a flipbook drawn frame by frame: fire, smoke, an eye) and `physics` (the
+  part swings on a physics constraint).
+- Godot: physics and transform-driven bones arrive baked into their tracks (a looping clip is
+  recorded on its second lap so the seam holds); `KeyframeRig.crossfade(clip, seconds)` and a
+  `blend_time` setting.
+
+### Changed
+
+- A drawing holds up to 128 parts (was 64), so a dressed figure with its wardrobe fits; `draw_rig`
+  still takes up to 64 per call, and `merge` adds the rest. An Aseprite file may have as many
+  visible layers.
+
+### Fixed
+
+- Planted feet (`write_animation` `plant`) keep each knee bending the rig's own way for the whole
+  window: its drawn bend, or over the toes for a leg drawn straight, or the clip's bend at the
+  start. A deep crouch, or a leg keyed straight or bent back, no longer folds a knee backwards or
+  flips it between frames; the baked turns start within half a turn of the setup pose.
+
 ## 0.0.2-beta - 2026-11-27
 
 Game characters and clips: a dressable side-view figure, animation events and loops, and sprite stacks for top-down games.

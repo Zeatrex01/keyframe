@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-F4AE3F"></a>
-  <img alt="Version 0.0.2-beta" src="https://img.shields.io/badge/version-0.0.2--beta-7C6CF0">
+  <img alt="Version 0.0.3-beta" src="https://img.shields.io/badge/version-0.0.3--beta-7C6CF0">
   <img alt="Node.js 18 or newer" src="https://img.shields.io/badge/node-%E2%89%A518-4CC08F">
   <img alt="No runtime dependencies" src="https://img.shields.io/badge/runtime%20dependencies-0-4CC08F">
   <img alt="Spine 4.2 JSON compatible" src="https://img.shields.io/badge/Spine%204.2%20JSON-compatible-5E7BFF">
@@ -292,7 +292,7 @@ install it.
 The studio grows in phases: tools any AI can use, its own engine, understanding the subject,
 drawing and effects, and the app itself. All five are in this beta.
 
-**In 0.0.2-beta:** everything above: the tools, the engine, the Director and its team, drawing and
+**In 0.0.3-beta:** everything above: the tools, the engine, the Director and its team, drawing and
 art export, effects, reference learning, Godot import and runtime API, the HTML player, versions,
 six examples, the Windows app (portable or installed, with updates), and the `keyframe` command.
 **Later:** a signed Windows build, macOS and Linux app packages, an editor panel inside Godot with the embedded agent, a studio that runs fully in the
