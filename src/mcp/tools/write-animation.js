@@ -55,12 +55,13 @@ export default {
       holdFromStart: { type: 'boolean', short: 'hold first keys back to t=0 (default true)', description: 'Default true. false keeps value channels showing the setup pose until their first key.' },
       plant: { type: 'array', short: 'feet that stay where they stand', items: { anyOf: [{ type: 'string' }, { type: 'object' }] },
         description: 'Feet (or hands) that stay planted while the body moves: "footFront", or { bone, from, to, at: [x, y], on }. The two bones above each (shin and thigh) are turned frame by frame so its joint stays where it stood at `from` (or at `at`), and baked to rotate keys; the foot keeps its angle. Use it for a punch, a lean, a crouch, a landing: anything where the body moves and the feet must not slide. With `on: "<bone>"` the point travels with that bone (`at` in its units): a back hand that stays on a spear shaft or the nock of a bow while the weapon moves. The answer lists them under `planted` with how far each leg had to stretch (reach 1 = straight).' },
+      loop: { type: 'boolean', short: 'loops (true) or plays once (false)', description: 'Whether this clip cycles or plays once in the exports (Godot AnimationPlayer, sprite sheets). Kept in the delivery with the clip. Empty lets the export decide: a clip that ends in its first pose loops unless its name is an action (attack, jab, cross, block, step, ...). Set false on any one-shot (a strike, a dodge, a reaction) so the engine reports it finished.' },
       events: { type: 'object', short: 'event definitions with defaults', description: 'Events the clips fire, with their default values: { hit: { int: 1, float: 0.5, string: "jab", audio: "hit.wav", volume: 1, balance: 0 } } (every field optional). Key them in the clip as events: [{ time, name, int?, float?, string? }] at the frame the game must act on (a hit\'s contact, a footstep). An event the clip fires that is defined nowhere is defined with no defaults, so this is only needed for defaults; the base\'s own definitions always win. Events reach every export: Godot calls keyframe_event on the rig root (the addon emits `keyframe_event`), the web player emits "event", Spine JSON keeps them.' },
     },
   },
-  async run({ animation, clip, from, into, replace = false, fps, holdFromStart = true, plant, events }, { session }) {
+  async run({ animation, clip, from, into, replace = false, fps, holdFromStart = true, plant, events, loop }, { session }) {
     const project = projectOf(session);
-    const result = await writeDelivery({ projectDir: project.dir, from, into, name: animation, animation: clip, replace, fps, holdFromStart, plant, events });
+    const result = await writeDelivery({ projectDir: project.dir, from, into, name: animation, animation: clip, replace, fps, holdFromStart, plant, events, loop });
     let conventions = [], duration = null, times;
     try {
       const delivered = JSON.parse(fs.readFileSync(project.resolve(result.file), 'utf8'));

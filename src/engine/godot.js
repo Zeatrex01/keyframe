@@ -17,7 +17,7 @@ import { regionUVs, meshUVs } from './draws.js';
 import { parseAtlas, atlasRegions } from './atlas.js';
 import { controlPoints } from './curve.js';
 import { toSkeletonJson, isKeyframeDocument } from './keyframe-format.js';
-import { clipLoops } from './loops.js';
+import { clipLoops, loopAnswer } from './loops.js';
 
 export const GODOT_FORMAT = 'keyframe-godot';
 const DEG = Math.PI / 180;
@@ -113,9 +113,9 @@ const GODOT_PROPERTY = { rotation: 'rotation', x: 'position:x', y: 'position:y',
 /**
  * The scene description of a skeleton for the Godot add-on.
  * @param {object} json  Spine 4.2 JSON or a Keyframe document
- * @param {{ atlasText: string, fps?: number, skin?: string, name?: string }} options
+ * @param {{ atlasText: string, fps?: number, skin?: string, name?: string, loops?: Record<string, boolean> }} options  `loops`: per clip, loops or plays once (wins over the written answer and the guess)
  */
-export function godotScene(json, { atlasText, fps = 30, skin, name } = /** @type {any} */ ({})) {
+export function godotScene(json, { atlasText, fps = 30, skin, name, loops } = /** @type {any} */ ({})) {
   if (typeof atlasText !== 'string') throw new StudioError('bad-argument', 'The Godot scene needs the skeleton\'s atlas.');
   if (!(fps >= 1 && fps <= 240)) throw new StudioError('bad-argument', 'fps must be between 1 and 240.', { fps });
   const source = isKeyframeDocument(json) ? toSkeletonJson(json) : json;
@@ -187,13 +187,13 @@ export function godotScene(json, { atlasText, fps = 30, skin, name } = /** @type
       blend: BLEND_NAMES[s.blend] ?? 'normal', attachment: shown?.name ?? null, attachments, ...(clip ? { clip } : {}) };
   });
 
-  const animations = [...model.animations.values()].map(animation => sceneAnimation(model, animation, { fps, skin, blocked, slots, report }));
+  const animations = [...model.animations.values()].map(animation => sceneAnimation(model, animation, { fps, skin, blocked, slots, report, asked: loopAnswer(animation.name, loops, json) }));
   return { format: GODOT_FORMAT, version: 1, name: name ?? model.name ?? 'skeleton', fps,
     pages: atlas.pages.map(p => ({ name: p.name, width: p.width, height: p.height, pma: p.pma })), bones, slots, animations,
     report: { baked: [...new Set(report.baked)], approximated: [...new Set(report.approximated)], skipped: [...new Set(report.skipped)].sort() } };
 }
 
-function sceneAnimation(model, animation, { fps, skin, blocked: always, slots, report }) {
+function sceneAnimation(model, animation, { fps, skin, blocked: always, slots, report, asked }) {
   const blocked = new Map(always);
   const duration = animation.duration;
   const times = frames(duration, fps);
@@ -260,7 +260,7 @@ function sceneAnimation(model, animation, { fps, skin, blocked: always, slots, r
     tracks.push({ target: 'root', property: 'events', type: 'method', keys: events.events.map(e => ({ time: round(e.time), name: e.name,
       int: e.int ?? 0, float: e.float ?? 0, string: e.string ?? '' })) });
   }
-  return { name: animation.name, length: round(duration), loop: clipLoops(animation.name, seamless(poses)), tracks };
+  return { name: animation.name, length: round(duration), loop: clipLoops(animation.name, seamless(poses), asked), tracks };
 }
 
 function hasMovingAncestor(model, index, touched) {

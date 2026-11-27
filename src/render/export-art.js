@@ -16,7 +16,7 @@ import { encodePng } from './png.js';
 import { partSvg, drawingSvg } from './compose-svg.js';
 import { renderFrames } from './frames.js';
 import { StudioError } from '../shared/errors.js';
-import { clipLoops } from '../engine/loops.js';
+import { clipLoops, loopAnswer } from '../engine/loops.js';
 
 const r2 = v => Math.round(v * 100) / 100;
 export const EXPORT_KINDS = Object.freeze(['parts', 'sheet', 'svg', 'clip']);
@@ -139,7 +139,7 @@ export async function exportClip({ json, atlasText, pages, animation, fps = 24, 
   // last frame of the fps grid (a 0.6 s run at 12 fps never samples 0.6 s).
   const ends = await renderFrames({ json, atlasText, pages, animation, times: [0, end], width: 64, height: 64, ...(view ? { viewport: view } : {}) });
   const same = (a, b) => { for (let i = 0; i < a.data.length; i++) if (Math.abs(a.data[i] - b.data[i]) > 2) return false; return true; };
-  const loop = clipLoops(animation, end > 0 && same(ends.frames[0].image, ends.frames[1].image), asked);
+  const loop = clipLoops(animation, end > 0 && same(ends.frames[0].image, ends.frames[1].image), typeof asked === 'boolean' ? asked : loopAnswer(animation, undefined, json));
   // A loop is cut into whole frames that cycle exactly (its closing copy of the first left out); a
   // one-shot keeps its last instant.
   const steps = Math.max(1, Math.min(240, Math.round(end * fps)));

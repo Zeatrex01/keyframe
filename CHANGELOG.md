@@ -11,6 +11,9 @@ All notable changes to this project. The format follows
   `events` keys; `write_animation` defines every fired event in the delivery (with defaults given
   in its new `events` argument, the base's own definitions winning). Events reach Godot (the
   rig's `keyframe_event` signal), the web player (`on('event')`, with the defaults) and Spine JSON.
+- Loops: `write_animation` takes `loop` (kept with the clip in the delivery) and `export_godot`
+  takes `loops` per clip, so a one-shot that ends in its first pose (a cross, a block, a step)
+  plays once in Godot and fires `animation_finished`. More fight moves are one-shots by name.
 
 ## 0.0.1-beta - 2026-11-24
 

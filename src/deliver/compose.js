@@ -99,7 +99,7 @@ export function keysOnPhysicsBones(base, clip) {
   return out;
 }
 
-export async function composeDelivery({ base, previous = null, name, animation, replace = false, fps, holdFromStart = true, plant, events, deliveryInfo = {} }) {
+export async function composeDelivery({ base, previous = null, name, animation, replace = false, fps, holdFromStart = true, plant, events, loop, deliveryInfo = {} }) {
   if (typeof name !== 'string' || !name.length) throw new StudioError('bad-argument', 'The animation name must be a non-empty string.');
   if (!base || typeof base !== 'object') throw new StudioError('bad-argument', 'A base skeleton is required.');
   const eventDefs = validateEventDefs(events);
@@ -128,7 +128,12 @@ export async function composeDelivery({ base, previous = null, name, animation, 
   const weights = previous ? carryWeightRepairs(out, previous) : { kept: [], dropped: [] };
   const paints = previous ? carryPaints(out, previous) : { kept: [], dropped: [] };
   const droppedMarkers = previous ? UNCARRIED_MARKERS.filter(m => previous[m] !== undefined && base[m] === undefined) : [];
-  out[DELIVERY_MARKER] = { ...deliveryInfo, baseHash: base.skeleton?.hash ?? null, ...(Object.keys(plantedBones).length ? { planted: plantedBones } : {}) };
+  // Loop answers given at write time (write_animation `loop`), per clip, for the exports (src/engine/loops.js).
+  if (loop !== undefined && typeof loop !== 'boolean') throw new StudioError('bad-argument', '`loop` is true or false.', { loop });
+  const loops = Object.fromEntries(Object.entries({ ...(previous?.[DELIVERY_MARKER]?.loops ?? {}), ...(typeof loop === 'boolean' ? { [name]: loop } : {}) })
+    .filter(([clipName, v]) => out.animations?.[clipName] && typeof v === 'boolean'));
+  out[DELIVERY_MARKER] = { ...deliveryInfo, baseHash: base.skeleton?.hash ?? null, ...(Object.keys(plantedBones).length ? { planted: plantedBones } : {}), ...(Object.keys(loops).length ? { loops } : { loops: undefined }) };
+  if (!out[DELIVERY_MARKER].loops) delete out[DELIVERY_MARKER].loops;
 
   const baseFindings = checkSkeleton(base);
   const outFindings = checkSkeleton(out);
