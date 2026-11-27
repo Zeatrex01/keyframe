@@ -52,3 +52,23 @@ repository). Not yet built:
 - `critique_art` false positives on small face parts: small eyes, brows and mouths are flagged as
   too thin or too small for the target size although they read well at it.
 - (Fixed in 638da00: one-shot clips no longer loop in Godot.)
+
+## 2026-11-27: open-source sources for effects and pixel art
+
+Surveyed for the effect side and for pixel-art output. Licenses as stated by each project; each
+one is still a maintainer decision before anything is taken (rule 5, `docs/concept.md`).
+
+| Source | License | What it would give the studio |
+|---|---|---|
+| Kenney Particle Pack and Smoke Particles (kenney.nl) | CC0 | Effect art the studio lacks: `add_effect` only reuses the rig's own art. Soft dots, sparks, flares, smoke puffs and magic shapes as an asset-library pack, usable by bursts, trails and flipbooks. |
+| `pixijs-userland/particle-emitter` | MIT | A proven emitter description to learn from: spawn shapes, lifetime, and behaviours that move alpha, scale, colour, speed and rotation along value/time keys. A model for an `emit` effect kind that the engine simulates with a seed, Godot gets as `CPUParticles2D`, and Spine gets baked into slots and keys. |
+| `gdquest-demos/godot-visual-effects` | code MIT, art CC-BY 4.0 | Recipes for 2D game effects in Godot (hit sparks, slashes, explosions, trails, shockwaves, flash shaders): how a hit is layered and timed. Learn the recipes; do not copy the art. |
+| Effekseer | MIT (sample data CC0) | A full effect editor and runtime, mostly 3D and C++. Too heavy to integrate; useful only as a reference for effect timing. |
+| `sedthh/pyxelate`, `thinknathan/node-simple-pixelate` | MIT, CC0 | How to turn smooth art into pixel art: downsample along edges, fix a palette, dither. A model for a `pixel` export of drawings and clips (low resolution, no anti-aliasing, a fixed palette, optional one-pixel outline). |
+| RotSprite (Xenowhirl's algorithm; the Rust crate is AGPL, so only the published algorithm) | algorithm | Rotating pixel-art parts on bones without jagged edges (scale up, rotate, scale down). Needed when the art itself is pixel art. |
+| Aseprite file format (`docs/ase-file-specs.md` in the Aseprite repository; parsers `ase-parser`, `node-ase` are MIT) | public spec | Import `.aseprite` files: layers become parts, frames and tags become flipbook clips. A parser fits in the standard library (Node's zlib inflates the cels). |
+| Pixelorama (MIT, Godot), Piskel (Apache-2.0) | MIT, Apache-2.0 | Pixel editors to learn from (palettes, onion skin, export options). Nothing to integrate. |
+| Lospec palettes | data terms unclear | Do not bundle the palette database; let a project name its palette as hex colours. |
+
+The 0.2 engine already plays what these need: flipbooks (sequences), additive blending and layers,
+in the players and in Godot.
