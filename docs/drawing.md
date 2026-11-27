@@ -103,6 +103,22 @@ component edits the whole component. A part drawn as plain SVG keeps the plain-s
 an illustration) with the same guide, critique and export. It writes `<name>.svg`, `<name>.png`
 and `<name>.parts.json`, and no skeleton. A drawing keeps its kind when it is drawn again.
 
+## Sprite stacks
+
+A part drawn with a height band, `stack: [from, to]`, is a cut through an object seen from above:
+the same drawing at every height from `from` to `to` (rig units, 0 is the ground). Piled one
+pixel apart and turned together, the cuts read as a solid object in a top-down game: cars,
+buildings, trees, props. `taper: [bottom, top]` scales the cut along its band (1 is as drawn), so a
+cone, a dome or a tree crown is one part. Bands may overlap; overlapping parts layer in drawing
+order. A car, for instance: wheels `[0, 3]`, body `[2, 8]`, windows `[8, 12]`, roof `[12, 13]`.
+
+Because the parts are vector, `export_art` cuts one slice per pixel of height at every scale, so
+walls come out smooth instead of stepped; the slices near the ground are shaded a little darker.
+It writes `stack@<s>x.png` (the slices bottom first, in one row, or wrapped into rows of at most 16384 px when a big model would pass the texture size engines import) with `stack@<s>x.json` (slice size,
+count, pivot), `turn@<s>x.png/.json` (the stack pre-turned to `turns` angles, for engines that only
+play frames) and `godot/keyframe_stack.gd`, the Godot node that piles the strip, turned with the node and under a turning camera
+([godot.md](godot.md#sprite-stacks)). The turn sheet comes back as an image to look at.
+
 ## The art critique
 
 `critique_art { file: "<name>.parts.json" }` checks:
@@ -130,6 +146,7 @@ out together on purpose and are not compared for alignment.
 | `parts` | `png@<s>x/<part>.png` per part and state, trimmed, transparent; `parts.json` with trim offset, source size and pivot in pixels | engines placing parts themselves |
 | `sheet` | `<name>@<s>x.png` and `.json` (frame, spriteSourceSize, sourceSize, pivot) | engines and web libraries that read sprite sheets |
 | `svg` | `svg/<part>.svg`, `<name>.svg` with a `<g id>` per part | web pages and design tools |
+| `stack` | `stack@<s>x.png/.json` slices bottom first with the pivot; `turn@<s>x.png/.json` pre-turned angles; `godot/keyframe_stack.gd` | top-down games (sprite stacking) |
 | `clip` | `clip-<anim>/frame_0000.png...` and `clip-<anim>@sheet.png/.json` with fps | engines without a skeletal runtime |
 
 Scales are pixels per rig unit (`[1, 2, 3]`), or `pixels` sets the longest side. Everything is

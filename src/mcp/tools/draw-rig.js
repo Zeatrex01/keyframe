@@ -33,6 +33,8 @@ const PART = {
     size: { type: 'array', items: { type: 'number' }, short: '[w, h] (default viewBox)', description: 'Size in the rig [w, h] in units; default the viewBox size.' },
     blend: { type: 'string', enum: ['normal', 'additive', 'multiply', 'screen'], short: 'blend (default normal)', description: 'Slot blend mode; default normal.' },
     source: { type: 'object', short: 'how it was drawn (keep as read)', description: 'Kept from an earlier drawing (the drawing board sends it back): how the part was drawn, so restyle can draw it again. Leave it as read.' },
+    stack: { type: 'array', items: { type: 'number' }, short: '[from, to] height band (sprite stack)', description: 'Sprite stacking: the part is drawn as seen from above and is the cut through the object at every height from `from` to `to` (rig units, 0 is the ground). export_art kind stack piles the cuts into a turnable top-down object (a car: wheels [0, 3], body [2, 8], windows [8, 12], roof [12, 13]). Parts without it stay flat.' },
+    taper: { type: 'array', items: { type: 'number' }, short: '[bottom, top] cut scale along the band', description: 'With `stack`: the cut\'s scale at the bottom and the top of the band (1 is as drawn), so a cone, a dome or a tree crown is one part: [1, 0.2].' },
     hidden: { type: 'boolean', short: 'hidden in setup', description: 'Hidden in the setup pose (a closed lid, a flash); default false.' },
   },
 };
