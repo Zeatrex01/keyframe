@@ -5,6 +5,28 @@ All notable changes to this project. The format follows
 
 ## Unreleased
 
+## 0.0.2-beta - 2026-11-27
+
+Game characters and clips: a dressable side-view figure, animation events and loops, and sprite stacks for top-down games.
+
+### Added
+
+- Sprite stacking: a part drawn with a height band (`stack: [from, to]`, optional
+  `taper: [bottom, top]`) is a cut through an object seen from above. `export_art` kind `stack`
+  cuts the drawing into one slice per pixel of height (smooth walls, a contact shade near the
+  ground), writes the strip with its pivot, a sheet pre-turned to `turns` angles (returned as an
+  image to look at) and the Godot add-on's new `KeyframeStack` node that piles the strip, turned with the node and under a turning camera.
+- Animation events: a clip can fire named moments (a hit's contact frame, a footstep) through
+  `events` keys; `write_animation` defines every fired event in the delivery (with defaults given
+  in its new `events` argument, the base's own definitions winning). Events reach Godot (the
+  rig's `keyframe_event` signal), the web player (`on('event')`, with the defaults) and Spine JSON.
+- Loops: `write_animation` takes `loop` (kept with the clip in the delivery) and `export_godot`
+  takes `loops` per clip, so a one-shot that ends in its first pose (a cross, a block, a step)
+  plays once in Godot and fires `animation_finished`. More fight moves are one-shots by name.
+- Wardrobe for the side figure (`bare: true`, `wear: [...]`): a bald, shaped body; hair in seven
+  styles; shirt, trousers, boots; head-wear (headband, beanie, cap, hat, glasses, shades, moustache,
+  beard, mask); plate armour piece by piece. Each item is its own part, shown or hidden by the game.
+
 ## 0.0.1-beta - 2026-11-24
 
 The first public release: an open-source, AI-assisted 2D skeletal animation studio. You describe
