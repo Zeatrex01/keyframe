@@ -14,6 +14,8 @@
 
 import { colorOf, darken } from './style.js';
 import { armourPieces, weaponPart, arrowPart } from './figure-gear.js';
+import { wardrobeParts } from './figure-wardrobe.js';
+import { formPart, form, shade, PROFILES, footPath, solePath, fistShapes } from './figure-form.js';
 
 export const SIDE_PARTS = Object.freeze(['upperArmBack', 'forearmBack', 'handBack', 'thighBack', 'shinBack', 'footBack', 'body', 'head', 'eye',
   'thighFront', 'shinFront', 'footFront', 'upperArmFront', 'forearmFront', 'handFront']);
@@ -42,18 +44,25 @@ export function sideParts(c, style) {
   const k = v => r2(v * H);
   const hex = v => colorOf(style, v);
   const skin = hex(c.skin ?? (style.palette.skin ? 'skin' : 'accent+55'));
-  const shirt = hex(c.shirt ?? 'primary'), pants = hex(c.pants ?? 'secondary'), hair = hex(c.hair ?? 'ink+25'), shoes = hex(c.shoes ?? 'ink+20');
+  // Bare (src/art/figure-wardrobe.js): a bald body in one plain base layer, everything else worn over it.
+  const bare = c.bare === true, base = hex(c.base ?? '#c9c3b9');
+  const shirt = bare ? base : hex(c.shirt ?? 'primary'), pants = bare ? base : hex(c.pants ?? 'secondary'), hair = hex(c.hair ?? 'ink+25'), shoes = bare ? base : hex(c.shoes ?? 'ink+20');
   const back = col => darken(col, 0.16);   // the far side, a step into the shade
   const sw = style.stroke.color === 'none' ? 0 : style.stroke.regular;
 
   // Heights from the ground up.
-  const footH = k(0.05), shin = k(0.14), thigh = k(0.15), legW = k(0.085);
+  // `bulk` (0.75-1.4) makes the build slimmer or broader: the torso, arms and legs widen, the bones stay.
+  // The bare body is leaner than the plain figure: a slim hero the wardrobe dresses up.
+  const bulk = (Number.isFinite(c.bulk) ? Math.min(1.4, Math.max(0.75, c.bulk)) : 1) * (bare ? 0.8 : 1);
+  const footH = k(0.05), shin = k(0.14), thigh = k(0.15), legW = r2(k(0.085) * bulk);
   const hip = footH + shin + thigh;
-  const torsoH = k(0.29), torsoW = k(0.19);
+  const torsoH = k(0.29), torsoW = r2(k(0.19) * bulk);
   const torsoBottom = hip - legW * 0.5, torsoTop = torsoBottom + torsoH;
-  const headH = k(0.3), headW = k(0.28), headY = torsoTop + headH * 0.42;
-  const armW = k(0.07), upperArm = k(0.13), forearm = k(0.12), handD = k(0.065);
-  const shoulder = [k(0.0), torsoTop - armW * 0.7];
+  // The bare body's head is a little smaller, so the body reads as a hero rather than a toy.
+  const headH = k(bare ? 0.245 : 0.3), headW = k(bare ? 0.23 : 0.28), headY = torsoTop + headH * 0.42;
+  const armW = r2(k(0.07) * bulk), upperArm = k(0.13), forearm = k(0.12), handD = k(0.065);
+  // The bare body hangs its arms a little behind the middle, so the chest line shows in front of them.
+  const shoulder = [bare ? -k(0.012) : k(0.0), torsoTop - armW * 0.7];
 
   // The measures gear is fitted to (figure-gear.js).
   const armAt = s => { const sx = shoulder[0] + (s === 'Back' ? k(0.015) : -k(0.01)); return { shoulder: [sx, shoulder[1]], elbow: [sx, shoulder[1] - upperArm] }; };
@@ -62,16 +71,33 @@ export function sideParts(c, style) {
   const g = { H, armW, forearm, legW, shin, thigh, torsoW, torsoH, torsoBottom, headW, headH, headCenter: [k(0.02), headY],
     arms: { Back: armAt('Back'), Front: armAt('Front') }, legs: { Back: legAt('Back'), Front: legAt('Front') },
     grip: [wristFront[0] + d0 * 0.02, wristFront[1] - d0 * 0.32] };
-  const gear = armourPieces(g, c, hex);
+  const gear = armourPieces(g, bare ? { ...c, armor: null } : c, hex);
+  const tp = PROFILES.torso, torsoLen = r2(torsoH - torsoW * (tp[0][1] + tp[0][2] + tp[tp.length - 1][1] + tp[tp.length - 1][2]) / 2);
+  const fw0 = k(0.13), fh0 = footH + legW * 0.25;
+  const wardrobe = bare ? wardrobeParts({ ...g, sw, upperArm,
+    limbs: Object.fromEntries(['Back', 'Front'].flatMap(s => {
+      const a = armAt(s), l = legAt(s);
+      return [[`upperArm${s}`, [a.shoulder, upperArm, armW, armW * 0.85, 'upperArm']], [`forearm${s}`, [a.elbow, forearm, armW * 0.82, armW * 0.72, 'forearm']],
+        [`thigh${s}`, [[l.x, hip], thigh, legW, legW * 0.85, 'thigh']], [`shin${s}`, [[l.x, hip - thigh], shin, legW * 0.82, legW * 0.7, 'shin']]];
+    })),
+    feet: Object.fromEntries(['Back', 'Front'].map(s => [s, { x: legAt(s).x, fw: fw0, fh: fh0, heel: fw0 * 0.3, legW }])),
+    torso: { W: torsoW, H: torsoH, len: torsoLen, bottom: torsoBottom, legW, hip }, head: { hw: headW, hh: headH, offset: [k(0.02), r2(headY)] } }, c, hex) : null;
   const weapon = weaponPart(g, c, hex), arrow = arrowPart(g, c, hex);
 
   /** @type {any[]} */
   const parts = [];
+  // A limb: a plain tapered tube, or on the bare body a shaped, shaded form (src/art/figure-form.js).
+  const bone = (name, parent, joint, len, w1, w2, fill, prof) => (bare
+    ? formPart(name, parent, [joint, len, w1, w2, prof], 0, f => shade(f, fill, 'skin'))
+    : limb(name, parent, joint, len, w1, w2, fill, sw));
   const arm = (s, tone) => {
     const sx = armAt(s).shoulder[0];
-    parts.push(limb(`upperArm${s}`, 'body', [sx, shoulder[1]], upperArm, armW, armW * 0.85, tone(shirt), sw));
+    parts.push(bone(`upperArm${s}`, 'body', [sx, shoulder[1]], upperArm, armW, armW * 0.85, tone(shirt), 'upperArm'));
+    const worn = wardrobe?.arm(s, tone);
+    if (worn) parts.push(...worn.upper);
     const elbow = [sx, shoulder[1] - upperArm];
-    parts.push(limb(`forearm${s}`, `upperArm${s}`, elbow, forearm, armW * 0.82, armW * 0.72, tone(skin), sw));
+    parts.push(bone(`forearm${s}`, `upperArm${s}`, elbow, forearm, armW * 0.82, armW * 0.72, tone(bare ? base : skin), 'forearm'));
+    if (worn) parts.push(...worn.lower);
     const [bracer, pauldron] = gear.arm(s, tone);
     if (bracer) parts.push(bracer);
     // The weapon goes under the near fist, so the fingers close over its grip.
@@ -79,24 +105,30 @@ export function sideParts(c, style) {
     if (s === 'Front' && arrow) parts.push(arrow);
     const d = handD + sw, wrist = [elbow[0], elbow[1] - forearm];
     // A fist, the thumb on top towards the front.
-    parts.push({ name: `hand${s}`, parent: `forearm${s}`, box: [r2(d * 1.2), r2(d * 1.2)], offset: [r2(wrist[0]), r2(wrist[1] - d * 0.3)], pivot: [0, r2(d * 0.3)], shapes: [
+    parts.push({ name: `hand${s}`, parent: `forearm${s}`, box: [r2(d * 1.2), r2(d * 1.2)], offset: [r2(wrist[0]), r2(wrist[1] - d * 0.3)], pivot: [0, r2(d * 0.3)], shapes: bare ? fistShapes(d, tone(skin)) : [
       { circle: [r2(d * 0.6), r2(d * 0.62), r2(d / 2 - sw / 2)], fill: tone(skin), sw: 'regular' },
       { ellipse: [r2(d * 0.86), r2(d * 0.46), r2(d * 0.15), r2(d * 0.2)], fill: tone(skin), sw: 'thin' },
     ] });
     if (pauldron) parts.push(pauldron);
+    if (worn) parts.push(...worn.top);
   };
   const leg = (s, tone) => {
     const x = s === 'Back' ? k(0.02) : -k(0.01);
-    parts.push(limb(`thigh${s}`, 'body', [x, hip], thigh, legW, legW * 0.85, tone(pants), sw));
-    const worn = gear.leg(s, tone);
+    parts.push(bone(`thigh${s}`, 'body', [x, hip], thigh, legW, legW * 0.85, tone(pants), 'thigh'));
+    const worn = gear.leg(s, tone), dressed = wardrobe?.leg(s, tone);
     parts.push(...worn.thigh);
-    parts.push(limb(`shin${s}`, `thigh${s}`, [x, hip - thigh], shin, legW * 0.82, legW * 0.7, tone(pants), sw));
+    if (dressed) parts.push(...dressed.thigh);
+    parts.push(bone(`shin${s}`, `thigh${s}`, [x, hip - thigh], shin, legW * 0.82, legW * 0.7, tone(pants), 'shin'));
     parts.push(...worn.shin);
+    if (dressed) parts.push(...dressed.shin);
     // A shoe pointing forward (+x), turning at the ankle over its heel.
     const fw = k(0.13), fh = footH + legW * 0.25, heel = fw * 0.3;
-    parts.push({ name: `foot${s}`, parent: `shin${s}`, box: [r2(fw), r2(fh)], offset: [r2(x - heel + fw / 2), r2(fh / 2)], pivot: [r2(heel - fw / 2), r2(fh / 2 - legW * 0.3)], shapes: [
+    parts.push({ name: `foot${s}`, parent: `shin${s}`, box: [r2(fw), r2(fh)], offset: [r2(x - heel + fw / 2), r2(fh / 2)], pivot: [r2(heel - fw / 2), r2(fh / 2 - legW * 0.3)], shapes: bare ? [
+      { path: footPath(fw, fh), fill: tone(shoes), sw: 'regular', shade: false, bbox: [0, 0, fw, fh] },
+      { path: solePath(fw, fh), fill: tone(darken(shoes, 0.2)), stroke: false, shade: false }] : [
       { path: `M${r2(sw / 2)} ${r2(fh - sw / 2)} L${r2(sw / 2)} ${r2(fh * 0.3)} Q${r2(sw / 2)} ${r2(sw / 2)} ${r2(fh * 0.5)} ${r2(sw / 2)} L${r2(fw * 0.55)} ${r2(sw / 2)} Q${r2(fw - sw / 2)} ${r2(fh * 0.25)} ${r2(fw - sw / 2)} ${r2(fh * 0.75)} L${r2(fw - sw / 2)} ${r2(fh - sw / 2)} Z`,
         fill: tone(shoes), sw: 'regular', bbox: [0, 0, fw, fh] }] });
+    if (dressed) parts.push(...dressed.foot);
   };
   const same = col => col;
 
@@ -109,7 +141,13 @@ export function sideParts(c, style) {
       fill: shirt, sw: 'regular', bbox: [0, 0, W, Ht] },
     { rect: [r2(x0 + W * 0.03), r2(Ht * 0.76), r2(W * 0.94 - sw), r2(Ht * 0.24 - sw / 2)], r: 'sm', fill: pants, sw: 'regular', shade: false },
   ] });
+  if (bare) {
+    // The bare torso in side view: rib cage tipped back, a waist, the pelvis (src/art/figure-form.js).
+    const tf = form('torso', torsoLen, torsoW), cy = torsoBottom + tf.H / 2;
+    parts[parts.length - 1] = { name: 'body', owner: true, box: [r2(tf.W), r2(tf.H)], offset: [r2(tf.W / 2 - tf.cx), r2(cy)], pivot: [r2(tf.cx - tf.W / 2), r2(hip - cy)], shapes: shade(tf, shirt, 'skin') };
+  }
   parts.push(...gear.body());
+  if (wardrobe) parts.push(...wardrobe.body());
   // The head in profile, facing right: the skull, the face to the front with a nose and a chin, an
   // ear in the middle, hair over the top and the back, a brow and a mouth.
   const hw = headW, hh = headH;
@@ -130,7 +168,9 @@ export function sideParts(c, style) {
     { ellipse: [r2(ed * 0.6), r2(ed * 0.8), r2(ed * 0.45), r2(ed * 0.72)], fill: 'ink+10', stroke: false, shade: false },
     { circle: [r2(ed * 0.78), r2(ed * 0.5), r2(ed * 0.16)], fill: '#ffffff', stroke: false, shade: false },
   ] });
+  if (bare) { const head = parts.find(p => p.name === 'head'); head.shapes.splice(1, 1); }   // bald: the hair is worn
   parts.push(...gear.head());
+  if (wardrobe) parts.push(...wardrobe.head());
   leg('Front', same); arm('Front', same);
   return parts;
 }

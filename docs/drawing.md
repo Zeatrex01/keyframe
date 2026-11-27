@@ -59,6 +59,15 @@ A part is drawn one of three ways, cheapest first:
    A bow brings an `arrow` part on the weapon, hidden until a shot shows it, and a drawn bow
    (`weapon_drawn`, the string pulled to the nock); `plant` with `on: "weapon"` keeps the far hand
    on the nock, or on a spear shaft, while the weapon moves.
+   `bare: true` gives the side figure as a bald, bare body with a wardrobe: every item is a part of
+   its own on the bone it covers, drawn hidden, and `wear: [...]` lists the ones shown, so a game
+   puts each one on or takes it off by itself. Cloth: `hair` (`hairStyle`: short, spiky, long,
+   swept, bun, afro, horseshoe; bald is no hair worn), `shirt`, `trousers`, `boots`. Head: `headband`,
+   `beanie`, `cap`, `hat`, `glasses`, `shades`, `moustache`, `beard`, `mask` (colours `headwear`,
+   `maskColor`, `facialHair`, `lens`). Armour: `helmet`, `cuirass`, `pauldrons`, `vambraces`,
+   `cuisses`, `greaves`, `sabatons` (`metal`, `trim`, `leather`). Armour hides the cloth under it, a
+   helmet hides hair and hats, a hat hides a cap, a mask hides facial hair; `bulk` (0.75 to 1.4)
+   slims or broadens the body and everything worn follows.
    `build: kid | adult` is a full body standing, with legs, for when the owner asks
    for one (`h`, `skin`, `shirt`, `pants`, `hair`, `shoes`, `sleeves: long`, and `prefix` for a
    second figure in one drawing).
