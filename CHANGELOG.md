@@ -7,6 +7,12 @@ All notable changes to this project. The format follows
 
 ### Added
 
+- Pixel art: `export_art` with `pixel` writes the parts, the sprite sheet and clips as pixel art
+  into `<name>-export/pixel/`: every pixel one colour of a palette (found from the drawing, 16
+  colours by default, or given), fully opaque or clear, no anti-aliasing; a pixel takes the colour
+  most of it shows, and a clearly darker line keeps its share. Parts and frames share one palette
+  (`palette.hex`, `palette.png`); an optional one-pixel outline and a whole-number blow-up; pivots
+  stay true and the maps say `filter: nearest`.
 - Particle emitters: `add_effect` kind `emit` simulates particles once (launched from a point,
   circle, ring, rectangle or line; pulled by gravity and slowed by drag; scaling, turning, tinting
   and fading over their lives) and writes them as ordinary bones, slots and keys whose bezier
