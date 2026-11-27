@@ -15,7 +15,9 @@ import { compactSchema } from '../src/mcp/describe.js';
 // (the art director's guide, check and exports), and the parametric shapes and components of draw_rig.
 // 2026-11-27: raised to 30,500 for see_animation's `then` and `layers` (the 0.2 engine's
 // crossfades and layers, seen as a game mixes them); nested fields carry one-word hints.
-const BUDGET_BYTES = 30500;
+// 2026-11-27: raised to 30,600 for add_effect's particle emitter (`emit`): its recipe names and
+// its library sprite, with the rest of its settings in `tune`.
+const BUDGET_BYTES = 30600;
 const SUMMARY_MAX = 220;      // one or two sentences
 
 test('the compact listing of the real tool set stays under budget', async () => {

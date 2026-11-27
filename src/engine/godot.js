@@ -15,7 +15,7 @@
 
 import { StudioError } from '../shared/errors.js';
 import { compileSkeleton } from './model.js';
-import { Pose, regionVertices, meshVertices, attachmentPath } from './pose.js';
+import { Pose, regionVertices, meshVertices } from './pose.js';
 import { Playhead } from './index.js';
 import { regionUVs, meshUVs } from './draws.js';
 import { parseAtlas, atlasRegions } from './atlas.js';
@@ -302,7 +302,7 @@ function sceneAnimation(model, animation, { fps, skin, blocked: always, slots, r
   return { name: animation.name, length: round(duration), loop: loops, tracks };
 }
 
-/** A copy of what a sampled pose shows, so a playhead can go on posing the next frame. */
+/** A copy of what a sampled pose shows, so a playhead can go on posing the next frame. @returns {any} */
 function frozen(pose) {
   const slots = pose.slots.map(s => ({ ...s, color: { ...s.color }, dark: s.dark ? { ...s.dark } : null }));
   return { model: pose.model, bones: pose.bones.map(b => ({ ...b })), slots, drawOrder: pose.drawOrder.map(s => slots[s.data.index]) };

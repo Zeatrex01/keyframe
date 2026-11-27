@@ -24,9 +24,11 @@ test('every bundled pack is sound, freely licensed, credited where it must be, a
     for (const item of pack.items.filter(i => i.file.endsWith('.svg'))) {
       const img = rasterizeSvg(readAssetSvg(item.ref), { height: 32 });
       assert.deepEqual(img.skipped, [], item.ref);
-      let opaque = 0;
-      for (let i = 3; i < img.data.length; i += 4) opaque += img.data[i] > 128 ? 1 : 0;
-      assert.ok(opaque > img.width * img.height * 0.15, `${item.ref} draws something`);
+      // Solid art covers a good part of its box; soft effect sprites (a glow, a slash) carry
+      // their ink in gradients, so their summed alpha counts instead.
+      let opaque = 0, mass = 0;
+      for (let i = 3; i < img.data.length; i += 4) { opaque += img.data[i] > 128 ? 1 : 0; mass += img.data[i] / 255; }
+      assert.ok(opaque > img.width * img.height * 0.15 || mass > img.width * img.height * 0.05, `${item.ref} draws something`);
     }
   }
 });

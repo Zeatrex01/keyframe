@@ -79,7 +79,8 @@ test('shake: decaying jitter that ends where it started; refuses a bone that alr
 
 test('the official runtime plays every effect as the engine does', { skip: !SPINE && 'needs the Spine add-on' }, async () => {
   const runtime = await officialRuntime();
-  for (const spec of [{ kind: 'burst', animation: 'open', sprite: { slot: 'coin' } }, { kind: 'flash', animation: 'open', sprite: { slot: 'chest' } }, { kind: 'trail', animation: 'open', sprite: { slot: 'coin' } }]) {
+  for (const spec of [{ kind: 'burst', animation: 'open', sprite: { slot: 'coin' } }, { kind: 'flash', animation: 'open', sprite: { slot: 'chest' } }, { kind: 'trail', animation: 'open', sprite: { slot: 'coin' } },
+    { kind: 'emit', animation: 'open', sprite: { slot: 'coin' }, count: 8, duration: 0.3, gravity: 400, drag: 2, life: [0.3, 0.5], align: true }]) {
     const { skeleton } = addEffect(BASE, spec);
     const data = await runtime.parseSkeleton(skeleton);
     const official = await runtime.sampleAnimation(data, 'open', [0.2, 0.5]);

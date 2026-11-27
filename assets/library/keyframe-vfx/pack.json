@@ -1,0 +1,21 @@
+{
+ "id": "keyframe-vfx",
+ "title": "Keyframe effects",
+ "description": "White, tintable effect sprites for particle emitters: soft dots and glows, sparks and streaks, smoke puffs, shockwave rings, flares, slashes, shards, flames and confetti. A clip tints them through the emitter's colours.",
+ "license": "MIT",
+ "author": "The Keyframe Studio contributors",
+ "source": "https://github.com/Zeatrex01/keyframe",
+ "items": [
+  { "id": "dot", "file": "dot.svg", "tags": ["vfx", "particle", "soft"] },
+  { "id": "glow", "file": "glow.svg", "tags": ["vfx", "light", "flash"] },
+  { "id": "spark", "file": "spark.svg", "tags": ["vfx", "hit", "magic"] },
+  { "id": "streak", "file": "streak.svg", "tags": ["vfx", "hit", "speed"] },
+  { "id": "puff", "file": "puff.svg", "tags": ["vfx", "smoke", "dust"] },
+  { "id": "ring", "file": "ring.svg", "tags": ["vfx", "shockwave", "hit"] },
+  { "id": "flare", "file": "flare.svg", "tags": ["vfx", "light", "magic"] },
+  { "id": "slash", "file": "slash.svg", "tags": ["vfx", "hit", "weapon"] },
+  { "id": "shard", "file": "shard.svg", "tags": ["vfx", "debris", "hit"] },
+  { "id": "flame", "file": "flame.svg", "tags": ["vfx", "fire"] },
+  { "id": "confetti", "file": "confetti.svg", "tags": ["vfx", "reward", "celebration"] }
+ ]
+}

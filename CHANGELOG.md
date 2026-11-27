@@ -7,6 +7,17 @@ All notable changes to this project. The format follows
 
 ### Added
 
+- Particle emitters: `add_effect` kind `emit` simulates particles once (launched from a point,
+  circle, ring, rectangle or line; pulled by gravity and slowed by drag; scaling, turning, tinting
+  and fading over their lives) and writes them as ordinary bones, slots and keys whose bezier
+  handles carry each particle's velocity, so the path is exact and every player shows the same.
+  Particles stay where they were let go (or ride the bone with `follow`), share slots when their
+  lives do not overlap, and a looping emitter wraps its lives around the loop with no seam.
+  Ready-made recipes: sparks, shockwave, smoke, dust, fire, embers, magic and confetti.
+- A bundled effects pack (`assets/library/keyframe-vfx`, MIT): white, tintable dots, glows,
+  sparks, streaks, puffs, rings, flares, slashes, shards, flames and confetti. An emitter that
+  draws one gets it on the delivery's own atlas page (`<delivery>_fx.png`) and a section in the
+  delivery's atlas; the base's atlas is never changed, and later writes keep the page.
 - Multi-track playback on the studio's own engine (`Mixer`): crossfades between clips, layers on
   higher tracks with an alpha (a punch over a run keeps the legs running), additive layers, a
   fade-out when a track is cleared, queued clips, and start, complete, end and event callbacks.

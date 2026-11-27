@@ -57,7 +57,7 @@ export const GUIDE = Object.freeze({
     next: ['read_rig', 'check_skeleton'],
   },
   add_effect: {
-    when: 'The clip needs an effect: coins or sparks flying out (burst), a motion trail, a hit flash, a pulsing glow, a camera or object shake.',
+    when: 'The clip needs an effect: sparks, smoke, fire or confetti (emit), coins flying out (burst), a trail, a hit flash, a glow, a shake.',
     notWhen: 'The effect needs new art: draw it first with draw_rig, then reuse it here.',
     example: { kind: 'burst', animation: 'open', sprite: { slot: 'coin' }, at: 0.4, count: 12, tune: { direction: 90, spread: 70 } },
     next: ['see_animation', 'critique_animation'],

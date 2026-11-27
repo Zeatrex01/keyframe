@@ -62,7 +62,7 @@ function packSheet(images, pad = 2) {
 /**
  * Export a drawing.
  * @param {{ name: string, kind?: string, parts: any[] }} doc  the parts document (svg-rig.js)
- * @param {{ scales?: number[], kinds?: string[], pixels?: number, padding?: number, turns?: number }} options  padding: clear pixels around each sprite in a sheet (default 2); turns: angles of the pre-turned stack (default 16); maxSide: the widest stack strip row in pixels (default MAX_STRIP_SIDE)
+ * @param {{ scales?: number[], kinds?: string[], pixels?: number, padding?: number, turns?: number, maxSide?: number }} options  padding: clear pixels around each sprite in a sheet (default 2); turns: angles of the pre-turned stack (default 16); maxSide: the widest stack strip row in pixels (default MAX_STRIP_SIDE)
  *   scales: pixels per rig unit (1x, 2x, 3x); pixels: instead, the longest side of the whole drawing in pixels
  * @returns {{ files: Record<string, Uint8Array | string>, manifest: object }}
  */

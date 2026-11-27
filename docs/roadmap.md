@@ -112,6 +112,17 @@ motion features games use most to the Spine add-on. This phase completes the eng
 - Godot: physics and transform bones baked, flipbooks as texture tracks, `crossfade()` on the rig.
 - Out of this phase: a state machine with parameters (next phase).
 
+### Phase 2d: effects and pixel art (decided 2026-11-27)
+
+Sources and their licenses are in [ideas.md](ideas.md) (2026-11-27). In order:
+
+- Particle emitters written as keys (`add_effect` kind `emit`) with ready-made recipes and a
+  bundled pack of effect sprites drawn onto the delivery's own atlas page. Done.
+- Pixel-art export: sprite sheets and parts at a fixed palette, without anti-aliasing, at an
+  integer scale, so a rig drawn as vectors ships as crisp pixel art.
+- Aseprite import: an `.aseprite` file's layers become parts and its frames and tags become
+  flipbook clips, read from the published file format with the standard library.
+
 ### Phase 3: the agent understands what it animates
 
 - Before writing, the agent classifies the subject (character, creature, prop, UI element, VFX,

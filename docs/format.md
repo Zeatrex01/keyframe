@@ -96,3 +96,12 @@ skipped. See [godot.md](godot.md).
 A pack is accepted only under CC0-1.0, MIT, CC-BY-3.0 or CC-BY-4.0, and a pack whose license asks
 for credit is credited in `NOTICE` (a gate checks both). Items are reached as
 `asset:<pack>/<item>`.
+
+## Effect art in a delivery
+
+A delivery records what the studio added beyond its base under `_kfAdded`: `bones` and `slots`
+(effects), and `art`, the library items its emitters draw:
+`[{ "region": "fx/keyframe-vfx/spark", "ref": "asset:keyframe-vfx/spark", "width": 16, "height": 16 }]`
+(sizes in skeleton units, the largest any emitter uses). The items are drawn at 2 pixels per unit
+onto a page of the delivery's own, `<delivery>_fx.png`, and the delivery's atlas is the base's with
+one more section for that page. The base's atlas and pages are never changed.
