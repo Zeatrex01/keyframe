@@ -110,13 +110,14 @@ export const exportArtTool = {
       animation: { type: 'string', short: 'clip to export (kind clip)', description: 'The animation to export as frames (kind clip). Read from the latest delivery (<name>_v2.json) when there is one.' },
       fps: { type: 'number', minimum: 1, maximum: 60, short: 'clip frames per second (24)', description: 'Frames per second of the clip export; default 24.' },
       size: { type: 'number', minimum: 16, maximum: 2048, short: 'clip frame px (256)', description: 'Square frame size of the clip export in pixels; default 256.' },
+      trim: { type: 'boolean', short: 'false: full box', description: 'false keeps every part PNG at its full box, transparent edges included, so tiles, nine-slice panels and frames line up without offsets; default true (trimmed, with trim offsets in parts.json).' },
       padding: { type: 'integer', minimum: 0, maximum: 32, short: 'clear px around each sprite (2)', description: 'Clear pixels around every sprite and clip frame in a sheet, so texture filtering never bleeds a neighbour in; default 2.' },
       turns: { type: 'integer', minimum: 4, maximum: 64, short: 'angles of the pre-turned stack (16)', description: 'How many angles the turn sheet of a stack has (kind stack); default 16.' },
       loop: { type: 'boolean', short: 'clip loops or plays once (auto)', description: 'Whether the clip export cycles (idle, run) or plays once (jump, attack). Default: it loops when it ends where it starts.' },
       pixel: { type: 'object', short: 'pixel art: colors, palette, outline, upscale', description: 'Pixel art of the parts, sheet and clip (see the description): { colors, palette, outline, upscale }.' },
     },
   },
-  async run({ file, kinds, scales, pixels, animation, fps, size, padding, loop, turns, pixel }, { session }) {
+  async run({ file, kinds, scales, pixels, animation, fps, size, padding, loop, turns, pixel, trim }, { session }) {
     if (pixel) pixelOptions(pixel);
     const project = projectOf(session);
     const { doc, abs } = readDrawing(project, file);
@@ -127,7 +128,7 @@ export const exportArtTool = {
     const drawing = wanted.filter(k => EXPORT_KINDS.includes(k) && k !== 'clip');
     const outDir = path.join(path.dirname(abs), `${doc.name}-export`);
     const files = {};
-    const out = drawing.length ? exportDrawing(doc, { scales: scales?.length ? scales : [1, 2], kinds: drawing, pixels, padding: padding ?? 2, turns: turns ?? 16, pixel }) : { files: {}, manifest: { scales: [] }, palette: null };
+    const out = drawing.length ? exportDrawing(doc, { scales: scales?.length ? scales : [1, 2], kinds: drawing, pixels, padding: padding ?? 2, turns: turns ?? 16, pixel, trim: trim !== false }) : { files: {}, manifest: { scales: [] }, palette: null };
     Object.assign(files, out.files);
     let palette = out.palette;
     if (wanted.includes('stack')) {

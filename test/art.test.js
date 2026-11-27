@@ -73,6 +73,22 @@ test('shapes become one clean SVG in the guide: gradients, outline, shine, text 
   assert.throws(() => renderShapes({ box: [10, 10], shapes: [{ icon: 'unicorn' }] }, style), /icon family/);
 });
 
+test('a dashed outline is cut into dashes any renderer draws: lines, rounded boxes and rings, the fill kept whole', () => {
+  const at = (img, x, y) => img.data[(y * img.width + x) * 4 + 3];
+  const line = renderShapes({ box: [100, 10], shapes: [{ line: [0, 5, 100, 5], stroke: '#2468cc', sw: 4, dash: [10, 10] }] }, style);
+  const segs = line.svg.match(/M[\d.]+ 5/g) ?? [];
+  assert.equal(segs.length, 5, 'ten on, ten off along a hundred: five dashes');
+  const img = rasterizeSvg(line.svg, { width: 100, height: 10 });
+  assert.ok(at(img, 5, 5) > 200 && at(img, 15, 5) < 30 && at(img, 25, 5) > 200, 'drawn, gap, drawn');
+  const box = renderShapes({ box: [80, 60], shapes: [{ rect: [4, 4, 72, 52], r: 10, fill: '#5b4be0', stroke: '#5b4be0', sw: 3, dash: [6, 5] }] }, style);
+  assert.match(box.svg, /<rect [^>]*rx="10" fill="[^"]+"\/>/, 'the fill is drawn without a stroke');
+  assert.ok((box.svg.match(/M/g) ?? []).length > 12, 'the outline goes round in dashes, corners included');
+  const ring = renderShapes({ box: [40, 40], shapes: [{ circle: [20, 20, 16], fill: 'none', stroke: '#f4ae3f', sw: 2, dash: [4, 4] }] }, style);
+  assert.ok((ring.svg.match(/M/g) ?? []).length >= 12 && !/<circle/.test(ring.svg), 'an unfilled ring is only its dashes');
+  assert.throws(() => renderShapes({ box: [10, 10], shapes: [{ path: 'M0 0L10 10', dash: [2, 2] }] }, style), /dash works on/);
+  assert.throws(() => renderShapes({ box: [10, 10], shapes: [{ line: [0, 0, 10, 10], dash: [0, 2] }] }, style), /above 0/);
+});
+
 test('components split into the parts an animator needs, with states as other looks', () => {
   assert.ok(Object.keys(COMPONENTS).length >= 8);
   const button = componentParts({ component: 'button', label: 'GO' }, style, 'go');
@@ -375,6 +391,17 @@ test('critique_art writes a contact sheet; export_art writes trimmed PNGs with p
     assert.match(svg, /<g id="play"/);
     assert.doesNotMatch(svg, /script|on[a-z]+=/i);
     assert.ok(fs.existsSync(path.join(out, 'svg', 'shop.svg')));
+    // Untrimmed: every PNG keeps its part's whole box, for tiles and nine-slice panels.
+    await s.call('draw_rig', { name: 'pad', parts: [{ name: 'dot', box: [40, 40], shapes: [{ circle: [20, 20, 5], fill: 'primary' }], at: [0, 0] }] });
+    const pad = path.join(s.dir, 'pad-export');
+    await s.call('export_art', { file: 'pad.parts.json', scales: [2], kinds: ['parts', 'sheet'] });
+    const cut = JSON.parse(fs.readFileSync(path.join(pad, 'parts.json'), 'utf8')).parts.dot.png['2x'].dot;
+    assert.ok(cut.size[0] < 40, 'trimmed by default');
+    await s.call('export_art', { file: 'pad.parts.json', scales: [2], kinds: ['parts', 'sheet'], trim: false });
+    const full = JSON.parse(fs.readFileSync(path.join(pad, 'parts.json'), 'utf8')).parts.dot.png['2x'].dot;
+    assert.deepEqual([full.size, full.trim], [[80, 80], [0, 0]], 'the image is the full box');
+    assert.deepEqual([decodePng(fs.readFileSync(path.join(pad, full.file))).width], [80]);
+    assert.equal(JSON.parse(fs.readFileSync(path.join(pad, 'pad@2x.json'), 'utf8')).frames.dot.trimmed, false);
   } finally { s.done(); }
 });
 

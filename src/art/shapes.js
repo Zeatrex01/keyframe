@@ -7,7 +7,8 @@
 // instead of the SVG itself: a tenth of the tokens, and every part follows the same palette,
 // stroke weights, radii and light. Shapes: rect, circle, ellipse, path, poly, line, star, text
 // (the built-in stroke font) and icon (the glyph family). Paint: fill and stroke by role
-// ("primary", "primary-20", "#rrggbb", "none"), sw (thin, regular, bold or a number), and the
+// ("primary", "primary-20", "#rrggbb", "none"), sw (thin, regular, bold or a number), dash ([on, off]
+// lengths, a dashed outline), and the
 // light of the guide: shade (top-lit gradient), shine (a highlight), shadow (a drop shadow).
 // Pure and isomorphic.
 
@@ -54,9 +55,51 @@ function geometry(s, style, where) {
       pts = []; for (let i = 0; i < flat.length; i += 2) pts.push([flat[i], flat[i + 1]]);
     }
     const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
-    return { kind, tag: 'polygon', attrs: { points: pts.map(p => p.map(r2).join(',')).join(' ') }, box: [Math.min(...xs), Math.min(...ys), Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)] };
+    return { kind, tag: 'polygon', pts, attrs: { points: pts.map(p => p.map(r2).join(',')).join(' ') }, box: [Math.min(...xs), Math.min(...ys), Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)] };
   }
   return { kind };
+}
+
+/** A shape's outline as polylines, for a dashed stroke; null for a shape that has none here (a path). */
+function outlineOf(g) {
+  const oval = (cx, cy, rx, ry, a0 = 0, a1 = 2 * Math.PI, n = 72) => Array.from({ length: n + 1 }, (_, i) => {
+    const a = a0 + (a1 - a0) * i / n;
+    return [cx + rx * Math.cos(a), cy + ry * Math.sin(a)];
+  });
+  if (g.kind === 'line') return [[[g.attrs.x1, g.attrs.y1], [g.attrs.x2, g.attrs.y2]]];
+  if (g.kind === 'circle') return [oval(g.attrs.cx, g.attrs.cy, g.attrs.r, g.attrs.r)];
+  if (g.kind === 'ellipse') return [oval(g.attrs.cx, g.attrs.cy, g.attrs.rx, g.attrs.ry)];
+  if (g.kind === 'poly' || g.kind === 'star') return [[...g.pts, g.pts[0]]];
+  if (g.kind === 'rect') {
+    const [x, y, w, h] = g.box, r = g.r ?? 0, q = Math.PI / 2;
+    if (!(r > 0)) return [[[x, y], [x + w, y], [x + w, y + h], [x, y + h], [x, y]]];
+    // Clockwise from the top left, each corner a quarter of an ellipse.
+    const pts = [...oval(x + w - r, y + r, r, r, -q, 0, 8), ...oval(x + w - r, y + h - r, r, r, 0, q, 8),
+      ...oval(x + r, y + h - r, r, r, q, 2 * q, 8), ...oval(x + r, y + r, r, r, 2 * q, 3 * q, 8)];
+    return [[...pts, pts[0]]];
+  }
+  return null;
+}
+
+/** Polylines cut into dashes [on, off] along their length, as SVG path data. */
+function dashPath(lines, [on, off]) {
+  let d = '';
+  for (const line of lines) {
+    let drawing = true, left = on, down = false;
+    for (let i = 1; i < line.length; i++) {
+      let [ax, ay] = line[i - 1];
+      const [bx, by] = line[i];
+      let seg = Math.hypot(bx - ax, by - ay);
+      while (seg > 1e-9) {
+        if (drawing && !down) { d += `M${r2(ax)} ${r2(ay)}`; down = true; }
+        const step = Math.min(left, seg), k = step / seg;
+        ax += (bx - ax) * k; ay += (by - ay) * k; seg -= step; left -= step;
+        if (drawing) d += `L${r2(ax)} ${r2(ay)}`;
+        if (left <= 1e-9) { drawing = !drawing; left = drawing ? on : off; down = false; }
+      }
+    }
+  }
+  return d;
 }
 
 /**
@@ -174,7 +217,16 @@ export function renderShapes(spec, style) {
     if (s.shadow && style.light.shadow > 0 && g.kind !== 'line') {
       body.push(el(g.tag, { ...g.attrs, fill: ink, 'fill-opacity': style.light.shadowAlpha, transform: `translate(${r2(lightDx * style.light.shadow)} ${style.light.shadow})` }));
     }
-    body.push(el(g.tag, {
+    // A dashed outline ("where it was", a dotted guide): the shape filled without a stroke, then its
+    // outline cut into dashes, so any renderer draws it without dash support.
+    const dash = s.dash === undefined ? null : nums(s.dash, 2, `${where}.dash [on, off]`);
+    if (dash && !(dash[0] > 0 && dash[1] > 0)) throw new StudioError('bad-argument', `${where}.dash [on, off] are two lengths above 0.`, { dash: s.dash });
+    const outline = dash ? outlineOf(g) : null;
+    if (dash && !outline) throw new StudioError('bad-argument', `${where}.dash works on line, rect, circle, ellipse, poly and star.`, { shape: g.kind });
+    if (dash) {
+      if (fill !== 'none') body.push(el(g.tag, { ...g.attrs, fill: paint, opacity }));
+      if (strokeColor !== 'none' && sw > 0) body.push(el('path', { d: dashPath(outline, dash), fill: 'none', opacity, stroke: strokeColor, 'stroke-width': sw, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }));
+    } else body.push(el(g.tag, {
       ...g.attrs, fill: paint, opacity,
       ...(strokeColor !== 'none' && sw > 0 ? { stroke: strokeColor, 'stroke-width': sw, 'stroke-linejoin': 'round', ...(g.kind === 'line' || g.kind === 'path' ? { 'stroke-linecap': 'round' } : {}) } : {}),
     }));
