@@ -186,8 +186,11 @@ export class Pose {
     return this;
   }
 
-  /** World transforms of every bone, parents first (bones are ordered parents first). */
-  updateWorld({ physics = 'pose', delta = 0 } = {}) {
+  /**
+   * World transforms of every bone, parents first (bones are ordered parents first).
+   * @param {{ physics?: 'pose' | 'none' | 'update' | 'reset', delta?: number }} [options]
+   */
+  updateWorld({ physics = /** @type {'pose' | 'none' | 'update' | 'reset'} */ ('pose'), delta = 0 } = {}) {
     for (const bone of this.bones) this.updateBone(bone, bone);
     applyConstraints(this, { physics, delta });
     return this;

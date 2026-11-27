@@ -21,6 +21,7 @@ import { openSkeleton, insideProjectReal } from '../core/paths.js';
 import { snapshotBytesDeferred } from '../core/backup.js';
 import { composeDelivery, DELIVERY_MARKER } from './compose.js';
 import { deleteAnimations } from './policy.js';
+import { fxArtOf, fxPageName, sectionOf, withFxSection } from './fx-atlas.js';
 
 const SKIPPED_DIRS = new Set(['.backup', '.keyframe', 'studio', 'node_modules', '.git', 'reference']);
 /** export_art writes into <name>-export/: copies made for engines and web pages, never the project's own skeletons. */
@@ -131,9 +132,17 @@ export async function prepareDelivery({ projectDir, from, into, name, animation,
   };
 }
 
-/** Commit a prepared delivery. Returns what was written and what was backed up. */
-export function commitDelivery(plan) {
+/**
+ * Commit a prepared delivery. Returns what was written and what was backed up.
+ * @param {any} plan
+ * @param {{ drawEffects?: (art: any[], page: string) => { png: Uint8Array, section: string } }} [options]
+ *   drawEffects draws the delivery's effect page (src/render/fx-art.js; add_effect passes it); without
+ *   it a delivery that draws library art keeps the page and atlas section it already has
+ */
+export function commitDelivery(plan, { drawEffects } = {}) {
   const { projectDir, base, target, bytes } = plan;
+  // Effect art is drawn first: a missing library item stops the write before anything changes.
+  const fx = effectPage(bytes, target.abs, drawEffects);
   const currentBase = base ? readBytes(base.abs) : null;
   const currentTarget = readBytes(target.abs);
   const baseChanged = base ? (!currentBase || hash(currentBase) !== base.hash) : false;
@@ -152,26 +161,55 @@ export function commitDelivery(plan) {
     throw new StudioError('write-failed', `The delivery could not be written: ${err.message}`, { target: target.rel });
   }
   const backup = pending ? pending.commit() : null;
+  const atlasSource = base ? atlasBeside(base.abs) : fx ? atlasBeside(target.abs) : null;
   return { file: target.rel, base: base?.rel ?? null, created: !target.existed, backup,
-    ...(base ? { atlas: placeAtlas(projectDir, base.abs, target.abs) } : {}) };
+    ...(base || fx ? { atlas: placeAtlas(projectDir, atlasSource, target.abs, fx) } : {}) };
+}
+
+/** The page of library art the delivery's effects draw with, or null (deliver/fx-atlas.js). */
+function effectPage(bytes, targetAbs, drawEffects) {
+  let skeleton = null;
+  try { skeleton = JSON.parse(bytes.toString('utf8')); } catch { return null; }
+  const art = fxArtOf(skeleton);
+  if (!art.length) return null;
+  const page = fxPageName(targetAbs);
+  if (drawEffects) return { page, ...drawEffects(art, page) };
+  // Kept as drawn: the section of the delivery's current atlas (the page itself stays beside it).
+  const current = atlasBeside(targetAbs);
+  const section = current ? sectionOf(fs.readFileSync(current, 'utf8'), page) : null;
+  return section ? { page, section, png: null } : null;
+}
+
+/** Write bytes beside the delivery, backing up a different file already there. */
+function placeBytes(projectDir, destination, bytes) {
+  const existing = readBytes(destination);
+  if (existing && existing.equals(bytes)) return 'unchanged';
+  if (existing) snapshotBytesDeferred(projectDir, existing, toRel(projectDir, destination), path.extname(destination))?.commit();
+  fs.writeFileSync(destination, bytes);
+  return existing ? 'replaced' : 'copied';
 }
 
 // The runtime and the Player pair x.json with x.atlas by name. Copy the base's atlas beside
 // the delivery; the page names inside stay valid because both sit in one folder.
-function placeAtlas(projectDir, baseAbs, targetAbs) {
-  const source = atlasBeside(baseAbs);
-  if (!source) return { status: 'no-source-atlas' };
-  const destination = targetAbs.replace(/\.json$/i, source.endsWith('.atlas.txt') ? '.atlas.txt' : '.atlas');
-  const sourceBytes = fs.readFileSync(source);
+// A delivery whose effects draw library art also gets its own page (<stem>_fx.png), and its
+// atlas is the base's with that page's section added.
+function placeAtlas(projectDir, source, targetAbs, fx = null) {
+  if (!source && !fx) return { status: 'no-source-atlas' };
+  const destination = targetAbs.replace(/\.json$/i, source?.endsWith('.atlas.txt') ? '.atlas.txt' : '.atlas');
+  const sourceText = source ? fs.readFileSync(source, 'utf8') : '';
+  const sourceBytes = fx ? Buffer.from(withFxSection(sourceText, fx.page, fx.section), 'utf8') : fs.readFileSync(source);
+  const fxPage = fx ? { file: toRel(projectDir, path.join(path.dirname(targetAbs), fx.page)),
+    status: fx.png ? placeBytes(projectDir, path.join(path.dirname(targetAbs), fx.page), Buffer.from(fx.png)) : 'kept' } : null;
+  const done = (/** @type {object} */ result) => (fxPage ? { ...result, effects: fxPage } : result);
   const existing = readBytes(destination);
-  if (existing && existing.equals(sourceBytes)) return { status: 'unchanged', file: toRel(projectDir, destination) };
+  if (existing && existing.equals(sourceBytes)) return done({ status: 'unchanged', file: toRel(projectDir, destination) });
   let backup = null;
   if (existing) {
     const pending = snapshotBytesDeferred(projectDir, existing, toRel(projectDir, destination), path.extname(destination));
     backup = pending?.commit() ?? null;
   }
-  fs.copyFileSync(source, destination);
-  return { status: existing ? 'replaced' : 'copied', file: toRel(projectDir, destination), backup };
+  fs.writeFileSync(destination, sourceBytes);
+  return done({ status: existing ? 'replaced' : 'copied', file: toRel(projectDir, destination), backup });
 }
 
 /**

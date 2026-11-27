@@ -28,7 +28,7 @@ Every refusal carries `fix` (how to get past it) and, for argument problems, an 
 | [`write_animation`](#write_animation) | core | Writes one animation (animation JSON, Spine 4.2 compatible) onto the base and saves a proven delivery beside it; the base is never written. |
 | [`delete_animation`](#delete_animation) | core | Deletes named animations from a delivery file, all or nothing; owner files are refused. |
 | [`set_curves`](#set_curves) | core | Applies an easing preset (or raw handles) to the segments of an animation; key values and times never move. |
-| [`add_effect`](#add_effect) | core | Adds an effect to a clip (burst, trail, flash, glow, shake) as ordinary bones, slots and keys every player shows the same. |
+| [`add_effect`](#add_effect) | core | Adds an effect to a clip (emitter, burst, trail, flash, glow, shake) as plain bones, slots and keys every player shows alike. |
 | [`style_guide`](#style_guide) | core | The project's art direction: palette by role, stroke weights, corner radii, light, grid, type and sizes. Read it, start it from a preset, or change it. |
 | [`draw_rig`](#draw_rig) | core | Draws placeholder art as SVG parts and builds the rig from it: a skeleton, an atlas and a page image the studio plays at once. |
 | [`critique_art`](#critique_art) | core | The art director's check of a drawing against the style guide: palette drift, outline weights, alignment, silhouettes at small size, states too alike, contrast. Writes a contact sheet to look at. |
@@ -693,31 +693,34 @@ Example:
 
 ## add_effect
 
-*core, writes files.* Adds an effect to a clip (burst, trail, flash, glow, shake) as ordinary bones, slots and keys every player shows the same.
+*core, writes files.* Adds an effect to a clip (emitter, burst, trail, flash, glow, shake) as plain bones, slots and keys every player shows alike.
 
-**Use when:** The clip needs an effect: coins or sparks flying out (burst), a motion trail, a hit flash, a pulsing glow, a camera or object shake.
+**Use when:** The clip needs an effect: sparks, smoke, fire or confetti (emit), coins flying out (burst), a trail, a hit flash, a glow, a shake.
 
 **Not when:** The effect needs new art: draw it first with draw_rig, then reuse it here.
 
-Effects as data, not a particle engine: what it writes is plain skeleton JSON, so the studio, the Godot export and any Spine runtime play it identically and every key stays editable. Kinds: burst, trail, flash, glow, shake.
+Effects as data, not a particle engine: what it writes is plain skeleton JSON, so the studio, the Godot export and any Spine runtime play it identically and every key stays editable. Kinds: burst, trail, flash, glow, shake, emit.
+- emit: a particle emitter, simulated once and written as keys (exact under gravity and drag). `preset`: sparks, shockwave, smoke, dust, fire, embers, magic, confetti; any setting in `tune` overrides it. It draws `art` (an item of the keyframe-vfx library pack: dot, glow, spark, streak, puff, ring, flare, slash, shard, flame, confetti, or any asset:<pack>/<item>; default the preset's) on the delivery's own atlas page, or reuses `sprite`. It emits from `bone` at `at` s for `duration` s (0 = all at once), `count` 1-96 particles; particles share slots when their lives do not overlap. They stay where they were let go (tune.follow: ride the bone instead); gravity always pulls down the screen. Tune: life [min, max] s, speed [min, max] units/s, direction (deg, 90 up), spread (deg), gravity (units/s², negative rises), drag (1/s), shape (point, circle, ring, rect, line) with radius, width, height, x, y; scale [values over the life], spin [min, max] deg/s or align (turn along the flight), color [rrggbb over the life], palette [rrggbb, one per particle], alpha, fade [in, out] (fractions of the life), size (the art's longest side, units), additive, loop (lives past the end continue from the start: a seamless looping clip), seed, name.
 - burst: `count` copies of `sprite` fly out from its bone (or `bone`) at `at` s, `duration` per particle; aim and feel in `tune`. Coins from a chest, sparks from a hit, confetti.
 - trail: `count` ghosts of `sprite` follow its bone, fading (`tune.delay`, `tune.strength`). The bone must already move in the clip.
 - flash: an additive copy of `sprite` lights up at `at` for `duration` (`tune.color`, `tune.strength`): a hit flash, a reward pop.
 - glow: the same copy pulsing (`tune.cycles`, `tune.period`).
 - shake: `bone` jitters around its place, decaying over `duration` (`tune.amplitude`, `tune.frequency`). Shake a bone that does not already travel in the clip (a parent made for it).
-Effects reuse existing art (nothing is drawn). Writes through the delivery model like every other write; then look at it with see_animation.
+Effects other than emit reuse existing art. Writes through the delivery model like every other write; then look at it with see_animation.
 
 | Argument | Type | Meaning |
 |---|---|---|
 | `file` | string | Project-relative skeleton (a delivery is updated in place; a base becomes a new delivery). |
 | `into` | string | Only when `file` is a base: the new delivery file; default <base>_v2.json. |
-| `kind` (required) | `burst` \\| `trail` \\| `flash` \\| `glow` \\| `shake` | The effect. |
+| `kind` (required) | `burst` \\| `trail` \\| `flash` \\| `glow` \\| `shake` \\| `emit` | The effect. |
 | `animation` (required) | string | The clip it is written into (created when it does not exist). |
-| `sprite` | object | The art the effect reuses: a slot and one of its attachments (default the slot's setup attachment). |
-| `bone` | string | For shake: the bone that jitters. For burst: the bone the particles start from (default the sprite's bone). |
+| `sprite` | object | The art the effect reuses: a slot and one of its attachments (default the slot's setup attachment). For emit with library art: the slot the particles draw in front of. |
+| `preset` | `sparks` \\| `shockwave` \\| `smoke` \\| `dust` \\| `fire` \\| `embers` \\| `magic` \\| `confetti` | For emit: a ready-made emitter (tune overrides any of its settings). |
+| `art` | string | For emit: the art each particle draws, an item of the keyframe-vfx pack (spark, puff, flame, ...) or asset:<pack>/<item>. Default the preset's. |
+| `bone` | string | For shake: the bone that jitters. For burst and emit: the bone the particles start from (default the sprite's bone, else the root). |
 | `at` | number (≥ 0) | When the effect starts, in seconds. |
-| `duration` | number (≥ 0.01, ≤ 30) | Length of a flash or shake, or of each burst particle. |
-| `count` | number (≥ 1, ≤ 64) | Burst particles (1-64) or trail ghosts (1-12). |
+| `duration` | number (≥ 0, ≤ 30) | Length of a flash or shake, of each burst particle, or how long an emitter emits (0 = all at once). |
+| `count` | number (≥ 1, ≤ 96) | Burst particles (1-64), emitter particles (1-96) or trail ghosts (1-12). |
 | `tune` | object | Per-kind settings, all optional. Burst: name (bones are fx_<name>), direction (deg, 0 right, 90 up; default 90), spread (deg 0-360; default 360), distance (units; default 140), gravity (0..1, default 0.35), spin (deg, default 240), scale [start, end] (default [1, 0.3]), stagger (s, default 0.02), x and y (start offset, default 0), additive, seed (default 1). Trail: delay (s between ghosts, default 0.04), strength (0..1 first ghost opacity, default 0.5), additive (default true). Flash and glow light up `sprite` itself. Flash: color (rrggbb, default ffffff), strength (0..1, default 1). Glow: color, strength (default 0.6), period (s, default 1.2), cycles (default 2). Shake: amplitude (units, default 8), frequency (Hz, default 24). |
 
 Example:

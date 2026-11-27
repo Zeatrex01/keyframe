@@ -123,7 +123,7 @@ export function validateParts(parts) {
 export const frameRegion = (name, i) => `${name}_f${String(i + 1).padStart(2, '0')}`;
 
 /** Shelf-pack images (largest first) into one page; returns positions and the page size. */
-function pack(images) {
+export function packImages(images) {
   const order = images.map((img, i) => i).sort((a, b) => images[b].height - images[a].height || images[b].width - images[a].width);
   const area = images.reduce((s, img) => s + (img.width + PAD) * (img.height + PAD), 0);
   let width = 64;
@@ -160,7 +160,7 @@ export function buildSvgRig({ name, parts, resolution = 2 }) {
     for (const s of img.skipped) skipped.push(`${region}: ${s}`);
     return img;
   });
-  const { at, width, height } = pack(images);
+  const { at, width, height } = packImages(images);
   const data = new Uint8Array(width * height * 4);
   images.forEach((img, i) => {
     const [ox, oy] = at[i];

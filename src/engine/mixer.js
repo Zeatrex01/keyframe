@@ -55,6 +55,10 @@ export class Mixer {
     return animation;
   }
 
+  /**
+   * @param {number} track @param {string|null} name
+   * @param {{ loop?: boolean, mix?: number, alpha?: number, add?: boolean, speed?: number }} [options]
+   */
   entryFor(track, name, { loop = true, mix, alpha = 1, add = false, speed = 1 } = {}) {
     const animation = name === null ? null : this.animation(name);
     return { track, name, animation, loop: !!loop, alpha: Math.min(1, Math.max(0, alpha)), add: !!add, speed,
@@ -101,7 +105,10 @@ export class Mixer {
     return entry;
   }
 
-  /** Fade what plays on `track` out over `mix` seconds (0 stops it at once). */
+  /**
+   * Fade what plays on `track` out over `mix` seconds (0 stops it at once).
+   * @param {number} track @param {{ mix?: number }} [options]
+   */
   clearTrack(track, { mix } = {}) {
     checkTrack(track);
     const current = this.tracks[track];

@@ -96,8 +96,11 @@ export async function prepareTransform({ projectDir, file, into, transform }) {
   };
 }
 
-/** prepare + commit: returns the commit result merged with the transform's report. */
+/**
+ * prepare + commit: returns the commit result merged with the transform's report.
+ * `options.drawEffects` goes to the commit (it draws the delivery's effect page).
+ */
 export async function writeTransform(options) {
   const plan = await prepareTransform(options);
-  return { ...commitDelivery(plan), ...plan.report };
+  return { ...commitDelivery(plan, { drawEffects: options.drawEffects }), ...plan.report };
 }

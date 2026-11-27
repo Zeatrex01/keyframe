@@ -19,6 +19,8 @@ Asset library (assets/library): each pack records its license, author and source
 pack.json, and is taken only under CC0, MIT or CC BY. Packs whose license asks for credit:
 - assets/library/keyframe-basics: "Keyframe basics" by The Keyframe Studio contributors, MIT
   (https://github.com/Zeatrex01/keyframe).
+- assets/library/keyframe-vfx: "Keyframe effects" by The Keyframe Studio contributors, MIT
+  (https://github.com/Zeatrex01/keyframe).
 
 Third-party licenses
 

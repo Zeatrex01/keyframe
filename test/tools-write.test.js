@@ -6,7 +6,6 @@ import os from 'node:os';
 import path from 'node:path';
 import { createServer } from '../src/mcp/server.js';
 import { REPAIR_MARKER } from '../src/spine/weight-repair.js';
-import { needsSpine } from './helpers/spine-addon.js';
 
 const fixture = rel => new URL(`./fixtures/${rel}`, import.meta.url);
 

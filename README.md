@@ -48,8 +48,9 @@ those things for whichever AI you use:
 - **Dressable game characters.** The side-view figure takes swappable armour and weapons in one
   skeleton, a stance and an attack per weapon, feet that stay planted, and upper-body clips that
   play over a run.
-- **Effects.** Bursts, trails, flashes, glows and shakes, written as ordinary bones and keys so
-  every engine plays them.
+- **Effects.** Particle emitters (sparks, shockwaves, smoke, dust, fire, embers, magic, confetti)
+  with a bundled set of effect sprites, plus bursts, trails, flashes, glows and shakes, all written
+  as ordinary bones and keys so every engine plays them.
 - **Learn from a reference video.** Mark one element in a screen recording; the studio measures its
   motion and puts it on a bone of your rig, then compares the two side by side.
 - **Its own engine.** The studio plays and writes the Spine 4.2 JSON format on its own engine, with
