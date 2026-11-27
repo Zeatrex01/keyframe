@@ -6,7 +6,7 @@
 // (needed playwright and Chromium). Any agent can now look at what it wrote.
 
 import { parseSkeleton, createPoser, loadRuntime } from '../runtime/index.js';
-import { collectDraws as engineDraws, applyClip, parseAtlas, atlasRegions } from '../engine/index.js';
+import { collectDraws as engineDraws, applyClip, parseAtlas, atlasRegions, MixPlayhead } from '../engine/index.js';
 import { StudioError } from '../shared/errors.js';
 import { createCanvas, prepareTexture, drawTriangles, toImage, BLEND } from './raster.js';
 
@@ -104,15 +104,20 @@ function boundsOf(frames) {
  * @param {number} [options.supersample=2]  edge anti-aliasing factor
  * @param {boolean} [options.boundsOnly] return only the framed box (`viewport`), drawing nothing
  * @param {string} [options.skin] @param {number} [options.fps=60]
+ * @param {{ then?: object, layers?: object[] }} [options.mix]  a crossfade (`then`) and layers over the clip, played
+ *        from 0 on the studio's engine's mixer (src/engine/mixer.js MixPlayhead); the clip loops
  */
 export async function renderFrames({ json, atlasText, pages, animation, times, width = 256, height = 256, margin = 0.08,
-  viewport, background = null, supersample = 2, skin, fps = 60, boundsOnly = false }) {
+  viewport, background = null, supersample = 2, skin, fps = 60, boundsOnly = false, mix = null }) {
   if (!(width > 0 && height > 0) || width * height * supersample * supersample > MAX_PIXELS) {
     throw new StudioError('bad-argument', 'Frame size is out of range.', { width, height, supersample });
   }
   if (!Array.isArray(times) || !times.length) throw new StudioError('bad-argument', 'Give at least one time to render.');
-  const data = await parseSkeleton(json, { atlasText });
-  const poser = await createPoser(data, animation, { fps, skin });
+  const mixing = !!(mix && (mix.then || mix.layers?.length));
+  // Mixing is the studio's engine's: a mixed render poses on it even when the add-on is on.
+  const data = await parseSkeleton(json, { atlasText, ...(mixing ? { backend: 'keyframe' } : {}) });
+  const poser = mixing ? new MixPlayhead(data.model, { animation, skin, then: mix.then, layers: mix.layers })
+    : await createPoser(data, animation, { fps, skin });
   const pageOf = name => (pages instanceof Map ? pages.get(name) : pages?.[name]);
   let drawsAt;
   if (data.backend === 'keyframe') {

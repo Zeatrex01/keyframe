@@ -3,16 +3,20 @@
 //
 // Everything Godot's own 2D stack can carry stays editable there: a bone channel with normal
 // inheritance and no constraint becomes a bezier track that keeps the authored handles. What
-// Godot has no counterpart for (IK, inherit modes other than normal, shear under rotation) is
-// baked from the engine's world transforms into dense keys, and named in `report`. Colour, draw
-// order and mesh deform are sampled at `fps`; attachments switch on a nearest track.
+// Godot has no counterpart for (IK, transform and physics constraints, inherit modes other than
+// normal, shear under rotation) is baked from the engine's world transforms into dense keys, and
+// named in `report`; physics is played from the start on the engine's fixed grid, a looping clip
+// one lap warmed up so its seam closes. Colour, draw order and mesh deform are sampled at `fps`;
+// attachments switch on a nearest track, and a sequence (a flipbook) switches its polygon's
+// texture coordinates frame by frame.
 //
 // Coordinates: Godot's y points down, so every y and every angle is mirrored; angles are radians.
 // Pure and isomorphic.
 
 import { StudioError } from '../shared/errors.js';
 import { compileSkeleton } from './model.js';
-import { Pose, regionVertices, meshVertices } from './pose.js';
+import { Pose, regionVertices, meshVertices, attachmentPath } from './pose.js';
+import { Playhead } from './index.js';
 import { regionUVs, meshUVs } from './draws.js';
 import { parseAtlas, atlasRegions } from './atlas.js';
 import { controlPoints } from './curve.js';
@@ -71,6 +75,8 @@ function frames(duration, fps) {
 function keyability(model) {
   const why = new Map();
   for (const c of model.ik) for (const b of c.bones) why.set(b, `ik ${c.name}`);
+  for (const c of model.transform) for (const b of c.bones) why.set(b, `transform ${c.name}`);
+  for (const c of model.physics) why.set(c.bone, `physics ${c.name}`);
   for (const b of model.bones) {
     if (b.inherit !== 0) why.set(b.index, 'inherit mode');
     else if (b.shearX || b.shearY) why.set(b.index, 'shear');
@@ -145,12 +151,24 @@ export function godotScene(json, { atlasText, fps = 30, skin, name, loops } = /*
           if (att.type === 'clipping' && !(setup.slots[index].attachment === att && !att.vertices.weighted)) report.skipped.push(`clipping:${s.name}/${att.name}`);
           continue;
         }
-        const region = regionOf(att.path);
-        if (!region) { report.skipped.push(`missing-region:${att.path}`); continue; }
+        const path = att.sequence ? att.sequence.paths[att.sequence.setup] : att.path;
+        const region = regionOf(path);
+        if (!region) { report.skipped.push(`missing-region:${path}`); continue; }
         const page = pages.get(region.page);
         const uvs = att.type === 'region' ? regionUVs(region) : meshUVs(att.uvs, region);
         const uv = Array.from(uvs, (v, i) => round(v * (i % 2 ? page.height : page.width)));
         const base = { name: att.name, page: region.page, color: color(att.color), uv };
+        if (att.sequence) {
+          // A flipbook: each frame's texture coordinates (and its polygon, for a region trimmed differently).
+          base.frames = att.sequence.paths.map(p => {
+            const r = regionOf(p);
+            if (!r) { report.skipped.push(`missing-region:${p}`); return null; }
+            const pg = pages.get(r.page);
+            const fuv = att.type === 'region' ? regionUVs(r) : meshUVs(att.uvs, r);
+            return { page: r.page, uv: Array.from(fuv, (v, i) => round(v * (i % 2 ? pg.height : pg.width))),
+              ...(att.type === 'region' ? { polygon: flipPairs(regionVertices({ a: 1, b: 0, c: 0, d: 1, worldX: 0, worldY: 0 }, att, r)).map(round) } : {}) };
+          });
+        }
         if (att.type === 'region') {
           const corners = regionVertices({ a: 1, b: 0, c: 0, d: 1, worldX: 0, worldY: 0 }, att, region);
           attachments.push({ ...base, type: 'region', polygon: flipPairs(corners).map(round), triangles: [0, 1, 2, 2, 3, 0] });
@@ -197,7 +215,17 @@ function sceneAnimation(model, animation, { fps, skin, blocked: always, slots, r
   const blocked = new Map(always);
   const duration = animation.duration;
   const times = frames(duration, fps);
-  const poses = times.map(t => new Pose(model, { skin }).apply(animation, Math.fround(t)).updateWorld());
+  let poses = times.map(t => new Pose(model, { skin }).apply(animation, Math.fround(t)).updateWorld());
+  // Whether it loops is read off the motion as written: physics never lands exactly where it started.
+  const loops = clipLoops(animation.name, seamless(poses), asked);
+  if (model.physics.length) {
+    // Physics plays from the start; a clip that loops is recorded on its second lap, so the swing
+    // at its end runs on into its start.
+    const warm = loops && duration > 0 ? duration : 0;
+    const head = new Playhead(model, animation, { skin, loop: warm > 0 });
+    poses = times.map(t => frozen(head.at(Math.min(warm + t, warm + duration))));
+    report.baked.push(`physics in ${animation.name}${warm ? ' (second lap, so the loop closes)' : ''}`);
+  }
   const tracks = [];
   const touched = new Set();
   const keyed = new Map();
@@ -210,7 +238,7 @@ function sceneAnimation(model, animation, { fps, skin, blocked: always, slots, r
     tracks.push(bezierTrack(bone, GODOT_PROPERTY[t.property], t.channel, v => KEYED[t.property](bone, v), duration, t.property.startsWith('scale') ? 1 : 0));
   }
   // Baked: every bone a constraint or an inherit mode moves, and the bones it keys that cannot be keyed.
-  const ikBones = new Set(model.ik.flatMap(c => c.bones));
+  const ikBones = new Set([...model.ik.flatMap(c => c.bones), ...model.transform.flatMap(c => c.bones), ...model.physics.map(c => c.bone)]);
   for (const bone of model.bones) {
     const i = bone.index;
     if (!blocked.has(i) || !(touched.has(i) || ikBones.has(i) || bone.inherit !== 0 || hasMovingAncestor(model, i, touched))) continue;
@@ -247,6 +275,17 @@ function sceneAnimation(model, animation, { fps, skin, blocked: always, slots, r
     }
   }
   for (const t of animation.timelines) {
+    if (t.kind !== 'sequence') continue;
+    const slot = model.slots[t.slot];
+    const scene = slots[t.slot].attachments.find(a => a.name === t.attachment.name);
+    if (!scene?.frames) continue;
+    const shown = poses.map(p => (p.slots[t.slot].attachment === t.attachment ? Math.max(0, p.slots[t.slot].sequenceIndex >= 0 ? p.slots[t.slot].sequenceIndex : t.attachment.sequence.setup) : t.attachment.sequence.setup));
+    const keysOf = read => changes(times, shown.map(i => JSON.stringify(read(scene.frames[i] ?? scene.frames[t.attachment.sequence.setup]))), t.times).map(k => ({ time: k.time, value: JSON.parse(k.value) }));
+    tracks.push({ target: 'attachment', name: slot.name, attachment: t.attachment.name, property: 'uv', type: 'value', interpolation: 'nearest', keys: keysOf(f => f?.uv ?? scene.uv) });
+    if (scene.type === 'region') tracks.push({ target: 'attachment', name: slot.name, attachment: t.attachment.name, property: 'polygon', type: 'value', interpolation: 'nearest', keys: keysOf(f => f?.polygon ?? scene.polygon) });
+    if (new Set(scene.frames.map(f => f?.page)).size > 1) tracks.push({ target: 'attachment', name: slot.name, attachment: t.attachment.name, property: 'texture', type: 'value', interpolation: 'nearest', keys: keysOf(f => f?.page ?? scene.page) });
+  }
+  for (const t of animation.timelines) {
     if (t.kind !== 'deform') continue;
     const slot = model.slots[t.slot];
     const scene = slots[t.slot].attachments.find(a => a.name === t.attachment.name);
@@ -260,7 +299,13 @@ function sceneAnimation(model, animation, { fps, skin, blocked: always, slots, r
     tracks.push({ target: 'root', property: 'events', type: 'method', keys: events.events.map(e => ({ time: round(e.time), name: e.name,
       int: e.int ?? 0, float: e.float ?? 0, string: e.string ?? '' })) });
   }
-  return { name: animation.name, length: round(duration), loop: clipLoops(animation.name, seamless(poses), asked), tracks };
+  return { name: animation.name, length: round(duration), loop: loops, tracks };
+}
+
+/** A copy of what a sampled pose shows, so a playhead can go on posing the next frame. */
+function frozen(pose) {
+  const slots = pose.slots.map(s => ({ ...s, color: { ...s.color }, dark: s.dark ? { ...s.dark } : null }));
+  return { model: pose.model, bones: pose.bones.map(b => ({ ...b })), slots, drawOrder: pose.drawOrder.map(s => slots[s.data.index]) };
 }
 
 function hasMovingAncestor(model, index, touched) {

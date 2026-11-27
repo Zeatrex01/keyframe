@@ -17,7 +17,6 @@ import {
 } from '../src/understand/bake.js';
 import { parseSkeleton, sampleAnimation } from '../src/runtime/index.js';
 import { isStudioError } from '../src/shared/errors.js';
-import { needsSpine } from './helpers/spine-addon.js';
 
 const J = v => JSON.stringify(v);
 const keyCount = channels => Object.values(channels ?? {}).reduce((n, list) => n + list.length, 0);
@@ -57,7 +56,7 @@ const isError = code => err => isStudioError(err, code);
 
 // ── the physics bake ──────────────────────────────────────────────────────────
 
-test('a physics bake gives the unkeyed physics bone dense keys and drops the constraint', needsSpine, async () => {
+test('a physics bake gives the unkeyed physics bone dense keys and drops the constraint', async () => {
   const source = physicsRig();
   const before = J(source);
   const result = await bakeAnimations(source, { animation: 'intro', what: 'physics', fps: 30 });
@@ -81,7 +80,7 @@ test('a physics bake gives the unkeyed physics bone dense keys and drops the con
   assert.equal(result.animations[0].physics, true);
 });
 
-test('the baked skeleton is a copy of the source: bones, slots, skins and version carried', needsSpine, async () => {
+test('the baked skeleton is a copy of the source: bones, slots, skins and version carried', async () => {
   const source = physicsRig();
   const { skeleton: out } = await bakeAnimations(source, { animation: 'intro' });
   assert.deepEqual(out.bones.map(b => b.name), source.bones.map(b => b.name));
@@ -90,7 +89,7 @@ test('the baked skeleton is a copy of the source: bones, slots, skins and versio
   assert.equal(out.skeleton.spine, source.skeleton.spine);
 });
 
-test('a bake writes bones only: slot colours, draw order and other clips come from the source', needsSpine, async () => {
+test('a bake writes bones only: slot colours, draw order and other clips come from the source', async () => {
   const source = physicsRig();
   const { skeleton: out } = await bakeAnimations(source, { animation: 'intro' });
   assert.equal(J(out.animations.intro.drawOrder), J(source.animations.intro.drawOrder), 'draw order unchanged');
@@ -98,14 +97,14 @@ test('a bake writes bones only: slot colours, draw order and other clips come fr
   assert.equal(J(out.animations.idle), J(source.animations.idle), 'a clip that was not baked is unchanged');
 });
 
-test('baking is deterministic: twice gives the same numbers', needsSpine, async () => {
+test('baking is deterministic: twice gives the same numbers', async () => {
   const a = await bakeAnimations(physicsRig(), { animation: 'intro', fps: 30 });
   const b = await bakeAnimations(physicsRig(), { animation: 'intro', fps: 30 });
   assert.equal(J(a.skeleton.animations.intro.bones.pendulum), J(b.skeleton.animations.intro.bones.pendulum));
   assert.equal(J(a.skeleton), J(b.skeleton));
 });
 
-test('the self-check replays the delivered file on the runtime and agrees with an independent replay', needsSpine, async () => {
+test('the self-check replays the delivered file on the runtime and agrees with an independent replay', async () => {
   const { skeleton } = await bakeAnimations(physicsRig(), { animation: 'intro' });
   const original = await parseSkeleton(physicsRig());
   const baked = await parseSkeleton(skeleton);
@@ -120,7 +119,7 @@ test('the self-check replays the delivered file on the runtime and agrees with a
   }
 });
 
-test('the self-check fails when the keys do not reproduce the pose', needsSpine, async () => {
+test('the self-check fails when the keys do not reproduce the pose', async () => {
   const source = physicsRig();
   const data = await parseSkeleton(source);
   const measurement = await measureBake(data, 'intro');
@@ -137,7 +136,7 @@ test('the self-check fails when the keys do not reproduce the pose', needsSpine,
 
 // ── what is removed ───────────────────────────────────────────────────────────
 
-test('what: curves removes nothing; the physics stays live and is not baked on top', needsSpine, async () => {
+test('what: curves removes nothing; the physics stays live and is not baked on top', async () => {
   const source = physicsRig();
   const before = J(source);
   const result = await bakeAnimations(source, { animation: 'intro', what: 'curves' });
@@ -152,7 +151,7 @@ test('what: curves removes nothing; the physics stays live and is not baked on t
   assert.equal(result.note, undefined, 'nothing was recorded, so no recording note');
 });
 
-test('remove is independent of what: [] removes nothing, [physics] removes only physics', needsSpine, async () => {
+test('remove is independent of what: [] removes nothing, [physics] removes only physics', async () => {
   const none = await bakeAnimations(physicsRig(), { animation: 'intro', what: 'all', remove: [] });
   assert.deepEqual(none.removed, {});
   assert.equal(none.skeleton.physics.length, 1, 'baked but not removed: the physics stays in the file');
@@ -173,7 +172,7 @@ test('removalList: presets, explicit list wins, unknown names refused', () => {
   assert.throws(() => removalList('physics'), isError('bad-argument'));
 });
 
-test('dropConstraints never touches a clipping mask: it is a slot attachment, not a constraint', needsSpine, async () => {
+test('dropConstraints never touches a clipping mask: it is a slot attachment, not a constraint', async () => {
   // A clipping mask is common in production rigs and a bake must never touch it. Break the drop into touching skins and this fails.
   const source = physicsRig();
   const clipOf = sk => sk?.skins?.[0]?.attachments?.mask?.clip ?? null;
@@ -190,7 +189,7 @@ test('dropConstraints never touches a clipping mask: it is a slot attachment, no
   assert.ok(result.skeleton.animations.intro.bones.arm, 'and a bone key was written');
 });
 
-test('dropConstraints removes skin references so the runtime can still read the file', needsSpine, async () => {
+test('dropConstraints removes skin references so the runtime can still read the file', async () => {
   // Fixed: legacy dropped the constraint arrays but left skins[].physics naming them, and
   // the official parser refuses a skin that names a missing constraint.
   const source = physicsRig();
@@ -249,7 +248,7 @@ test('removing the IK bakes the IK result into plain keys', async () => {
   assert.equal(result.verification.passed, true, J(result.verification));
 });
 
-test('a baked bone loses every authored timeline the bake does not reproduce', needsSpine, async () => {
+test('a baked bone loses every authored timeline the bake does not reproduce', async () => {
   // Fixed: legacy merged per channel, and a bone the bake found static was not written at
   // all, so authored keys hidden under a constraint came back to life once it was removed.
   // Here a transform constraint pins `held` to `anchor` while its own keys try to move it.
@@ -336,7 +335,7 @@ test('a keyed mirror (negative scale) bakes faithfully', async () => {
   assert.equal(result.verification.passed, true, J(result.verification));
 });
 
-test('a physics swing under a keyed mirror bakes faithfully, checked against the runtime', needsSpine, async () => {
+test('a physics swing under a keyed mirror bakes faithfully, checked against the runtime', async () => {
   // Legacy pinned this case as a failed self-check and shipped it flagged. It baked every
   // bone from its applied pose, which re-expresses the mirrored parent as scaleY=-1 plus
   // rotate 180. Baked from keyed transforms (only the physics bone from its applied pose)
@@ -415,7 +414,7 @@ test('a keyed negative-scale bone is densified by default; keepLive keeps its au
 
 // ── several animations ────────────────────────────────────────────────────────
 
-test('baking every animation captures each with the physics live and drops it once at the end', needsSpine, async () => {
+test('baking every animation captures each with the physics live and drops it once at the end', async () => {
   // Physics may only be dropped once, at the end: strip it after the first clip and the
   // rest have nothing left to simulate. pendulum has no timeline, so keys in BOTH clips
   // prove both were measured while the physics was live.
@@ -457,7 +456,7 @@ test('a baked clip keeps its duration when it ends between two samples', async (
   assert.equal(result.animations[0].duration, (await parseSkeleton(result.skeleton)).findAnimation('short').duration);
 });
 
-test('a higher sample rate gives more samples; the snapped rate is reported', needsSpine, async () => {
+test('a higher sample rate gives more samples; the snapped rate is reported', async () => {
   const data = await parseSkeleton(physicsRig());
   const low = await measureBake(data, 'intro', { fps: 12 });
   const high = await measureBake(data, 'intro', { fps: 60 });
@@ -469,7 +468,7 @@ test('a higher sample rate gives more samples; the snapped rate is reported', ne
   assert.equal(low.truncated, false);
 });
 
-test('bones that never leave setup are not listed; setup values are carried', needsSpine, async () => {
+test('bones that never leave setup are not listed; setup values are carried', async () => {
   const data = await parseSkeleton(physicsRig());
   const m = await measureBake(data, 'intro');
   assert.deepEqual(m.moving, ['arm', 'pendulum']);
@@ -490,7 +489,7 @@ test('a clip longer than the runtime samples is baked up to there and reported a
   assert.equal(m.duration, 601);
 });
 
-test('physicsStep thins only physics bones and always keeps the first and last key', needsSpine, async () => {
+test('physicsStep thins only physics bones and always keeps the first and last key', async () => {
   // Bake physics at intervals, and keep the last frame when stepping.
   const full = await bakeAnimations(physicsRig(), { animation: 'intro', fps: 30 });
   const thin = await bakeAnimations(physicsRig(), { animation: 'intro', fps: 30, physicsStep: 4 });
@@ -572,7 +571,7 @@ test('bakeable and physics bone sets', () => {
 
 // ── refusals ──────────────────────────────────────────────────────────────────
 
-test('nothing to bake, an unknown animation, a bad option: refused with stable codes', needsSpine, async () => {
+test('nothing to bake, an unknown animation, a bad option: refused with stable codes', async () => {
   const still = { skeleton: { spine: '4.2.43', hash: 's' }, bones: [{ name: 'root' }, { name: 'b', parent: 'root' }],
     animations: { rest: { bones: { b: { rotate: [{ value: 0 }, { time: 1, value: 0 }] } } } } };
   await assert.rejects(bakeAnimations(still), isError('nothing-to-bake'));

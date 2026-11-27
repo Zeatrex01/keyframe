@@ -37,3 +37,18 @@ Proposal, not yet decided:
 - Take from the earlier project only "find the scenes, sample frames, name each moment from a fixed list".
 - Keep the measuring in the studio's own tracker.
 - Make what is learned reach the model when it writes an animation. Today nothing measured reaches `write_animation`.
+
+## 2026-11-27: gaps found while making a fighting-game demo with the studio
+
+Found by building a rhythm fighting demo on the studio's own rigs (the game is not part of the
+repository). Not yet built:
+
+- Expression sets: no way to declare a face set (brows, eyes, mouth together) for a rig and swap it
+  as one, the way a skin swaps a look. Today each face part is keyed by hand in every clip.
+- Draw order for raw-SVG pieces: a piece added to `draw_rig` as raw SVG cannot say where it sits
+  in the draw order (in front of the arm, behind the torso); it lands where it is listed.
+- Keyable squash and "hide the whole rig": no single channel squashes a whole character on impact
+  or hides it (a knock-out flash, a teleport); today every slot is keyed one by one.
+- `critique_art` false positives on small face parts: small eyes, brows and mouths are flagged as
+  too thin or too small for the target size although they read well at it.
+- (Fixed in 638da00: one-shot clips no longer loop in Godot.)

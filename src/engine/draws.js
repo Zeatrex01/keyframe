@@ -4,7 +4,7 @@
 //
 // Pure and isomorphic.
 
-import { regionVertices, meshVertices } from './pose.js';
+import { regionVertices, meshVertices, attachmentPath } from './pose.js';
 
 const QUAD = [0, 1, 2, 2, 3, 0];
 
@@ -66,8 +66,9 @@ export function collectDraws(pose, regionOf) {
     if (att && (att.type === 'region' || att.type === 'mesh')) {
       const lc = slot.color, ac = att.color;
       const light = { r: sc.r * lc.r * ac.r, g: sc.g * lc.g * ac.g, b: sc.b * lc.b * ac.b, a: sc.a * lc.a * ac.a };
-      const region = regionOf(att.path);
-      if (!region) missing.add(att.path);
+      const path = attachmentPath(slot, att);
+      const region = regionOf(path);
+      if (!region) missing.add(path);
       else if (light.a > 0) {
         const bone = pose.bones[slot.data.bone];
         const positions = att.type === 'region' ? regionVertices(bone, att, region) : meshVertices(pose, slot, att);

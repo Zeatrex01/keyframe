@@ -12,6 +12,9 @@ extends Node2D
 ## An upper-body layer (a clip that keys only the arms and the head, such as "punch_upper") plays
 ## over the clip the AnimationPlayer is playing, so the legs keep running:
 ##   rig.play_layer("punch_upper")
+##
+## Changing clips without a pop: the old clip blends into the new one over `seconds`.
+##   rig.crossfade("run", 0.2)
 
 ## Emitted when a clip passes one of its events.
 signal keyframe_event(event_name: String, int_value: int, float_value: float, string_value: String)
@@ -32,6 +35,9 @@ signal keyframe_event(event_name: String, int_value: int, float_value: float, st
 		weapon = value
 		if is_node_ready():
 			set_attachment(WEAPON_SLOT, value)
+
+## How long `crossfade` blends from one clip into the next when it is not told, in seconds.
+@export_range(0.0, 2.0, 0.01) var blend_time: float = 0.2
 
 ## The slot `weapon` drives; set_look leaves it alone.
 const WEAPON_SLOT := "weapon"
@@ -139,3 +145,13 @@ func play_layer(clip: String) -> bool:
 	layer.play(clip)
 	return true
 
+
+
+## Plays `clip` on the AnimationPlayer, blending from what it played over `seconds` (Godot's own
+## blend between clips; below 0 uses `blend_time`). Returns false when the rig has no such clip.
+func crossfade(clip: String, seconds: float = -1.0) -> bool:
+	var base := get_node_or_null("AnimationPlayer") as AnimationPlayer
+	if base == null or not base.has_animation(clip):
+		return false
+	base.play(clip, blend_time if seconds < 0.0 else seconds)
+	return true

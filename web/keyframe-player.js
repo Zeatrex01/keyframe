@@ -4,9 +4,10 @@
 // It answers the small part of the official player's interface the stage uses (play, pause,
 // paused, speed, setAnimation, animationState.getCurrent / apply / addListener, skeleton.data,
 // dispose), so the stage drives it, or the official player when the Spine add-on is on, the
-// same way.
+// same way. On top of that it plays a layer over the clip (`setLayer`) and crossfades between
+// clips (`mix`), on the engine's mixer, with physics stepped every frame.
 
-import { compileSkeleton, Pose, collectDraws, clipFrames, parseAtlas, atlasRegions } from '/src/engine/index.js';
+import { compileSkeleton, Pose, Mixer, collectDraws, clipFrames, parseAtlas, atlasRegions } from '/src/engine/index.js';
 import { createCanvasRenderer, fitView } from '/src/engine/canvas.js';
 import { toSkeletonJson, isKeyframeDocument } from '/src/engine/keyframe-format.js';
 
@@ -55,10 +56,12 @@ export class KeyframePlayer {
     this.listeners = [];
     this.animationState = {
       data: { defaultMix: 0 },
-      getCurrent: () => player.entry,
+      getCurrent: track => (track ? player.mixer?.current(track) ?? null : player.entry),
       apply: () => { player.dirty = true; },
       addListener: listener => { player.listeners.push(listener); },
     };
+    /** Seconds a new clip crossfades from the one before (0 cuts). */
+    this.mix = 0;
     this.load().catch(err => { if (!this.disposed) config.error?.(this, String(err?.message ?? err)); });
   }
 
@@ -78,6 +81,8 @@ export class KeyframePlayer {
     this.regions = atlasRegions(parsed);
     this.pages = pages;
     this.pose = new Pose(model);
+    this.mixer = new Mixer(model, { pose: this.pose });
+    this.mixer.addListener({ complete: ({ track, entry }) => { if (track === 0) for (const l of this.listeners) l.complete?.(entry); } });
     // The framing of each clip: the setup pose and everything the clip draws, sampled densely enough
     // (30 a second, at most 60 per clip) that a swing at its extreme is not cut off between samples.
     // `x/y/width/height` stay the union of all clips, for callers that frame the whole rig once.
@@ -90,15 +95,10 @@ export class KeyframePlayer {
     this.last = performance.now();
     const tick = now => {
       if (this.disposed) return;
-      const dt = Math.min(0.1, (now - this.last) / 1000);
+      const dt = Math.max(0, Math.min(0.1, (now - this.last) / 1000)); // a frame stamp can precede the start
       this.last = now;
-      if (this.entry && !this.paused) {
-        const e = this.entry, before = e.trackTime;
-        e.trackTime += dt * this.speed;
-        const d = e.animation.duration;
-        // A clip completes each time it reaches its end (every lap when it loops), as in Spine.
-        if (d > 0 && Math.floor(e.trackTime / d) > Math.floor(before / d)) for (const l of this.listeners) l.complete?.(e);
-      }
+      // A clip completes each time it reaches its end (every lap when it loops), as in Spine.
+      if (this.entry && !this.paused) this.mixer.update(dt * this.speed);
       this.draw();
       requestAnimationFrame(tick);
     };
@@ -114,9 +114,16 @@ export class KeyframePlayer {
   setAnimation(name, loop = true) {
     const animation = this.model?.animations.get(name);
     if (!animation) return null;
-    this.entry = { animation, trackTime: 0, loop };
+    this.entry = this.mixer.setAnimation(0, name, { loop, mix: this.entry ? this.mix : 0 });
     this.dirty = true;
     return this.entry;
+  }
+
+  /** Play `name` over the clip (track 1), fading in; null fades the layer out. */
+  setLayer(name, { mix = 0.2, alpha = 1 } = {}) {
+    if (!this.model) return null;
+    if (!name || !this.model.animations.has(name)) { this.mixer.clearTrack(1, { mix }); return null; }
+    return this.mixer.setAnimation(1, name, { loop: true, mix, alpha });
   }
 
   play() { this.paused = false; }
@@ -136,11 +143,8 @@ export class KeyframePlayer {
     else { ctx.fillStyle = this.config.backgroundColor ?? '#100E17'; ctx.fillRect(0, 0, w, h); }
     // A skeleton with no clip yet (a rig just drawn) shows its setup pose.
     let draws;
-    if (this.entry) {
-      const { animation, trackTime, loop } = this.entry;
-      const time = animation.duration > 0 ? (loop ? trackTime % animation.duration : Math.min(trackTime, animation.duration)) : 0;
-      draws = this.drawsAt(animation, time);
-    } else draws = collectDraws(this.pose.updateWorld(), this.regions).draws;
+    if (this.entry) draws = collectDraws(this.mixer.apply(), this.regions).draws;
+    else draws = collectDraws(this.pose.updateWorld(), this.regions).draws;
     const vp = this.config.viewport;
     const box = vp && vp.width > 0 ? vp : this.skeleton.data;
     this.renderer.render(ctx, draws, page => this.pages.get(page), fitView(box, w, h));

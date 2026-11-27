@@ -64,6 +64,8 @@ export function playerReady(player) {
   player.animationState.data.defaultMix = 0;
   player.speed = S.speed;
   if (S.anim && player.skeleton.data.findAnimation(S.anim)) player.setAnimation(S.anim, S.loop);
+  if ('mix' in player) player.mix = S.blend ? 0.2 : 0;
+  if (S.overlay && typeof player.setLayer === 'function' && player.skeleton.data.findAnimation(S.overlay)) player.setLayer(S.overlay, { mix: 0 });
   player.play();
   S.lastTime = 0;
   seekMedia(0);
@@ -124,6 +126,7 @@ export function frameClip(player, name) {
 
 export function setClip(name) {
   S.anim = name;
+  if (S.overlay === name) { S.overlay = ''; S.player?.setLayer?.(null, { mix: 0 }); }
   if (!S.ready || !S.player.skeleton.data.findAnimation(name)) return;
   frameClip(S.player, name);
   const wasPaused = S.player.paused;
@@ -132,6 +135,20 @@ export function setClip(name) {
   if (wasPaused && e) pose(e, 0);
   S.lastTime = 0;
   seekMedia(0);
+}
+
+/** Play a clip over the stage's clip (track 1, fading in), or '' for none. The official player has no layer menu. */
+export function setOverlay(name) {
+  S.overlay = name && name !== S.anim ? name : '';
+  if (S.ready && typeof S.player.setLayer === 'function') S.player.setLayer(S.overlay || null);
+  renderTransport();
+}
+
+/** Crossfade into the next clip (0.2 s) instead of cutting. */
+export function setBlend(on) {
+  S.blend = on;
+  if (S.player && 'mix' in S.player) S.player.mix = on ? 0.2 : 0;
+  renderTransport();
 }
 
 export function setLoop(on) {
@@ -168,6 +185,20 @@ export function renderTransport() {
   if (S.anim && animations.includes(S.anim)) el.clip.value = S.anim;
   const live = Boolean(entry());
   el.clip.disabled = !animations.length;
+  // The layer menu: any other clip over this one (the studio's own player only).
+  const layering = typeof S.player?.setLayer === 'function';
+  const overlays = ['', ...animations.filter(n => n !== S.anim)];
+  const wantedOverlays = `${S.lang}\n${overlays.join('\n')}`;
+  if (el.overlay.dataset.names !== wantedOverlays) {
+    el.overlay.dataset.names = wantedOverlays;
+    el.overlay.replaceChildren(...overlays.map(name => { const o = node('option', '', name || t('stage.noLayer')); o.value = name; return o; }));
+  }
+  el.overlay.value = overlays.includes(S.overlay) ? S.overlay : '';
+  el.overlay.disabled = !live || !layering || animations.length < 2;
+  el.overlay.hidden = !layering;
+  el.blend.hidden = !layering;
+  el.blend.setAttribute('aria-pressed', String(S.blend));
+  el.blend.title = t('stage.blendHint');
   el.play.disabled = !live;
   el.loop.setAttribute('aria-pressed', String(S.loop));
   for (const b of el.speed.querySelectorAll('button')) b.setAttribute('aria-pressed', String(Number(b.dataset.speed) === S.speed));

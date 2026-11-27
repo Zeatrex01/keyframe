@@ -9,8 +9,9 @@ import { compileSkeleton } from './model.js';
 import { Pose, regionVertices, meshVertices } from './pose.js';
 import { collectDraws, boundsOf } from './draws.js';
 
-export { compileSkeleton, parseColor, INHERIT, BLEND } from './model.js';
-export { Pose, regionVertices, meshVertices } from './pose.js';
+export { compileSkeleton, parseColor, INHERIT, BLEND, sequenceFrame, SEQUENCE_MODES } from './model.js';
+export { Pose, regionVertices, meshVertices, attachmentPath } from './pose.js';
+export { Mixer, MixPlayhead, DEFAULT_MIX } from './mixer.js';
 export { collectDraws, boundsOf, applyClip, triangulate } from './draws.js';
 export { parseAtlas, atlasRegions, imageRegions } from './atlas.js';
 export { resolveCurve } from './curve.js';
@@ -29,7 +30,57 @@ export function poseAt(model, animationName, time, { skin, loop = false } = {}) 
     throw new StudioError('bad-argument', `Sample times must be numbers between 0 and ${MAX_SAMPLE_SECONDS} s.`, { time, max: MAX_SAMPLE_SECONDS });
   }
   // Key times are float32 (as in every Spine runtime); posing at the float32 instant lands on them.
-  return new Pose(model, { skin }).apply(animation, Math.fround(time), { loop }).updateWorld();
+  if (!model.physics?.length) return new Pose(model, { skin }).apply(animation, Math.fround(time), { loop }).updateWorld();
+  return new Playhead(model, animation, { skin, loop }).at(time);
+}
+
+/** Physics steps per second when the engine replays a clip for a sample (a bake, a frame, a check). */
+export const PHYSICS_RATE = 60;
+
+/**
+ * One clip played from 0 with its physics stepped on the fixed 1/60 grid, so the pose at an
+ * instant is the pose a player shows there after playing from the start: the same numbers every
+ * time. Moving forward continues the simulation; going back replays from 0. Without physics it
+ * poses each instant on its own.
+ */
+export class Playhead {
+  /** @param {ReturnType<typeof compileSkeleton>} model @param {any} animation @param {{ skin?: string, loop?: boolean }} [options] */
+  constructor(model, animation, { skin, loop = false } = {}) {
+    this.model = model;
+    this.animation = typeof animation === 'string' ? requireAnimation(model, animation) : animation;
+    this.pose = new Pose(model, { skin });
+    this.loop = loop;
+    this.physics = !!model.physics?.length;
+    this.step = -1;
+  }
+
+  /** The pose at `time` seconds, world transforms and physics updated. */
+  at(time) {
+    if (!(time >= 0) || time > MAX_SAMPLE_SECONDS) {
+      throw new StudioError('bad-argument', `Sample times must be numbers between 0 and ${MAX_SAMPLE_SECONDS} s.`, { time, max: MAX_SAMPLE_SECONDS });
+    }
+    const pose = this.pose, loop = this.loop, animation = this.animation;
+    if (!this.physics) return pose.apply(animation, Math.fround(time), { loop }).updateWorld();
+    const n = Math.floor(time * PHYSICS_RATE + 1e-6);
+    if (n < this.step) { this.step = -1; pose.resetPhysics(); }
+    for (let k = this.step + 1; k <= n; k++) {
+      const t = Math.fround(k / PHYSICS_RATE);
+      pose.apply(animation, t, { loop, lastTime: k > 0 ? Math.fround((k - 1) / PHYSICS_RATE) : null });
+      pose.updateWorld(k === 0 ? { physics: 'reset' } : { physics: 'update', delta: 1 / PHYSICS_RATE });
+    }
+    this.step = Math.max(this.step, n);
+    const rest = time - n / PHYSICS_RATE;
+    if (rest > 1e-9) {
+      // Between two steps: the lag of the part step is shown, then the simulation goes back to the step.
+      const saved = pose.savePhysics();
+      pose.apply(animation, Math.fround(time), { loop, lastTime: Math.fround(n / PHYSICS_RATE) });
+      pose.updateWorld({ physics: 'update', delta: rest });
+      pose.restorePhysics(saved);
+    } else {
+      pose.apply(animation, Math.fround(n / PHYSICS_RATE), { loop }).updateWorld({ physics: 'pose' });
+    }
+    return pose;
+  }
 }
 
 export function requireAnimation(model, name) {
@@ -48,7 +99,8 @@ export function setupPose(model, { skin } = {}) {
 
 /** Snapshots of one animation at the given times, in the order given. */
 export function sample(model, animationName, times, options = {}) {
-  return times.map(time => ({ time, ...poseAt(model, animationName, time, options).snapshot() }));
+  const head = new Playhead(model, requireAnimation(model, animationName), options);
+  return times.map(time => ({ time, ...head.at(time).snapshot() }));
 }
 
 /**

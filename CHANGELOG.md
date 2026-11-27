@@ -7,6 +7,23 @@ All notable changes to this project. The format follows
 
 ### Added
 
+- Multi-track playback on the studio's own engine (`Mixer`): crossfades between clips, layers on
+  higher tracks with an alpha (a punch over a run keeps the legs running), additive layers, a
+  fade-out when a track is cleared, queued clips, and start, complete, end and event callbacks.
+  The web player gains `layer()` and `clearLayer()` and crossfades on `play(name, { mix })`; the
+  standalone player and the stage have a layer menu and a blend switch; `see_animation` renders
+  a planned crossfade (`then`) or layer (`layers`).
+- Physics constraints (hair, tails, capes), transform constraints and IK softness are evaluated by
+  the studio's engine, so they play, render and bake without the Spine add-on; only path
+  constraints still need it. Physics is the studio's own damped spring on Spine's parameters,
+  deterministic: the same instant gives the same pose however it is reached.
+- Sequences (flipbooks): a sequence attachment plays its frames in every mode (hold, once, loop,
+  ping-pong and reversed), in the engine, the players and Godot (texture tracks). `draw_rig`
+  parts take `frames` (a flipbook drawn frame by frame: fire, smoke, an eye) and `physics` (the
+  part swings on a physics constraint).
+- Godot: physics and transform-driven bones arrive baked into their tracks (a looping clip is
+  recorded on its second lap so the seam holds); `KeyframeRig.crossfade(clip, seconds)` and a
+  `blend_time` setting.
 - Sprite stacking: a part drawn with a height band (`stack: [from, to]`, optional
   `taper: [bottom, top]`) is a cut through an object seen from above. `export_art` kind `stack`
   cuts the drawing into one slice per pixel of height (smooth walls, a contact shade near the

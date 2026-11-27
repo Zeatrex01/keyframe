@@ -48,6 +48,8 @@ static func build(data: Dictionary, base_dir: String) -> Node2D:
 			push_warning("Keyframe: the atlas page %s is missing beside the scene." % page.name)
 		textures[page.name] = texture
 		pma[page.name] = bool(page.get("pma", false))
+	# A flipbook's texture track names its page; the tracks find the loaded texture here.
+	data["_textures"] = textures
 
 	# Slots and attachments.
 	var slot_paths := {}
@@ -171,13 +173,17 @@ static func _add_track(animation: Animation, reset: Animation, reset_paths: Dict
 			_reset_key(reset, reset_paths, path, int(slot.z), false)
 		return
 	if target == "attachment":
-		var path := "%s/%s:polygon" % [slot_paths[track.name], String(track.attachment).validate_node_name()]
-		var index := _value_track(animation, path, "linear")
+		# polygon (deform, or a flipbook frame trimmed differently), uv and texture (a flipbook frame).
+		var property := String(track.property)
+		var path := "%s/%s:%s" % [slot_paths[track.name], String(track.attachment).validate_node_name(), property]
+		var index := _value_track(animation, path, String(track.get("interpolation", "linear")))
+		var textures: Dictionary = data.get("_textures", {})
 		for key in track.keys:
-			animation.track_insert_key(index, key.time, _points(key.value))
+			animation.track_insert_key(index, key.time, textures.get(key.value) if property == "texture" else _points(key.value))
 		for att in _slot(data, String(track.name)).attachments:
 			if att.name == track.attachment:
-				_reset_key(reset, reset_paths, path, _points(att.polygon), false)
+				var rest = textures.get(att.page) if property == "texture" else _points(att.get(property, att.polygon))
+				_reset_key(reset, reset_paths, path, rest, false)
 
 
 static func _value_track(animation: Animation, path: String, interpolation: String) -> int:

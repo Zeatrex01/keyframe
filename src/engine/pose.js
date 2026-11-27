@@ -4,14 +4,20 @@
 // scale; bezier segments read as a nine-point polyline), so a clip plays the same here and in
 // any Spine runtime. test/engine-parity.test.js holds the two side by side.
 //
-// Stateless per instant: posing at t never depends on which instants were posed before.
+// Stateless per instant: posing at t never depends on which instants were posed before. The one
+// exception is physics, which integrates over time: its state lives in the pose and moves only
+// when updateWorld is asked to step it (src/engine/index.js replays it from 0 for a sample).
+//
+// Mixing: `apply` can lay a clip over what the pose holds instead of over the setup pose, and a
+// pose's state can be captured, restored and blended, which is all src/engine/mixer.js needs for
+// tracks, layers and crossfades.
 //
 // Pure and isomorphic.
 
 import { StudioError } from '../shared/errors.js';
 import { channelValue, keyIndex, segmentPercent } from './curve.js';
-import { colorAt } from './model.js';
-import { applyConstraints } from './constraints.js';
+import { colorAt, sequenceFrame } from './model.js';
+import { applyConstraints, freshPhysicsState } from './constraints.js';
 
 const DEG = Math.PI / 180;
 const cosDeg = d => Math.cos(d * DEG);
@@ -30,9 +36,11 @@ export class Pose {
     this.scaleX = 1; this.scaleY = 1; this.x = 0; this.y = 0;
     this.color = { r: 1, g: 1, b: 1, a: 1 };
     this.bones = model.bones.map(data => ({ data, x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1, shearX: 0, shearY: 0, a: 1, b: 0, c: 0, d: 1, worldX: 0, worldY: 0 }));
-    this.slots = model.slots.map(data => ({ data, color: { ...data.color }, dark: data.dark ? { ...data.dark } : null, attachment: null, deform: null }));
+    this.slots = model.slots.map(data => ({ data, color: { ...data.color }, dark: data.dark ? { ...data.dark } : null, attachment: null, deform: null, sequenceIndex: -1 }));
     this.drawOrder = this.slots.slice();
     this.ik = (model.ik ?? []).map(c => ({ mix: c.mix, softness: c.softness, bendDirection: c.bendDirection, compress: c.compress, stretch: c.stretch, uniform: c.uniform }));
+    this.transform = (model.transform ?? []).map(c => ({ ...TRANSFORM_SETUP(c) }));
+    this.physics = (model.physics ?? []).map(c => ({ ...PHYSICS_SETUP(c), state: freshPhysicsState() }));
     this.setupPose();
   }
 
@@ -50,28 +58,45 @@ export class Pose {
     for (const s of this.slots) this.setupSlot(s);
     this.drawOrder = this.slots.slice();
     (this.model.ik ?? []).forEach((c, i) => Object.assign(this.ik[i], { mix: c.mix, softness: c.softness, bendDirection: c.bendDirection, compress: c.compress, stretch: c.stretch }));
+    (this.model.transform ?? []).forEach((c, i) => Object.assign(this.transform[i], TRANSFORM_SETUP(c)));
+    (this.model.physics ?? []).forEach((c, i) => Object.assign(this.physics[i], PHYSICS_SETUP(c)));
   }
+
+  /** Physics at rest where the bones are now (at the next updateWorld). */
+  resetPhysics() { for (const c of this.physics) c.state = freshPhysicsState(); }
+
+  /** A copy of the physics simulation, to step ahead and come back. */
+  savePhysics() { return this.physics.map(c => ({ ...c.state })); }
+  restorePhysics(saved) { this.physics.forEach((c, i) => { c.state = { ...saved[i] }; }); }
 
   setupSlot(s) {
     Object.assign(s.color, s.data.color);
     if (s.dark && s.data.dark) Object.assign(s.dark, s.data.dark);
     s.deform = null;
+    s.sequenceIndex = -1;
     this.setAttachment(s, s.data.attachmentName);
   }
 
   setAttachment(s, name) {
     const attachment = this.attachmentFor(s.data.index, name);
-    if (attachment !== s.attachment) s.deform = null;
+    if (attachment !== s.attachment) { s.deform = null; s.sequenceIndex = -1; }
     s.attachment = attachment;
   }
 
   /**
    * Apply an animation at `time` (seconds) over the setup pose: what a property's timeline does
-   * not key stays at setup.
+   * not key stays at setup. With `fromSetup: false` it lays over what the pose holds instead
+   * (what it keys is set, the rest is left alone). `lastTime`, the instant posed before, lets a
+   * physics reset key between the two take effect.
    */
-  apply(animation, time, { loop = false } = {}) {
-    if (loop && animation.duration > 0) time %= animation.duration;
-    this.setupPose();
+  apply(animation, time, { loop = false, fromSetup = true, lastTime = null } = {}) {
+    if (loop && animation.duration > 0) {
+      const d = animation.duration;
+      // A reset key is crossed between the last instant and this one; a new lap starts from before 0.
+      if (lastTime !== null) lastTime = Math.floor(lastTime / d) === Math.floor(time / d) ? lastTime % d : -1;
+      time %= d;
+    }
+    if (fromSetup) this.setupPose();
     for (const t of animation.timelines) {
       switch (t.kind) {
         case 'bone': {
@@ -112,10 +137,39 @@ export class Pose {
           c.bendDirection = t.bend[i]; c.compress = t.compress[i]; c.stretch = t.stretch[i];
           break;
         }
-        default: break; // deform after attachments are settled; events draw nothing
+        case 'transform': {
+          const c = this.transform[t.constraint];
+          for (const [mix, channel] of t.channels) { const v = channelValue(channel, time); if (v !== undefined) c[mix] = v; }
+          break;
+        }
+        case 'physics': {
+          const v = channelValue(t.channel, time);
+          if (v === undefined) break;
+          for (const index of t.constraints) this.physics[index][t.property] = t.property === 'mass' ? Math.max(1e-4, v) : v;
+          break;
+        }
+        case 'physicsReset': {
+          // A reset key between the last instant posed and this one puts the simulation at rest.
+          if (lastTime === null) break;
+          for (let i = 0; i < t.times.length; i++) {
+            if (t.times[i] > lastTime && t.times[i] <= time) { for (const index of t.constraints) this.physics[index].state = freshPhysicsState(); break; }
+          }
+          break;
+        }
+        default: break; // deform and sequences after attachments are settled; events draw nothing
       }
     }
     for (const t of animation.timelines) {
+      if (t.kind === 'sequence') {
+        const slot = this.slots[t.slot];
+        const current = slot.attachment;
+        if (!current || (current !== t.attachment && current.deformFrom !== t.attachment)) continue;
+        const i = keyIndex(t.times, time);
+        if (i < 0) { slot.sequenceIndex = -1; continue; }
+        const k = t.keys[i];
+        slot.sequenceIndex = sequenceFrame(k.mode, k.index, k.delay, time - k.time, current.sequence.count);
+        continue;
+      }
       if (t.kind !== 'deform') continue;
       const slot = this.slots[t.slot];
       const current = slot.attachment;
@@ -133,9 +187,99 @@ export class Pose {
   }
 
   /** World transforms of every bone, parents first (bones are ordered parents first). */
-  updateWorld() {
+  updateWorld({ physics = 'pose', delta = 0 } = {}) {
     for (const bone of this.bones) this.updateBone(bone, bone);
-    applyConstraints(this);
+    applyConstraints(this, { physics, delta });
+    return this;
+  }
+
+  /**
+   * What an animation sets, as plain data: bone locals, slot colours, attachments, deform,
+   * sequence frames, draw order and constraint mixes. Not the physics simulation, which goes on
+   * across whatever is mixed.
+   */
+  captureState() {
+    const bones = new Float64Array(this.bones.length * 7);
+    this.bones.forEach((b, i) => { const o = i * 7; bones[o] = b.x; bones[o + 1] = b.y; bones[o + 2] = b.rotation; bones[o + 3] = b.scaleX; bones[o + 4] = b.scaleY; bones[o + 5] = b.shearX; bones[o + 6] = b.shearY; });
+    return {
+      bones,
+      slots: this.slots.map(s => ({ color: { ...s.color }, dark: s.dark ? { ...s.dark } : null, attachment: s.attachment, deform: s.deform, sequenceIndex: s.sequenceIndex })),
+      drawOrder: this.drawOrder.slice(),
+      ik: this.ik.map(c => ({ ...c })),
+      transform: this.transform.map(c => ({ ...c })),
+      physics: this.physics.map(({ state, ...c }) => c),
+    };
+  }
+
+  restoreState(st) {
+    this.bones.forEach((b, i) => { const o = i * 7; b.x = st.bones[o]; b.y = st.bones[o + 1]; b.rotation = st.bones[o + 2]; b.scaleX = st.bones[o + 3]; b.scaleY = st.bones[o + 4]; b.shearX = st.bones[o + 5]; b.shearY = st.bones[o + 6]; });
+    this.slots.forEach((s, i) => { const v = st.slots[i]; Object.assign(s.color, v.color); if (s.dark && v.dark) Object.assign(s.dark, v.dark); s.attachment = v.attachment; s.deform = v.deform; s.sequenceIndex = v.sequenceIndex; });
+    this.drawOrder = st.drawOrder.slice();
+    this.ik.forEach((c, i) => Object.assign(c, st.ik[i]));
+    this.transform.forEach((c, i) => Object.assign(c, st.transform[i]));
+    this.physics.forEach((c, i) => Object.assign(c, st.physics[i]));
+    return this;
+  }
+
+  /**
+   * Set the pose to `a` blended toward `b` by `t` (0 = a, 1 = b). Numbers are interpolated
+   * (rotation the short way round); what has no in-between (an attachment, a sequence frame,
+   * the draw order, a bend direction) switches at half way. With `add`, `b` is an offset from
+   * `base` (both captured over the setup pose) added on top of `a` by `t`: the bone transforms of
+   * an additive layer.
+   */
+  blendStates(a, b, t, { add = null } = {}) {
+    const lerp = (x, y) => x + (y - x) * t;
+    const turn = (x, y) => { let d = (y - x) % 360; if (d > 180) d -= 360; else if (d < -180) d += 360; return x + d * t; };
+    this.bones.forEach((bone, i) => {
+      const o = i * 7;
+      if (add) {
+        const base = add.bones;
+        bone.x = a.bones[o] + (b.bones[o] - base[o]) * t; bone.y = a.bones[o + 1] + (b.bones[o + 1] - base[o + 1]) * t;
+        bone.rotation = a.bones[o + 2] + (b.bones[o + 2] - base[o + 2]) * t;
+        bone.scaleX = a.bones[o + 3] + (b.bones[o + 3] - base[o + 3]) * t; bone.scaleY = a.bones[o + 4] + (b.bones[o + 4] - base[o + 4]) * t;
+        bone.shearX = a.bones[o + 5] + (b.bones[o + 5] - base[o + 5]) * t; bone.shearY = a.bones[o + 6] + (b.bones[o + 6] - base[o + 6]) * t;
+        return;
+      }
+      bone.x = lerp(a.bones[o], b.bones[o]); bone.y = lerp(a.bones[o + 1], b.bones[o + 1]); bone.rotation = turn(a.bones[o + 2], b.bones[o + 2]);
+      bone.scaleX = lerp(a.bones[o + 3], b.bones[o + 3]); bone.scaleY = lerp(a.bones[o + 4], b.bones[o + 4]);
+      bone.shearX = lerp(a.bones[o + 5], b.bones[o + 5]); bone.shearY = lerp(a.bones[o + 6], b.bones[o + 6]);
+    });
+    const late = t >= 0.5;
+    this.slots.forEach((s, i) => {
+      const x = a.slots[i], y = add ? a.slots[i] : b.slots[i];
+      for (const k of ['r', 'g', 'b', 'a']) s.color[k] = lerp(x.color[k], y.color[k]);
+      if (s.dark && x.dark && y.dark) for (const k of ['r', 'g', 'b']) s.dark[k] = lerp(x.dark[k], y.dark[k]);
+      const pick = late ? y : x;
+      s.attachment = pick.attachment; s.sequenceIndex = pick.sequenceIndex;
+      if (x.attachment === y.attachment && x.deform && y.deform && x.deform.length === y.deform.length) {
+        const out = new Float64Array(x.deform.length);
+        for (let k = 0; k < out.length; k++) out[k] = x.deform[k] + (y.deform[k] - x.deform[k]) * t;
+        s.deform = out;
+      } else if (x.attachment === y.attachment && (x.deform || y.deform)) {
+        const setup = setupDeform(s.attachment);
+        const from = x.deform ?? setup, to = y.deform ?? setup;
+        if (from && to && from.length === to.length) { const out = new Float64Array(from.length); for (let k = 0; k < out.length; k++) out[k] = from[k] + (to[k] - from[k]) * t; s.deform = out; }
+        else s.deform = pick.deform;
+      } else s.deform = pick.deform;
+    });
+    if (!add) this.drawOrder = (late ? b : a).drawOrder.slice();
+    else this.drawOrder = a.drawOrder.slice();
+    const mixNumbers = (list, from, to, discrete = []) => list.forEach((c, i) => {
+      for (const k of Object.keys(from[i])) {
+        if (typeof from[i][k] === 'number' && !discrete.includes(k)) c[k] = lerp(from[i][k], to[i][k]);
+        else c[k] = (late ? to : from)[i][k];
+      }
+    });
+    if (!add) {
+      mixNumbers(this.ik, a.ik, b.ik, ['bendDirection']);
+      mixNumbers(this.transform, a.transform, b.transform);
+      mixNumbers(this.physics, a.physics, b.physics);
+    } else {
+      this.ik.forEach((c, i) => Object.assign(c, a.ik[i]));
+      this.transform.forEach((c, i) => Object.assign(c, a.transform[i]));
+      this.physics.forEach((c, i) => Object.assign(c, a.physics[i]));
+    }
     return this;
   }
 
@@ -284,6 +428,22 @@ export class Pose {
     for (const t of animation.timelines) if (t.kind === 'event') for (const e of t.events) if (e.time > from && e.time <= to) out.push(e);
     return out;
   }
+}
+
+const TRANSFORM_SETUP = c => ({ mixRotate: c.mixRotate, mixX: c.mixX, mixY: c.mixY, mixScaleX: c.mixScaleX, mixScaleY: c.mixScaleY, mixShearY: c.mixShearY });
+const PHYSICS_SETUP = c => ({ inertia: c.inertia, strength: c.strength, damping: c.damping, mass: c.mass, wind: c.wind, gravity: c.gravity, mix: c.mix });
+
+/** The deform values a mesh has with no deform key: its own vertices (unweighted) or zero offsets (weighted). */
+function setupDeform(att) {
+  if (!att || att.type !== 'mesh') return null;
+  return att.vertices.weighted ? new Float64Array(att.vertices.data.length / 3 * 2) : Float64Array.from(att.vertices.data);
+}
+
+/** The region path an attachment draws now: its own, or the frame of its sequence the slot shows. */
+export function attachmentPath(slot, att) {
+  if (!att.sequence) return att.path;
+  const i = slot.sequenceIndex >= 0 ? slot.sequenceIndex : att.sequence.setup;
+  return att.sequence.paths[Math.min(att.sequence.count - 1, i)];
 }
 
 /** World vertices of a region attachment: four corners in Spine's order (BL, UL, UR, BR). */

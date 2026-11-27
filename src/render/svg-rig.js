@@ -9,6 +9,11 @@
 //   parent  the part whose bone carries this one (default the root)
 //   size    the art's size in the rig (default the viewBox size)
 //   states  other looks of the part, { pressed: svg, ... }: attachments <name>_<state> of its slot
+//   frames  a flipbook, [svg, svg, ...] (2 to 64): the part's attachment becomes a sequence of
+//           regions <name>_f01, <name>_f02, ... that a clip plays (fire, smoke, a blink, a mouth)
+//   physics true or { inertia, strength, damping, mass, gravity, wind, x, y }: the part swings
+//           on its own (hair, a tail, a cape): its bone points from the pivot through the art
+//           and carries a physics constraint the studio's engine simulates
 //   source  how it was drawn (parametric shapes or a component), kept so it can be redrawn
 // Parts are listed back to front: the first is drawn first. A parent may come later in the list
 // (an arm drawn behind the body it hangs from). Pure, no I/O: the caller writes the files.
@@ -40,6 +45,31 @@ function states(p, where, problems) {
   return Object.keys(out).length ? { states: out } : {};
 }
 
+/** A flipbook: 2 to 64 SVG frames. */
+function frames(p, where, problems) {
+  if (p.frames === undefined) return {};
+  if (!Array.isArray(p.frames) || p.frames.length < 2 || p.frames.length > 64) { problems.push(`${where}.frames is a list of 2 to 64 SVG frames.`); return {}; }
+  if (p.frames.some(f => typeof f !== 'string' || f.length > 200000)) { problems.push(`${where}.frames: every frame is one SVG document.`); return {}; }
+  return { frames: p.frames.slice() };
+}
+
+/** The physics a part swings with, with defaults for hair and tails that rest where they are drawn. */
+export const PART_PHYSICS = Object.freeze({ inertia: 0.7, strength: 45, damping: 0.85, mass: 1, gravity: 0, wind: 0, x: 0, y: 0 });
+const PHYSICS_RANGE = { inertia: [0, 1], strength: [0, 1000], damping: [0, 1], mass: [0.01, 100], gravity: [-1000, 1000], wind: [-1000, 1000], x: [0, 1], y: [0, 1] };
+function physics(p, where, problems) {
+  if (p.physics === undefined || p.physics === false) return {};
+  if (p.physics === true) return { physics: { ...PART_PHYSICS } };
+  if (!p.physics || typeof p.physics !== 'object' || Array.isArray(p.physics)) { problems.push(`${where}.physics is true or { inertia, strength, damping, mass, gravity, wind, x, y }.`); return {}; }
+  const out = { ...PART_PHYSICS };
+  for (const [k, v] of Object.entries(p.physics)) {
+    const range = PHYSICS_RANGE[k];
+    if (!range) { problems.push(`${where}.physics.${k} is not one of ${Object.keys(PHYSICS_RANGE).join(', ')}.`); continue; }
+    if (!Number.isFinite(v) || v < range[0] || v > range[1]) { problems.push(`${where}.physics.${k} is a number from ${range[0]} to ${range[1]}.`); continue; }
+    out[k] = v;
+  }
+  return { physics: out };
+}
+
 /** Check a parts document; returns the cleaned parts or throws with every problem. */
 export function validateParts(parts) {
   if (!Array.isArray(parts) || !parts.length) throw new StudioError('bad-argument', 'A drawing has at least one part.', {});
@@ -65,6 +95,8 @@ export function validateParts(parts) {
         ...(p.stack !== undefined ? { stack: p.stack } : {}),
         ...(p.taper !== undefined ? { taper: p.taper } : {}),
         ...(states(p, where, problems)),
+        ...(frames(p, where, problems)),
+        ...(physics(p, where, problems)),
         ...(p.source && typeof p.source === 'object' ? { source: p.source } : {}),
       };
     } catch (err) {
@@ -86,6 +118,9 @@ export function validateParts(parts) {
   if (problems.length) throw new StudioError('bad-parts', `The drawing has problems: ${problems.join(' ')}`, { problems });
   return /** @type {any[]} */ (out);
 }
+
+/** The region of a flipbook frame: <part>_f01, <part>_f02, ... (a Spine sequence of path <part>_f, start 1, two digits). */
+export const frameRegion = (name, i) => `${name}_f${String(i + 1).padStart(2, '0')}`;
 
 /** Shelf-pack images (largest first) into one page; returns positions and the page size. */
 function pack(images) {
@@ -118,7 +153,8 @@ export function buildSvgRig({ name, parts, resolution = 2 }) {
   const clean = validateParts(parts);
   const skipped = [];
   // One region per part, and one per state of a part (<part>_<state>), all at the part's size.
-  const regions = clean.flatMap(p => [{ part: p, region: p.name, svg: p.svg }, ...Object.entries(p.states ?? {}).map(([k, svg]) => ({ part: p, region: `${p.name}_${k}`, svg }))]);
+  const regions = clean.flatMap(p => [{ part: p, region: p.name, svg: p.svg }, ...Object.entries(p.states ?? {}).map(([k, svg]) => ({ part: p, region: `${p.name}_${k}`, svg })),
+    ...(p.frames ?? []).map((svg, i) => ({ part: p, region: frameRegion(p.name, i), svg }))]);
   const images = regions.map(({ part: p, region, svg }) => {
     const img = rasterizeSvg(svg, { width: Math.max(1, Math.round(p.size[0] * res)), height: Math.max(1, Math.round(p.size[1] * res)) });
     for (const s of img.skipped) skipped.push(`${region}: ${s}`);
@@ -134,17 +170,27 @@ export function buildSvgRig({ name, parts, resolution = 2 }) {
   let atlasText = `${page}\nsize:${width},${height}\nfilter:Linear,Linear\npma:false\n`;
   regions.forEach((r, i) => { atlasText += `${r.region}\nbounds:${at[i][0]},${at[i][1]},${images[i].width},${images[i].height}\n`; });
 
-  // Bones parents first; slots keep the drawing order.
+  // Bones parents first; slots keep the drawing order. A part that swings on its own points its
+  // bone from the pivot through its art (a physics bone lags and swings along its length); every
+  // other bone keeps the rig's axes. Offsets are turned into each parent's own frame.
   const pivotOf = new Map([['root', [0, 0]]]);
+  const angleOf = new Map([['root', 0]]);
   const bones = [{ name: 'root' }];
   const ordered = [], placed = new Set();
   const place = p => { if (placed.has(p.name)) return; if (p.parent) place(clean.find(q => q.name === p.parent)); placed.add(p.name); ordered.push(p); };
   clean.forEach(place);
+  const turn = ([x, y], deg) => { const r = deg * Math.PI / 180, c = Math.cos(r), s = Math.sin(r); return [x * c - y * s, x * s + y * c]; };
   for (const p of ordered) {
-    const parent = p.parent ?? 'root', pp = pivotOf.get(parent);
-    bones.push({ name: p.name, parent, x: round(p.pivot[0] - pp[0]), y: round(p.pivot[1] - pp[1]) });
+    const parent = p.parent ?? 'root', pp = pivotOf.get(parent), pa = angleOf.get(parent);
+    const reach = Math.hypot(p.at[0] - p.pivot[0], p.at[1] - p.pivot[1]);
+    const angle = p.physics ? (reach > 1e-3 ? Math.atan2(p.at[1] - p.pivot[1], p.at[0] - p.pivot[0]) * 180 / Math.PI : -90) : 0;
+    const [x, y] = turn([p.pivot[0] - pp[0], p.pivot[1] - pp[1]], -pa);
+    bones.push({ name: p.name, parent, x: round(x), y: round(y), ...(angle - pa ? { rotation: round(angle - pa) } : {}),
+      ...(p.physics ? { length: round(Math.max(1, reach > 1e-3 ? reach * 2 : p.size[1])) } : {}) });
     pivotOf.set(p.name, p.pivot);
+    angleOf.set(p.name, angle);
   }
+  const physicsList = ordered.filter(p => p.physics).map((p, i) => ({ name: p.name, order: i, bone: p.name, rotate: 1, ...p.physics }));
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   for (const p of clean) {
     minX = Math.min(minX, p.at[0] - p.size[0] / 2); maxX = Math.max(maxX, p.at[0] + p.size[0] / 2);
@@ -155,9 +201,13 @@ export function buildSvgRig({ name, parts, resolution = 2 }) {
     bones,
     slots: clean.map(p => ({ name: p.name, bone: p.name, ...(p.hidden ? {} : { attachment: p.name }), ...(p.blend ? { blend: p.blend } : {}) })),
     skins: [{ name: 'default', attachments: Object.fromEntries(clean.map(p => {
-      const box = { x: round(p.at[0] - p.pivot[0]), y: round(p.at[1] - p.pivot[1]), width: round(p.size[0]), height: round(p.size[1]) };
-      return [p.name, Object.fromEntries([p.name, ...Object.keys(p.states ?? {}).map(k => `${p.name}_${k}`)].map(a => [a, { ...box }]))];
+      const angle = angleOf.get(p.name);
+      const [x, y] = turn([p.at[0] - p.pivot[0], p.at[1] - p.pivot[1]], -angle);
+      const box = { x: round(x), y: round(y), ...(angle ? { rotation: round(-angle) } : {}), width: round(p.size[0]), height: round(p.size[1]) };
+      const own = p.frames ? { ...box, path: `${p.name}_f`, sequence: { count: p.frames.length, start: 1, digits: 2, setup: 0 } } : { ...box };
+      return [p.name, Object.fromEntries([[p.name, own], ...Object.keys(p.states ?? {}).map(k => [`${p.name}_${k}`, { ...box }])])];
     })) }],
+    ...(physicsList.length ? { physics: physicsList } : {}),
     animations: {},
   };
   const document = { format: PARTS_FORMAT, version: 1, name, resolution: res, parts: clean.map(({ parent, ...p }) => (parent ? { ...p, parent } : p)) };
