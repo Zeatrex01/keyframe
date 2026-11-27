@@ -893,6 +893,7 @@ Writes new files into <folder>/<name>-export/ (never touches the drawing or the 
 | `animation` | string | The animation to export as frames (kind clip). Read from the latest delivery (<name>_v2.json) when there is one. |
 | `fps` | number (≥ 1, ≤ 60) | Frames per second of the clip export; default 24. |
 | `size` | number (≥ 16, ≤ 2048) | Square frame size of the clip export in pixels; default 256. |
+| `trim` | boolean | false keeps every part PNG at its full box, transparent edges included, so tiles, nine-slice panels and frames line up without offsets; default true (trimmed, with trim offsets in parts.json). |
 | `padding` | integer (≥ 0, ≤ 32) | Clear pixels around every sprite and clip frame in a sheet, so texture filtering never bleeds a neighbour in; default 2. |
 | `turns` | integer (≥ 4, ≤ 64) | How many angles the turn sheet of a stack has (kind stack); default 16. |
 | `loop` | boolean | Whether the clip export cycles (idle, run) or plays once (jump, attack). Default: it loops when it ends where it starts. |

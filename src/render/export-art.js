@@ -1,7 +1,8 @@
 // A drawing made usable outside the studio, for game engines, web pages and design tools:
 //
 //   png@<s>x/<part>.png        each part (and each state) at scale s, transparent, trimmed to its
-//                              pixels; parts.json keeps where each sits and where it turns
+//                              pixels (or kept at its full box); parts.json keeps where each sits
+//                              and where it turns
 //   <name>@<s>x.png + .json    one sprite sheet per scale with a frame map (the common "JSON hash"
 //                              sprite-sheet layout game engines and web libraries read)
 //   svg/<part>.svg, <name>.svg clean SVG: each part, and the whole drawing with a <g id> per part
@@ -63,13 +64,14 @@ function packSheet(images, pad = 2) {
 /**
  * Export a drawing.
  * @param {{ name: string, kind?: string, parts: any[] }} doc  the parts document (svg-rig.js)
- * @param {{ scales?: number[], kinds?: string[], pixels?: number, padding?: number, turns?: number, maxSide?: number, pixel?: object }} options  padding: clear pixels around each sprite in a sheet (default 2); turns: angles of the pre-turned stack (default 16); maxSide: the widest stack strip row in pixels (default MAX_STRIP_SIDE)
+ * @param {{ scales?: number[], kinds?: string[], pixels?: number, padding?: number, turns?: number, maxSide?: number, pixel?: object, trim?: boolean }} options  trim: false keeps
+ *   every image at its part's full box (tiles, nine-slice panels, frames that must line up); padding: clear pixels around each sprite in a sheet (default 2); turns: angles of the pre-turned stack (default 16); maxSide: the widest stack strip row in pixels (default MAX_STRIP_SIDE)
  *   scales: pixels per rig unit (1x, 2x, 3x); pixels: instead, the longest side of the whole drawing in pixels
  *   pixel: pixel art for parts and sheet (src/render/pixel.js): { colors, palette, outline, upscale }; pivots and
  *   boxes are then in the blown-up pixels
  * @returns {{ files: Record<string, Uint8Array | string>, manifest: any, palette: number[][] | null }}
  */
-export function exportDrawing(doc, { scales = [1, 2], kinds = ['parts', 'sheet', 'svg'], pixels, padding = 2, turns = 16, maxSide = MAX_STRIP_SIDE, pixel } = {}) {
+export function exportDrawing(doc, { scales = [1, 2], kinds = ['parts', 'sheet', 'svg'], pixels, padding = 2, turns = 16, maxSide = MAX_STRIP_SIDE, pixel, trim = true } = {}) {
   const px = pixel ? pixelOptions(pixel) : null;
   if (px && kinds.some(k => k !== 'parts' && k !== 'sheet')) throw new StudioError('bad-argument', 'Pixel art is made of the parts, the sheet and clips; export svg and stack without `pixel`.', { kinds });
   let palette = px?.palette ?? null;
@@ -103,7 +105,7 @@ export function exportDrawing(doc, { scales = [1, 2], kinds = ['parts', 'sheet',
     const k = s * (px?.upscale ?? 1);
     const images = looks.map((l, i) => {
       const { image: full } = drawn[i], margin = drawn[i].margin * (px?.upscale ?? 1);
-      const box = alphaBounds(full) ?? { x: 0, y: 0, width: 1, height: 1 };
+      const box = trim ? alphaBounds(full) ?? { x: 0, y: 0, width: 1, height: 1 } : { x: 0, y: 0, width: full.width, height: full.height };
       // The pivot in the trimmed image's pixels (y down), so an engine can place and turn it.
       const pvx = (l.part.pivot[0] - (l.part.at[0] - l.part.size[0] / 2)) * k + margin - box.x;
       const pvy = ((l.part.at[1] + l.part.size[1] / 2) - l.part.pivot[1]) * k + margin - box.y;
@@ -121,7 +123,7 @@ export function exportDrawing(doc, { scales = [1, 2], kinds = ['parts', 'sheet',
       const { at, image } = packSheet(images.map(l => l.image), padding);
       files[`${doc.name}@${tag}.png`] = encodePng(image);
       const frames = Object.fromEntries(images.map((l, i) => [l.name, {
-        frame: { x: at[i][0], y: at[i][1], w: l.image.width, h: l.image.height }, rotated: false, trimmed: true,
+        frame: { x: at[i][0], y: at[i][1], w: l.image.width, h: l.image.height }, rotated: false, trimmed: trim,
         spriteSourceSize: { x: l.trim.x, y: l.trim.y, w: l.image.width, h: l.image.height }, sourceSize: { w: l.source[0], h: l.source[1] },
         pivot: { x: r2(l.pivot[0] / Math.max(1, l.image.width)), y: r2(l.pivot[1] / Math.max(1, l.image.height)) },
       }]));
