@@ -114,7 +114,7 @@ order. A car, for instance: wheels `[0, 3]`, body `[2, 8]`, windows `[8, 12]`, r
 
 Because the parts are vector, `export_art` cuts one slice per pixel of height at every scale, so
 walls come out smooth instead of stepped; the slices near the ground are shaded a little darker.
-It writes `stack@<s>x.png` (one row of slices, bottom first) with `stack@<s>x.json` (slice size,
+It writes `stack@<s>x.png` (the slices bottom first, in one row, or wrapped into rows of at most 16384 px when a big model would pass the texture size engines import) with `stack@<s>x.json` (slice size,
 count, pivot), `turn@<s>x.png/.json` (the stack pre-turned to `turns` angles, for engines that only
 play frames) and `godot/keyframe_stack.gd`, the Godot node that piles the strip, turned with the node and under a turning camera
 ([godot.md](godot.md#sprite-stacks)). The turn sheet comes back as an image to look at.

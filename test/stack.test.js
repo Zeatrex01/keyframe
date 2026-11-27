@@ -8,7 +8,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { validateParts } from '../src/render/svg-rig.js';
 import { stackSlices, drawStack, turnFrames, bandOf } from '../src/render/stack.js';
-import { exportDrawing } from '../src/render/export-art.js';
+import { exportDrawing, stackGrid, MAX_STRIP_SIDE } from '../src/render/export-art.js';
 import { decodePng } from '../src/render/png.js';
 import { createServer } from '../src/mcp/server.js';
 
@@ -80,6 +80,30 @@ test('export: a strip of slices bottom first with its pivot, a turn sheet with a
   assert.equal(turns.frames.car_02.angle, 90);
   assert.ok(decodePng(files['turn@2x.png']).width > 0);
   assert.equal(files['car@2x.png'], undefined, 'only what was asked');
+});
+
+test('a long strip wraps into rows under the texture side limit; the Godot node reads the rows', () => {
+  assert.deepEqual(stackGrid(24, 100, 80), { columns: 24, rows: 1 }, 'a short stack stays one row');
+  const ferry = stackGrid(64, 530, 300);
+  assert.ok(ferry.rows > 1 && ferry.columns * 530 <= MAX_STRIP_SIDE, 'a ferry wraps');
+  assert.ok(ferry.columns * ferry.rows >= 64, 'every slice has a cell');
+  assert.throws(() => stackGrid(4000, 4000, 4000), /too big/);
+  // A real export with the side limit set low enough to wrap: cells in rows, read left to right.
+  const { files } = exportDrawing(doc(), { scales: [2], kinds: ['stack'], turns: 4, maxSide: 500 });
+  const map = JSON.parse(String(files['stack@2x.json']));
+  assert.ok(map.meta.rows > 1, 'it wrapped');
+  assert.ok(map.meta.columns * map.meta.rows >= map.meta.slices);
+  const one = JSON.parse(String(exportDrawing(doc(), { scales: [2], kinds: ['stack'], turns: 4 }).files['stack@2x.json']));
+  const flat = decodePng(exportDrawing(doc(), { scales: [2], kinds: ['stack'], turns: 4 }).files['stack@2x.png']);
+  const cell = (img, i, cols) => { const ox = (i % cols) * one.meta.slice.w, oy = Math.floor(i / cols) * one.meta.slice.h; let n = 0;
+    for (let y = 0; y < one.meta.slice.h; y++) for (let x = 0; x < one.meta.slice.w; x++) n += img.data[((oy + y) * img.width + ox + x) * 4 + 3]; return n; };
+  const strip = decodePng(files['stack@2x.png']);
+  assert.equal(strip.width, map.meta.columns * map.meta.slice.w);
+  assert.equal(strip.height, map.meta.rows * map.meta.slice.h);
+  for (const i of [0, 5, map.meta.slices - 1]) assert.equal(cell(strip, i, map.meta.columns), cell(flat, i, one.meta.columns), `slice ${i} is the same in rows`);
+  const node = fs.readFileSync(new URL('../integrations/godot/addons/keyframe/keyframe_stack.gd', import.meta.url), 'utf8');
+  assert.match(node, /i % _columns/, 'the node finds a slice by column and row');
+  assert.match(node, /meta\.get\("columns"/);
 });
 
 test('export_art exports a stacked drawing by default with the Godot node and shows the turns', async () => {

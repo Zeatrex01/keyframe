@@ -62,11 +62,11 @@ function packSheet(images, pad = 2) {
 /**
  * Export a drawing.
  * @param {{ name: string, kind?: string, parts: any[] }} doc  the parts document (svg-rig.js)
- * @param {{ scales?: number[], kinds?: string[], pixels?: number, padding?: number, turns?: number }} options  padding: clear pixels around each sprite in a sheet (default 2); turns: angles of the pre-turned stack (default 16)
+ * @param {{ scales?: number[], kinds?: string[], pixels?: number, padding?: number, turns?: number }} options  padding: clear pixels around each sprite in a sheet (default 2); turns: angles of the pre-turned stack (default 16); maxSide: the widest stack strip row in pixels (default MAX_STRIP_SIDE)
  *   scales: pixels per rig unit (1x, 2x, 3x); pixels: instead, the longest side of the whole drawing in pixels
  * @returns {{ files: Record<string, Uint8Array | string>, manifest: object }}
  */
-export function exportDrawing(doc, { scales = [1, 2], kinds = ['parts', 'sheet', 'svg'], pixels, padding = 2, turns = 16 } = {}) {
+export function exportDrawing(doc, { scales = [1, 2], kinds = ['parts', 'sheet', 'svg'], pixels, padding = 2, turns = 16, maxSide = MAX_STRIP_SIDE } = {}) {
   /** @type {Record<string, Uint8Array | string>} */
   const files = {};
   const manifest = { name: doc.name, kind: doc.kind ?? 'rig', units: 'rig units, y up; pixel boxes y down from the top left', scales: [], parts: {} };
@@ -80,7 +80,7 @@ export function exportDrawing(doc, { scales = [1, 2], kinds = ['parts', 'sheet',
   for (const s of list) {
     const tag = `${String(s).replace('.', '_')}x`;
     manifest.scales.push(s);
-    if (kinds.includes('stack')) Object.assign(files, stackFiles(doc, s, tag, turns, padding));
+    if (kinds.includes('stack')) Object.assign(files, stackFiles(doc, s, tag, turns, padding, maxSide));
     if (!kinds.includes('parts') && !kinds.includes('sheet')) continue;
     const images = looks.map(l => {
       const full = rasterizeSvg(l.svg, { width: Math.max(1, Math.round(l.part.size[0] * s)), height: Math.max(1, Math.round(l.part.size[1] * s)) });
@@ -117,16 +117,38 @@ export function exportDrawing(doc, { scales = [1, 2], kinds = ['parts', 'sheet',
   return { files, manifest };
 }
 
+/** The widest strip a stack writes on one row, in pixels: safe in every engine's texture import. */
+export const MAX_STRIP_SIDE = 16384;
+
+/**
+ * Columns and rows of a stack strip: one row while it fits in MAX_STRIP_SIDE, else rows of as many
+ * slices as fit, as square a block as the side allows.
+ */
+export function stackGrid(count, w, h, side = MAX_STRIP_SIDE) {
+  if (count * w <= side) return { columns: Math.max(1, count), rows: 1 };
+  const columns = Math.max(1, Math.floor(side / Math.max(1, w)));
+  const rows = Math.ceil(count / columns);
+  if (rows * h > side) throw new StudioError('bad-argument', `This stack is too big to export at this scale (${count} slices of ${w}x${h} px); export it at a smaller scale.`, { slices: count, w, h });
+  return { columns, rows };
+}
+
 /**
  * A sprite stack at one scale. The strip is what an engine stacks itself (the Godot add-on's
  * KeyframeStack node draws it turned at any angle, each slice one pixel above the last); the turn
  * sheet is the same stack pre-turned, for engines that only play frames.
  */
-function stackFiles(doc, s, tag, turns, padding) {
+function stackFiles(doc, s, tag, turns, padding, maxSide = MAX_STRIP_SIDE) {
   const stack = stackSlices(doc, { scale: s });
   const [w, h] = stack.size, n = stack.slices.length;
-  const strip = { width: n * w, height: h, data: new Uint8Array(n * w * h * 4) };
-  stack.slices.forEach((img, i) => { for (let y = 0; y < h; y++) strip.data.set(img.data.subarray(y * w * 4, (y + 1) * w * 4), (y * strip.width + i * w) * 4); });
+  // Engines cap a texture's side (Godot imports up to 16384 px safely, 32768 at most, and shrinks a
+  // wider one, which breaks every slice rectangle): a long strip wraps into rows, read left to
+  // right, bottom slice first.
+  const { columns, rows } = stackGrid(n, w, h, maxSide);
+  const strip = { width: columns * w, height: rows * h, data: new Uint8Array(columns * w * rows * h * 4) };
+  stack.slices.forEach((img, i) => {
+    const ox = (i % columns) * w, oy = Math.floor(i / columns) * h;
+    for (let y = 0; y < h; y++) strip.data.set(img.data.subarray(y * w * 4, (y + 1) * w * 4), ((oy + y) * strip.width + ox) * 4);
+  });
   const turned = turnFrames(stack, turns);
   const cols = Math.ceil(Math.sqrt(turns));
   const { at, image } = packSheetGrid(turned.frames.map(f => f.image), cols, padding);
@@ -135,7 +157,7 @@ function stackFiles(doc, s, tag, turns, padding) {
   return {
     [`stack@${tag}.png`]: encodePng(strip),
     [`stack@${tag}.json`]: `${JSON.stringify({
-      meta: { app: 'Keyframe Studio', kind: 'sprite-stack', image: `stack@${tag}.png`, slices: n, slice: { w, h }, layout: 'one row, bottom slice first', spacing: 1, pivot: { x: stack.pivot[0], y: stack.pivot[1] }, height: r2(stack.height), scale: s },
+      meta: { app: 'Keyframe Studio', kind: 'sprite-stack', image: `stack@${tag}.png`, slices: n, slice: { w, h }, columns, rows, layout: rows > 1 ? 'rows left to right, top row first, bottom slice first' : 'one row, bottom slice first', spacing: 1, pivot: { x: stack.pivot[0], y: stack.pivot[1] }, height: r2(stack.height), scale: s },
     }, null, 1)}\n`,
     [`turn@${tag}.png`]: encodePng(image),
     [`turn@${tag}.json`]: `${JSON.stringify({

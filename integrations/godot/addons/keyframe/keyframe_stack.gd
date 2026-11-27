@@ -38,6 +38,7 @@ extends Node2D
 
 var _strip: Texture2D
 var _slices := 0
+var _columns := 1
 var _size := Vector2.ZERO
 var _pivot := Vector2.ZERO
 var _scale := 1.0
@@ -61,6 +62,8 @@ func _load() -> void:
 		return
 	var meta: Dictionary = data["meta"]
 	_slices = int(meta.get("slices", 0))
+	# A long stack wraps into rows (a ferry or a tower would pass the texture size limit in one row).
+	_columns = maxi(1, int(meta.get("columns", _slices)))
 	_size = Vector2(float(meta["slice"]["w"]), float(meta["slice"]["h"]))
 	_pivot = Vector2(float(meta["pivot"]["x"]), float(meta["pivot"]["y"]))
 	_scale = maxf(0.01, float(meta.get("scale", 1.0)))
@@ -94,5 +97,5 @@ func _draw() -> void:
 	var k := 1.0 / _scale
 	for i in _slices:
 		draw_set_transform(up * i, 0.0, Vector2(k, k))
-		draw_texture_rect_region(_strip, Rect2(-_pivot, _size), Rect2(Vector2(i * _size.x, 0.0), _size), tint)
+		draw_texture_rect_region(_strip, Rect2(-_pivot, _size), Rect2(Vector2((i % _columns) * _size.x, (i / _columns) * _size.y), _size), tint)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
