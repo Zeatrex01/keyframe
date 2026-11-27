@@ -20,6 +20,7 @@ import { renderFrames } from './frames.js';
 import { StudioError } from '../shared/errors.js';
 import { clipLoops, loopAnswer } from '../engine/loops.js';
 import { stackSlices, turnFrames } from './stack.js';
+import { OVERSAMPLE, pixelOptions, findPalette, toPixelArt, hexOf } from './pixel.js';
 
 const r2 = v => Math.round(v * 100) / 100;
 export const EXPORT_KINDS = Object.freeze(['parts', 'sheet', 'svg', 'stack', 'clip']);
@@ -62,11 +63,16 @@ function packSheet(images, pad = 2) {
 /**
  * Export a drawing.
  * @param {{ name: string, kind?: string, parts: any[] }} doc  the parts document (svg-rig.js)
- * @param {{ scales?: number[], kinds?: string[], pixels?: number, padding?: number, turns?: number, maxSide?: number }} options  padding: clear pixels around each sprite in a sheet (default 2); turns: angles of the pre-turned stack (default 16); maxSide: the widest stack strip row in pixels (default MAX_STRIP_SIDE)
+ * @param {{ scales?: number[], kinds?: string[], pixels?: number, padding?: number, turns?: number, maxSide?: number, pixel?: object }} options  padding: clear pixels around each sprite in a sheet (default 2); turns: angles of the pre-turned stack (default 16); maxSide: the widest stack strip row in pixels (default MAX_STRIP_SIDE)
  *   scales: pixels per rig unit (1x, 2x, 3x); pixels: instead, the longest side of the whole drawing in pixels
- * @returns {{ files: Record<string, Uint8Array | string>, manifest: object }}
+ *   pixel: pixel art for parts and sheet (src/render/pixel.js): { colors, palette, outline, upscale }; pivots and
+ *   boxes are then in the blown-up pixels
+ * @returns {{ files: Record<string, Uint8Array | string>, manifest: any, palette: number[][] | null }}
  */
-export function exportDrawing(doc, { scales = [1, 2], kinds = ['parts', 'sheet', 'svg'], pixels, padding = 2, turns = 16, maxSide = MAX_STRIP_SIDE } = {}) {
+export function exportDrawing(doc, { scales = [1, 2], kinds = ['parts', 'sheet', 'svg'], pixels, padding = 2, turns = 16, maxSide = MAX_STRIP_SIDE, pixel } = {}) {
+  const px = pixel ? pixelOptions(pixel) : null;
+  if (px && kinds.some(k => k !== 'parts' && k !== 'sheet')) throw new StudioError('bad-argument', 'Pixel art is made of the parts, the sheet and clips; export svg and stack without `pixel`.', { kinds });
+  let palette = px?.palette ?? null;
   /** @type {Record<string, Uint8Array | string>} */
   const files = {};
   const manifest = { name: doc.name, kind: doc.kind ?? 'rig', units: 'rig units, y up; pixel boxes y down from the top left', scales: [], parts: {} };
@@ -82,13 +88,26 @@ export function exportDrawing(doc, { scales = [1, 2], kinds = ['parts', 'sheet',
     manifest.scales.push(s);
     if (kinds.includes('stack')) Object.assign(files, stackFiles(doc, s, tag, turns, padding, maxSide));
     if (!kinds.includes('parts') && !kinds.includes('sheet')) continue;
-    const images = looks.map(l => {
-      const full = rasterizeSvg(l.svg, { width: Math.max(1, Math.round(l.part.size[0] * s)), height: Math.max(1, Math.round(l.part.size[1] * s)) });
+    const sizeOf = l => [Math.max(1, Math.round(l.part.size[0] * s)), Math.max(1, Math.round(l.part.size[1] * s))];
+    let drawn;
+    if (px) {
+      // Pixel art: drawn OVERSAMPLE times larger, then one palette colour per pixel.
+      const his = looks.map(l => {
+        const [w, h] = sizeOf(l);
+        if (Math.max(w, h) * OVERSAMPLE > 4096) throw new StudioError('bad-argument', `Pixel art is drawn small: "${l.name}" would be ${Math.max(w, h)} px; lower the scale or \`pixels\`.`, { part: l.name });
+        return rasterizeSvg(l.svg, { width: w * OVERSAMPLE, height: h * OVERSAMPLE });
+      });
+      palette ??= findPalette(his, px.colors);
+      drawn = his.map(hi => toPixelArt(hi, px, palette));
+    } else drawn = looks.map(l => { const [w, h] = sizeOf(l); return { image: rasterizeSvg(l.svg, { width: w, height: h }), margin: 0 }; });
+    const k = s * (px?.upscale ?? 1);
+    const images = looks.map((l, i) => {
+      const { image: full } = drawn[i], margin = drawn[i].margin * (px?.upscale ?? 1);
       const box = alphaBounds(full) ?? { x: 0, y: 0, width: 1, height: 1 };
       // The pivot in the trimmed image's pixels (y down), so an engine can place and turn it.
-      const px = (l.part.pivot[0] - (l.part.at[0] - l.part.size[0] / 2)) * s - box.x;
-      const py = ((l.part.at[1] + l.part.size[1] / 2) - l.part.pivot[1]) * s - box.y;
-      return { ...l, image: crop(full, box), trim: box, source: [full.width, full.height], pivot: [r2(px), r2(py)] };
+      const pvx = (l.part.pivot[0] - (l.part.at[0] - l.part.size[0] / 2)) * k + margin - box.x;
+      const pvy = ((l.part.at[1] + l.part.size[1] / 2) - l.part.pivot[1]) * k + margin - box.y;
+      return { ...l, image: crop(full, box), trim: box, source: [full.width, full.height], pivot: [r2(pvx), r2(pvy)] };
     });
     if (kinds.includes('parts')) {
       for (const l of images) {
@@ -106,15 +125,17 @@ export function exportDrawing(doc, { scales = [1, 2], kinds = ['parts', 'sheet',
         spriteSourceSize: { x: l.trim.x, y: l.trim.y, w: l.image.width, h: l.image.height }, sourceSize: { w: l.source[0], h: l.source[1] },
         pivot: { x: r2(l.pivot[0] / Math.max(1, l.image.width)), y: r2(l.pivot[1] / Math.max(1, l.image.height)) },
       }]));
-      files[`${doc.name}@${tag}.json`] = `${JSON.stringify({ frames, meta: { app: 'Keyframe Studio', image: `${doc.name}@${tag}.png`, format: 'RGBA8888', size: { w: image.width, h: image.height }, scale: String(s) } }, null, 1)}\n`;
+      files[`${doc.name}@${tag}.json`] = `${JSON.stringify({ frames, meta: { app: 'Keyframe Studio', image: `${doc.name}@${tag}.png`, format: 'RGBA8888', size: { w: image.width, h: image.height }, scale: String(k),
+        ...(px ? { filter: 'nearest' } : {}) } }, null, 1)}\n`;
     }
   }
   if (kinds.includes('svg')) {
     for (const l of looks) files[`svg/${l.name}.svg`] = partSvg({ ...l.part, name: l.name, svg: l.svg });
     files[`${doc.name}.svg`] = drawingSvg(doc).svg;
   }
+  if (px) manifest.pixel = { palette: (palette ?? []).map(hexOf), upscale: px.upscale, ...(px.outline ? { outline: hexOf(px.outline) } : {}), filter: 'nearest' };
   files['parts.json'] = `${JSON.stringify(manifest, null, 1)}\n`;
-  return { files, manifest };
+  return { files, manifest, palette };
 }
 
 /** The widest strip a stack writes on one row, in pixels: safe in every engine's texture import. */
@@ -176,9 +197,15 @@ function stackFiles(doc, s, tag, turns, padding, maxSide = MAX_STRIP_SIDE) {
  * character) as `meta.origin` in pixels and as each frame's `pivot` (0-1). A clip that ends where it
  * starts is a loop (unless its name says it plays once, src/engine/loops.js): it is cut into whole
  * frames that cycle exactly, without a closing copy of the first.
- * @param {{ json: object, atlasText: string, pages: object, animation: string, fps?: number, size?: number, padding?: number, loop?: boolean }} input
+ *
+ * With `pixel` (src/render/pixel.js) the frames are pixel art: `size` pixels square before the
+ * blow-up, every frame on one palette (the given one, or one found across all the frames).
+ * @param {{ json: object, atlasText: string, pages: object, animation: string, fps?: number, size?: number, padding?: number, loop?: boolean,
+ *   pixel?: object, palette?: number[][] }} input  palette: the colours to use (an export's shared palette)
  */
-export async function exportClip({ json, atlasText, pages, animation, fps = 24, size = 256, padding = 2, loop: asked }) {
+export async function exportClip({ json, atlasText, pages, animation, fps = 24, size = 256, padding = 2, loop: asked, pixel, palette: shared }) {
+  const px = pixel ? pixelOptions(pixel) : null;
+  if (px && size * OVERSAMPLE > 4096) throw new StudioError('bad-argument', 'Pixel-art frames are drawn small: `size` is at most 1024.', { size });
   const clip = json.animations?.[animation];
   if (!clip) throw new StudioError('bad-argument', `There is no animation "${animation}". Clips: ${Object.keys(json.animations ?? {}).join(', ') || 'none'}.`, { animation });
   const endOf = c => { let end = 0; const scan = v => { if (Array.isArray(v)) v.forEach(scan); else if (v && typeof v === 'object') { if (Number.isFinite(v.time)) end = Math.max(end, v.time); Object.values(v).forEach(scan); } }; scan(c); return end; };
@@ -200,11 +227,21 @@ export async function exportClip({ json, atlasText, pages, animation, fps = 24, 
   const steps = Math.max(1, Math.min(240, Math.round(end * fps)));
   const times = loop ? Array.from({ length: steps }, (_, i) => r2(end * i / steps)) : Array.from({ length: steps + 1 }, (_, i) => r2(Math.min(end, i / fps)));
   const margin = 0.06;
-  const rendered = await renderFrames({ json, atlasText, pages, animation, times, width: size, height: size, margin, ...(view ? { viewport: view } : {}) });
-  const frames = rendered.frames;
+  const drawSize = px ? size * OVERSAMPLE : size;
+  const rendered = await renderFrames({ json, atlasText, pages, animation, times, width: drawSize, height: drawSize, margin, ...(view ? { viewport: view } : {}),
+    ...(px ? { supersample: 1 } : {}) });
+  /** @type {Array<{ time: number, image: { width: number, height: number, data: Uint8Array } }>} */
+  let frames = rendered.frames, palette = null;
+  if (px) {
+    // One palette for every frame, so no colour flickers from frame to frame.
+    palette = shared ?? px.palette ?? findPalette(frames.map(f => f.image), px.colors);
+    frames = frames.map(f => ({ ...f, image: toPixelArt(f.image, px, palette, { room: false }).image }));
+  }
   const frameMs = Math.round(1000 * (loop && end > 0 ? end / steps : 1 / fps));
-  const box = rendered.viewport, k = rendered.scale;
-  const origin = box && k ? [r2(size / 2 - (box.x + box.width / 2) * k), r2(size / 2 + (box.y + box.height / 2) * k)] : [size / 2, size / 2];
+  const box = rendered.viewport, toOut = px ? px.upscale / OVERSAMPLE : 1, k = rendered.scale * toOut;
+  const origin = box && rendered.scale ? [r2((drawSize / 2 - (box.x + box.width / 2) * rendered.scale) * toOut), r2((drawSize / 2 + (box.y + box.height / 2) * rendered.scale) * toOut)]
+    : [drawSize * toOut / 2, drawSize * toOut / 2];
+  size = frames[0].image.width;
   /** @type {Record<string, Uint8Array | string>} */
   const files = {};
   frames.forEach((f, i) => { files[`clip-${animation}/frame_${String(i).padStart(4, '0')}.png`] = encodePng(f.image); });
@@ -214,9 +251,10 @@ export async function exportClip({ json, atlasText, pages, animation, fps = 24, 
   files[`clip-${animation}@sheet.png`] = encodePng(image);
   files[`clip-${animation}@sheet.json`] = `${JSON.stringify({
     frames: Object.fromEntries(frames.map((f, i) => [`${animation}_${String(i).padStart(4, '0')}`, { frame: { x: at[i][0], y: at[i][1], w: size, h: size }, rotated: false, trimmed: false, spriteSourceSize: { x: 0, y: 0, w: size, h: size }, sourceSize: { w: size, h: size }, pivot, duration: frameMs }])),
-    meta: { app: 'Keyframe Studio', image: `clip-${animation}@sheet.png`, size: { w: image.width, h: image.height }, fps, frames: frames.length, loop, origin: { x: origin[0], y: origin[1] }, scale: r2(k) },
+    meta: { app: 'Keyframe Studio', image: `clip-${animation}@sheet.png`, size: { w: image.width, h: image.height }, fps, frames: frames.length, loop, origin: { x: origin[0], y: origin[1] }, scale: r2(k),
+      ...(px ? { filter: 'nearest' } : {}) },
   }, null, 1)}\n`;
-  return { files, frames: frames.length, fps, loop, origin };
+  return { files, frames: frames.length, fps, loop, origin, palette };
 }
 
 /** Frames on a grid, `pad` px of clear space around each, so a sampler never bleeds one into the next. */

@@ -17,7 +17,9 @@ import { compactSchema } from '../src/mcp/describe.js';
 // crossfades and layers, seen as a game mixes them); nested fields carry one-word hints.
 // 2026-11-27: raised to 30,600 for add_effect's particle emitter (`emit`): its recipe names and
 // its library sprite, with the rest of its settings in `tune`.
-const BUDGET_BYTES = 30600;
+// 2026-11-27: raised to 30,700 for export_art's `pixel` (pixel-art parts, sheets and clips), one
+// object whose fields the description explains.
+const BUDGET_BYTES = 30700;
 const SUMMARY_MAX = 220;      // one or two sentences
 
 test('the compact listing of the real tool set stays under budget', async () => {

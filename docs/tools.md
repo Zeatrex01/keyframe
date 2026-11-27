@@ -880,6 +880,7 @@ Example:
 **Not when:** The animation goes to an engine with a skeletal runtime: deliver the skeleton itself (write_animation) instead of frames.
 
 Writes new files into <folder>/<name>-export/ (never touches the drawing or the owner's files; a second export replaces the folder's files): `parts` png@<s>x/<part>.png, each part and each state at scale s (pixels per rig unit), transparent and trimmed, with parts.json listing for each its trim offset, source size and pivot in pixels so an engine places and turns it like the rig; `sheet` <name>@<s>x.png and .json, all of them packed into one sprite sheet with a frame map in the common JSON-hash layout (frame, spriteSourceSize, sourceSize, pivot) that game engines and web libraries read; `svg` svg/<part>.svg and <name>.svg, clean SVG with a <g id> per part for web pages and design tools; `clip` (with `animation`) clip-<anim>/frame_0000.png... and clip-<anim>@sheet.png/.json at `fps`, for engines without a skeletal runtime: every clip of the skeleton is framed alike (same size, feet on the same row), the map gives the origin in pixels (meta.origin, each frame's pivot) and whether the clip loops (a loop leaves out its closing copy of the first frame); `web` web/keyframe-player.js (the studio's engine as one script: a KeyframePlayer class with play, stop, pause, seek, setSpeed, setLook for drawn states, and start/complete/loop/event listeners, plus a <keyframe-player> element), the skeleton, its atlas and pages, and an index.html showing the snippet, for web games and pages. Kinds: parts, sheet, svg, stack, clip, web; default parts, sheet and svg, and stack when a part has a height band. Scales default [1, 2]; `pixels` instead sets the longest side of the whole drawing.
+`pixel` makes pixel art of the parts, the sheet and the clip, into <name>-export/pixel/: every pixel one colour of a palette, fully opaque or clear, no anti-aliasing. { colors: 2-64 (default 16; the palette is found from the drawing and shared by every part and frame), palette: ['rrggbb', ...] (use these colours instead), outline: 'rrggbb' (a one-pixel outline), upscale: 1-8 (each pixel blown up to a block, for crisp display) }. Draw it small: `pixels` 32-128 for the drawing, `size` 32-128 for clip frames. palette.hex and palette.png list the colours; the maps say filter: nearest (import without smoothing).
 
 | Argument | Type | Meaning |
 |---|---|---|
@@ -893,6 +894,7 @@ Writes new files into <folder>/<name>-export/ (never touches the drawing or the 
 | `padding` | integer (≥ 0, ≤ 32) | Clear pixels around every sprite and clip frame in a sheet, so texture filtering never bleeds a neighbour in; default 2. |
 | `turns` | integer (≥ 4, ≤ 64) | How many angles the turn sheet of a stack has (kind stack); default 16. |
 | `loop` | boolean | Whether the clip export cycles (idle, run) or plays once (jump, attack). Default: it loops when it ends where it starts. |
+| `pixel` | object | Pixel art of the parts, sheet and clip (see the description): { colors, palette, outline, upscale }. |
 
 Example:
 

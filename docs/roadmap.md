@@ -119,8 +119,9 @@ or art is taken. In order:
 
 - Particle emitters written as keys (`add_effect` kind `emit`) with ready-made recipes and a
   bundled pack of effect sprites drawn onto the delivery's own atlas page. Done.
-- Pixel-art export: sprite sheets and parts at a fixed palette, without anti-aliasing, at an
-  integer scale, so a rig drawn as vectors ships as crisp pixel art.
+- Pixel-art export: sprite sheets, parts and clips at a fixed palette, without anti-aliasing, at a
+  whole-number blow-up, so a rig drawn as vectors ships as crisp pixel art (`export_art` `pixel`).
+  Done.
 - Aseprite import: an `.aseprite` file's layers become parts and its frames and tags become
   flipbook clips, read from the published file format with the standard library.
 
