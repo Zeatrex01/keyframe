@@ -18,6 +18,7 @@ import { listMeshes, signature } from '../spine/weights.js';
 import { readRepairMarker, REPAIR_MARKER } from '../spine/weight-repair.js';
 import { parseSkeleton } from '../runtime/index.js';
 import { normalizeAnimation } from './normalize.js';
+import { validateEventDefs, defineEvents } from './events.js';
 import { carryPaints } from '../spine/paint.js';
 import { carryAdded } from '../spine/effects.js';
 import { mergeAnimations, mergeClip, changesBetween } from './policy.js';
@@ -98,9 +99,10 @@ export function keysOnPhysicsBones(base, clip) {
   return out;
 }
 
-export async function composeDelivery({ base, previous = null, name, animation, replace = false, fps, holdFromStart = true, plant, deliveryInfo = {} }) {
+export async function composeDelivery({ base, previous = null, name, animation, replace = false, fps, holdFromStart = true, plant, events, loop, deliveryInfo = {} }) {
   if (typeof name !== 'string' || !name.length) throw new StudioError('bad-argument', 'The animation name must be a non-empty string.');
   if (!base || typeof base !== 'object') throw new StudioError('bad-argument', 'A base skeleton is required.');
+  const eventDefs = validateEventDefs(events);
   const normalized = normalizeAnimation(animation, { fps, holdFromStart });
 
   const baseClip = base.animations?.[name];
@@ -121,10 +123,17 @@ export async function composeDelivery({ base, previous = null, name, animation, 
     .filter(([clipName]) => out.animations?.[clipName] && !(clipName === name && (replace || baked))));
   if (baked) plantedBones[name] = baked.bones;
 
+  // Every event a clip fires is defined (src/deliver/events.js), so a hit frame never refuses a write.
+  const eventReport = defineEvents(out, base, previous, eventDefs);
   const weights = previous ? carryWeightRepairs(out, previous) : { kept: [], dropped: [] };
   const paints = previous ? carryPaints(out, previous) : { kept: [], dropped: [] };
   const droppedMarkers = previous ? UNCARRIED_MARKERS.filter(m => previous[m] !== undefined && base[m] === undefined) : [];
-  out[DELIVERY_MARKER] = { ...deliveryInfo, baseHash: base.skeleton?.hash ?? null, ...(Object.keys(plantedBones).length ? { planted: plantedBones } : {}) };
+  // Loop answers given at write time (write_animation `loop`), per clip, for the exports (src/engine/loops.js).
+  if (loop !== undefined && typeof loop !== 'boolean') throw new StudioError('bad-argument', '`loop` is true or false.', { loop });
+  const loops = Object.fromEntries(Object.entries({ ...(previous?.[DELIVERY_MARKER]?.loops ?? {}), ...(typeof loop === 'boolean' ? { [name]: loop } : {}) })
+    .filter(([clipName, v]) => out.animations?.[clipName] && typeof v === 'boolean'));
+  out[DELIVERY_MARKER] = { ...deliveryInfo, baseHash: base.skeleton?.hash ?? null, ...(Object.keys(plantedBones).length ? { planted: plantedBones } : {}), ...(Object.keys(loops).length ? { loops } : { loops: undefined }) };
+  if (!out[DELIVERY_MARKER].loops) delete out[DELIVERY_MARKER].loops;
 
   const baseFindings = checkSkeleton(base);
   const outFindings = checkSkeleton(out);
@@ -154,6 +163,7 @@ export async function composeDelivery({ base, previous = null, name, animation, 
       presets: normalized.presets,
       ...(normalized.followed.length ? { followed: normalized.followed } : {}),
       ...(planted ? { planted } : {}),
+      ...(eventReport.defined.length || eventReport.baseDefinitionKept ? { events: eventReport } : {}),
       ...(planted?.some(p => p.reach > 1.01) ? { plantWarning: `${planted.filter(p => p.reach > 1.01).map(p => p.bone).join(', ')}: the leg is too short to stay on its point at times (reach above 1), so the foot lifts there. Move the hips less far, or bend the knees more.` } : {}),
       ...(onPhysics.length ? { onPhysicsBones: onPhysics } : {}),
       replacedFromBase: replace && targetClip !== undefined,

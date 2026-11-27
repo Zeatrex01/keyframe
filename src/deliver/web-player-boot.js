@@ -109,7 +109,8 @@ export function defineKeyframePlayer(load) {
 
     events(from, to) {
       const keys = this.json.animations?.[this.current?.name]?.events ?? [];
-      for (const e of keys) { const t = e.time ?? 0; if (t > from && t <= to) this.emit('event', e.name, e); }
+      // The key's own values over the event's defaults: { name, time, int, float, string, audio, ... }.
+      for (const e of keys) { const t = e.time ?? 0; if (t > from && t <= to) this.emit('event', e.name, { ...(this.json.events?.[e.name] ?? {}), ...e }); }
     }
 
     frame(now) {

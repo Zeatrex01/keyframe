@@ -118,15 +118,16 @@ export const exportGodotTool = {
     properties: {
       file: { type: 'string', short: 'skeleton; empty = the folder base', description: 'Project-relative skeleton JSON (Spine 4.2 or Keyframe).' },
       fps: { type: 'number', short: 'bake rate (default 30)', description: 'Frames per second for baked keys (constraints, colour, draw order, deform). Default 30.' },
+      loops: { type: 'object', short: 'per clip: loops or plays once', additionalProperties: { type: 'boolean' }, description: 'Whether each named clip loops in Godot: { idle: true, cross: false }. Wins over the loop each clip was written with (write_animation `loop`) and over the guess (a clip that ends in its first pose loops unless its name is an action such as attack, jab, cross, block, step). A clip that plays once fires animation_finished.' },
     },
   },
-  run({ file, fps = 30 }, { session }) {
+  run({ file, fps = 30, loops }, { session }) {
     const project = projectOf(session);
     const { sk, rel, abs } = project.skeleton(file);
     const atlas = project.atlasFor(abs);
     if (!atlas) throw new StudioError('file-not-found', `No atlas beside ${rel}: Godot needs the art.`, { file: rel });
     const name = path.basename(abs).replace(/(\.keyframe)?\.json$/i, '');
-    const scene = godotScene(sk, { atlasText: atlas.text, fps, name });
+    const scene = godotScene(sk, { atlasText: atlas.text, fps, name, loops });
     const targetAbs = abs.replace(/(\.keyframe)?\.json$/i, '.kfscene');
     const text = `${JSON.stringify(scene)}\n`;
     const pending = fs.existsSync(targetAbs) ? snapshotBytesDeferred(project.dir, fs.readFileSync(targetAbs), project.rel(targetAbs), '.kfscene') : null;
