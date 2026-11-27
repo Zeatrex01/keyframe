@@ -14,6 +14,9 @@ All notable changes to this project. The format follows
 - Loops: `write_animation` takes `loop` (kept with the clip in the delivery) and `export_godot`
   takes `loops` per clip, so a one-shot that ends in its first pose (a cross, a block, a step)
   plays once in Godot and fires `animation_finished`. More fight moves are one-shots by name.
+- Wardrobe for the side figure (`bare: true`, `wear: [...]`): a bald, shaped body; hair in seven
+  styles; shirt, trousers, boots; head-wear (headband, beanie, cap, hat, glasses, shades, moustache,
+  beard, mask); plate armour piece by piece. Each item is its own part, shown or hidden by the game.
 
 ## 0.0.1-beta - 2026-11-24
 

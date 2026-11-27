@@ -78,3 +78,26 @@ test('the bare body is shaped, shaded from one light, and armour has plates', as
   }
   assert.ok(f.body.box[1] === figure([]).body.box[1], 'the torso keeps its height');
 });
+
+test('head-wear and the extra hair styles are wear items of their own on the head', async () => {
+  const { HEADWEAR } = await import('../src/art/figure-wardrobe.js');
+  const f = figure([]);
+  for (const n of HEADWEAR) {
+    assert.ok(f[n], `${n} is drawn`);
+    assert.equal(f[n].parent, 'head', `${n} rides the head`);
+    assert.equal(f[n].hidden, true, `${n} is hidden unless worn`);
+    assert.deepEqual(f[n].offset, f.head.offset, `${n} is centred on the head`);
+    assert.ok(f[n].box[0] > f.head.box[0], `${n} has room past the head (a brim, tails)`);
+  }
+  const worn = figure(['hair', 'cap', 'glasses', 'moustache']);
+  for (const n of ['cap', 'glasses', 'moustache', 'hair']) assert.ok(!worn[n].hidden, `${n} is worn`);
+  assert.ok(worn.hat.hidden && worn.beard.hidden, 'what is not worn stays hidden');
+  assert.ok(figure(['cap', 'helmet']).cap.hidden, 'a helmet hides a cap');
+  assert.ok(figure(['cap', 'hat']).cap.hidden && !figure(['cap', 'hat']).hat.hidden, 'a hat hides a cap');
+  const masked = figure(['mask', 'beard', 'moustache']);
+  assert.ok(masked.beard.hidden && masked.moustache.hidden && !masked.mask.hidden, 'a mask hides facial hair');
+  for (const style of ['bun', 'afro', 'horseshoe']) assert.ok(HAIR_STYLES.includes(style), style);
+  const order = sideParts({ h: 300, bare: true, wear: [] }, style).map(p => p.name);
+  const after = (a, b) => order.indexOf(a) > order.indexOf(b);
+  for (const [a, b] of [['moustache', 'eye'], ['glasses', 'eye'], ['cap', 'hair'], ['helmet', 'hat'], ['mask', 'beard']]) assert.ok(after(a, b), `${a} is drawn over ${b}`);
+});

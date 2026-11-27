@@ -5,7 +5,8 @@
 //   { component: 'figure', build: 'side', bare: true, wear: ['hair', 'shirt', 'trousers', 'boots', 'cuirass'] }
 //
 // Items (`wear` lists the ones worn; the rest are drawn too, hidden, for the game to show):
-//   cloth   hair (`hairStyle`: short, spiky, long, swept), shirt (body and both sleeves), trousers (waist and both legs), boots
+//   cloth   hair (`hairStyle`: short, spiky, long, swept, bun, afro, horseshoe; bald = no hair worn), shirt (body and both sleeves), trousers (waist and both legs), boots
+//   head    headband, beanie, cap, hat, glasses, shades, moustache, beard, mask (src/art/figure-headwear.js)
 //   armour  helmet, cuirass, pauldrons (shoulder plate and upper-arm tube), vambraces, cuisses, greaves, sabatons
 // Every piece covers the whole of its body part, a little wider all round, so nothing under it shows
 // at its edges. Armour hides the cloth on its own part (a worn cuirass hides the shirt and waist, a
@@ -14,11 +15,16 @@
 
 import { darken, lighten } from './style.js';
 import { form, formPart, shade, lame, rivets, shadowOf, footPath, solePath } from './figure-form.js';
+import { HEADWEAR, HEADWEAR_HIDES, headwearParts } from './figure-headwear.js';
+
+export { HEADWEAR };
+/** How far a head piece's box reaches past the head, as a fraction of the head, on every side. */
+const PAD = 0.3;
 
 export const CLOTH = Object.freeze(['hair', 'shirt', 'trousers', 'boots']);
 export const ARMOUR = Object.freeze(['helmet', 'cuirass', 'pauldrons', 'vambraces', 'cuisses', 'greaves', 'sabatons']);
 /** Which armour hides which cloth, by the part they share. */
-const HIDES = Object.freeze({ helmet: ['hair'], cuirass: ['shirt', 'trousers'], pauldrons: ['shirt'], vambraces: ['shirt'], cuisses: ['trousers'], greaves: ['trousers'], sabatons: ['boots'] });
+const HIDES = Object.freeze({ ...HEADWEAR_HIDES, helmet: ['hair', ...HEADWEAR_HIDES.helmet], cuirass: ['shirt', 'trousers'], pauldrons: ['shirt'], vambraces: ['shirt'], cuisses: ['trousers'], greaves: ['trousers'], sabatons: ['boots'] });
 
 const r2 = v => Math.round(v * 100) / 100;
 const flat = { stroke: false, shade: false };
@@ -40,17 +46,26 @@ export function torsoPath(W, H, sw) {
   return `M${r2(x0 + W * 0.12)} ${r2(sw / 2)} L${r2(x1 - W * 0.3)} ${r2(sw / 2)} Q${r2(x1)} ${r2(H * 0.06)} ${r2(x1)} ${r2(H * 0.4)} L${r2(x1 - W * 0.04)} ${r2(H - sw / 2)} L${r2(x0 + W * 0.04)} ${r2(H - sw / 2)} L${r2(x0)} ${r2(H * 0.25)} Q${r2(x0)} ${r2(sw / 2)} ${r2(x0 + W * 0.12)} ${r2(sw / 2)} Z`;
 }
 
-export const HAIR_STYLES = Object.freeze(['short', 'spiky', 'long', 'swept']);
+export const HAIR_STYLES = Object.freeze(['short', 'spiky', 'long', 'swept', 'bun', 'afro', 'horseshoe']);
 
-/** The hair over the top and the back of the head, in the head's box, in one of HAIR_STYLES. */
-export function hairPath(hw, hh, style = 'short') {
-  const hx = v => r2(v * hw), hy = v => r2(v * hh);
+/**
+ * The hair over the top and the back of the head, in one of HAIR_STYLES: in the head's box grown by
+ * `pad` (a fraction of the head) on every side, so big hair (an afro, a bun) fits.
+ */
+export function hairPath(hw, hh, style = 'short', pad = 0) {
+  const hx = v => r2((v + pad) * hw), hy = v => r2((v + pad) * hh);
+  const short = `M${hx(0.1)} ${hy(0.62)} Q${hx(0.02)} ${hy(0.02)} ${hx(0.55)} ${hy(0.02)} Q${hx(0.9)} ${hy(0.04)} ${hx(0.9)} ${hy(0.3)} Q${hx(0.72)} ${hy(0.24)} ${hx(0.6)} ${hy(0.32)} Q${hx(0.5)} ${hy(0.4)} ${hx(0.42)} ${hy(0.36)} Q${hx(0.3)} ${hy(0.48)} ${hx(0.24)} ${hy(0.7)} Q${hx(0.14)} ${hy(0.72)} ${hx(0.1)} ${hy(0.62)} Z`;
+  // Bun: short hair drawn back into a knot at the back of the crown. Afro: a round cloud well past
+  // the skull, open at the face. Horseshoe: bald on top, a ring of hair round the back at ear height.
+  if (style === 'bun') { const cx = 0.16, cy = 0.1, r = 0.14; return `${short} M${hx(cx - r)} ${hy(cy)} A${r2(r * hw)} ${r2(r * hh)} 0 1 0 ${hx(cx + r)} ${hy(cy)} A${r2(r * hw)} ${r2(r * hh)} 0 1 0 ${hx(cx - r)} ${hy(cy)} Z`; }
+  if (style === 'afro') return `M${hx(0.14)} ${hy(0.78)} Q${hx(-0.16)} ${hy(0.7)} ${hx(-0.12)} ${hy(0.4)} Q${hx(-0.2)} ${hy(0.1)} ${hx(0.04)} ${hy(-0.06)} Q${hx(0.14)} ${hy(-0.24)} ${hx(0.4)} ${hy(-0.2)} Q${hx(0.6)} ${hy(-0.28)} ${hx(0.8)} ${hy(-0.12)} Q${hx(1.06)} ${hy(-0.04)} ${hx(1.02)} ${hy(0.22)} Q${hx(1.04)} ${hy(0.36)} ${hx(0.9)} ${hy(0.36)} Q${hx(0.74)} ${hy(0.26)} ${hx(0.6)} ${hy(0.32)} Q${hx(0.46)} ${hy(0.38)} ${hx(0.4)} ${hy(0.36)} Q${hx(0.3)} ${hy(0.5)} ${hx(0.3)} ${hy(0.72)} Q${hx(0.22)} ${hy(0.8)} ${hx(0.14)} ${hy(0.78)} Z`;
+  if (style === 'horseshoe') return `M${hx(0.1)} ${hy(0.64)} Q${hx(0.04)} ${hy(0.42)} ${hx(0.14)} ${hy(0.3)} Q${hx(0.26)} ${hy(0.28)} ${hx(0.3)} ${hy(0.36)} Q${hx(0.24)} ${hy(0.42)} ${hx(0.3)} ${hy(0.5)} Q${hx(0.26)} ${hy(0.64)} ${hx(0.24)} ${hy(0.72)} Q${hx(0.14)} ${hy(0.74)} ${hx(0.1)} ${hy(0.64)} Z`;
   // Spiky: tufts standing up over the crown. Long: down the back to the nape, a fringe in front.
   // Swept: a high quiff swept back.
   if (style === 'spiky') return `M${hx(0.1)} ${hy(0.64)} L${hx(0.04)} ${hy(0.3)} L${hx(0.16)} ${hy(0.2)} L${hx(0.14)} ${hy(0.02)} L${hx(0.32)} ${hy(0.1)} L${hx(0.42)} ${hy(-0.04)} L${hx(0.54)} ${hy(0.08)} L${hx(0.7)} ${hy(0)} L${hx(0.74)} ${hy(0.14)} L${hx(0.94)} ${hy(0.16)} L${hx(0.86)} ${hy(0.3)} Q${hx(0.7)} ${hy(0.26)} ${hx(0.6)} ${hy(0.32)} Q${hx(0.48)} ${hy(0.4)} ${hx(0.4)} ${hy(0.36)} Q${hx(0.3)} ${hy(0.5)} ${hx(0.24)} ${hy(0.72)} Q${hx(0.14)} ${hy(0.74)} ${hx(0.1)} ${hy(0.64)} Z`;
   if (style === 'long') return `M${hx(0.18)} ${hy(0.98)} Q${hx(0.0)} ${hy(0.8)} ${hx(0.04)} ${hy(0.4)} Q${hx(0.06)} ${hy(0.0)} ${hx(0.55)} ${hy(0.01)} Q${hx(0.94)} ${hy(0.04)} ${hx(0.92)} ${hy(0.42)} Q${hx(0.84)} ${hy(0.3)} ${hx(0.74)} ${hy(0.3)} Q${hx(0.6)} ${hy(0.36)} ${hx(0.44)} ${hy(0.36)} Q${hx(0.3)} ${hy(0.5)} ${hx(0.32)} ${hy(0.98)} Z`;
   if (style === 'swept') return `M${hx(0.1)} ${hy(0.6)} Q${hx(0.0)} ${hy(0.1)} ${hx(0.4)} ${hy(-0.02)} Q${hx(0.82)} ${hy(-0.1)} ${hx(1.0)} ${hy(0.12)} Q${hx(0.9)} ${hy(0.14)} ${hx(0.86)} ${hy(0.24)} Q${hx(0.7)} ${hy(0.22)} ${hx(0.58)} ${hy(0.3)} Q${hx(0.44)} ${hy(0.36)} ${hx(0.4)} ${hy(0.34)} Q${hx(0.3)} ${hy(0.46)} ${hx(0.24)} ${hy(0.68)} Q${hx(0.14)} ${hy(0.7)} ${hx(0.1)} ${hy(0.6)} Z`;
-  return `M${hx(0.1)} ${hy(0.62)} Q${hx(0.02)} ${hy(0.02)} ${hx(0.55)} ${hy(0.02)} Q${hx(0.9)} ${hy(0.04)} ${hx(0.9)} ${hy(0.3)} Q${hx(0.72)} ${hy(0.24)} ${hx(0.6)} ${hy(0.32)} Q${hx(0.5)} ${hy(0.4)} ${hx(0.42)} ${hy(0.36)} Q${hx(0.3)} ${hy(0.48)} ${hx(0.24)} ${hy(0.7)} Q${hx(0.14)} ${hy(0.72)} ${hx(0.1)} ${hy(0.62)} Z`;
+  return short;
 }
 
 /** A shoe pointing forward in a fw x fh box. */
@@ -166,11 +181,15 @@ export function wardrobeParts(g, c, hex) {
     head: () => {
       const { hw, hh, offset } = g.head;
       const k = 1.03, HW = hw * k, HH = hh * k, x = v => r2(v * HW), y = v => r2(v * HH), M = metal;
+      const X = v => r2((v + PAD) * hw), Y = v => r2((v + PAD) * hh), style = HAIR_STYLES.includes(c.hairStyle) ? c.hairStyle : 'short';
       return [
-        part({ name: 'hair', parent: 'head', box: [r2(hw), r2(hh)], offset, shapes: [
-          { path: hairPath(hw, hh, HAIR_STYLES.includes(c.hairStyle) ? c.hairStyle : 'short'), fill: hair, sw: 'regular', shade: false, bbox: [0, 0, hw, hh] },
-          { path: `M${r2(hw * 0.12)} ${r2(hh * 0.5)} Q${r2(hw * 0.14)} ${r2(hh * 0.14)} ${r2(hw * 0.5)} ${r2(hh * 0.08)} Q${r2(hw * 0.3)} ${r2(hh * 0.22)} ${r2(hw * 0.22)} ${r2(hh * 0.5)} Z`, fill: shadowOf(hair, 'skin'), ...flat },
-          { path: `M${r2(hw * 0.46)} ${r2(hh * 0.07)} Q${r2(hw * 0.7)} ${r2(hh * 0.06)} ${r2(hw * 0.8)} ${r2(hh * 0.16)} Q${r2(hw * 0.64)} ${r2(hh * 0.12)} ${r2(hw * 0.46)} ${r2(hh * 0.07)} Z`, fill: lighten(hair, 0.3), ...flat }] }, shown('hair', 'helmet')),
+        // The hair's box is the head's grown by PAD on every side (same centre), so big hair fits.
+        part({ name: 'hair', parent: 'head', box: [r2(hw * (1 + 2 * PAD)), r2(hh * (1 + 2 * PAD))], offset, shapes: [
+          { path: hairPath(hw, hh, style, PAD), fill: hair, sw: 'regular', shade: false, bbox: [0, 0, hw * (1 + 2 * PAD), hh * (1 + 2 * PAD)] },
+          ...(style === 'horseshoe' ? [] : [
+            { path: `M${X(0.12)} ${Y(0.5)} Q${X(0.14)} ${Y(0.14)} ${X(0.5)} ${Y(0.08)} Q${X(0.3)} ${Y(0.22)} ${X(0.22)} ${Y(0.5)} Z`, fill: shadowOf(hair, 'skin'), ...flat },
+            { path: `M${X(0.46)} ${Y(0.07)} Q${X(0.7)} ${Y(0.06)} ${X(0.8)} ${Y(0.16)} Q${X(0.64)} ${Y(0.12)} ${X(0.46)} ${Y(0.07)} Z`, fill: lighten(hair, 0.3), ...flat }])] }, shown('hair', 'helmet')),
+        ...headwearParts({ hw, hh, offset, pad: PAD }, c, hex, part, shown),
         // Over the whole skull, the back of the head and the nape; the face stays open under a brim.
         part({ name: 'helmet', parent: 'head', box: [r2(HW), r2(HH)], offset: [offset[0], r2(offset[1] + (HH - hh) / 2)], shapes: [
           { path: `M${x(0.5)} ${y(0.43)} L${x(0.98)} ${y(0.43)} L${x(0.98)} ${y(0.5)} L${x(0.5)} ${y(0.52)} Z`, fill: '#000000', opacity: 0.22, ...flat },   // the brim's shadow on the face
