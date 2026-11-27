@@ -98,25 +98,35 @@ export function pixelate(img, factor, palette) {
   const data = new Uint8Array(width * height * 4);
   const cache = new Map();
   const indexOf = (r, g, b) => { const key = (r << 16) | (g << 8) | b; let i = cache.get(key); if (i === undefined) { i = nearest(palette, [r, g, b]); cache.set(key, i); } return i; };
-  const votes = new Float64Array(palette.length);
   const luma = palette.map(c => 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]);
+  // How much of each pixel is covered, 0..1.
+  const cover = new Float64Array(width * height);
   for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+    let sum = 0;
+    for (let sy = 0; sy < factor; sy++) for (let sx = 0; sx < factor; sx++) sum += img.data[((y * factor + sy) * img.width + x * factor + sx) * 4 + 3];
+    cover[y * width + x] = sum / (factor * factor * 255);
+  }
+  const coverAt = (x, y) => (x >= 0 && y >= 0 && x < width && y < height ? cover[y * width + x] : 0);
+  const votes = new Float64Array(palette.length);
+  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+    const c0 = cover[y * width + x];
+    // Half covered is kept. So is a fifth when no neighbour is half covered: a line thinner than
+    // a pixel (a bowstring, a whisker) stays a line instead of breaking up; the soft edge of a
+    // solid shape, beside its covered pixels, does not grow a fringe.
+    const thin = c0 >= 0.2 && Math.max(coverAt(x - 1, y), coverAt(x + 1, y), coverAt(x, y - 1), coverAt(x, y + 1)) < 0.5;
+    if (c0 < 0.5 && !thin) continue;
     votes.fill(0);
-    let cover = 0;
     for (let sy = 0; sy < factor; sy++) for (let sx = 0; sx < factor; sx++) {
       const o = ((y * factor + sy) * img.width + x * factor + sx) * 4, a = img.data[o + 3];
-      cover += a;
-      if (a >= 128) votes[indexOf(img.data[o], img.data[o + 1], img.data[o + 2])] += 1;
+      if (a) votes[indexOf(img.data[o], img.data[o + 1], img.data[o + 2])] += a / 255;
     }
-    if (cover < factor * factor * 255 * 0.5) continue;
     let best = 0, total = 0;
     for (let i = 0; i < votes.length; i++) { total += votes[i]; if (votes[i] > votes[best]) best = i; }
     // A dark line or an eye thinner than a pixel would lose the vote to the fill around it; a
     // clearly darker colour holding a good share of the pixel keeps it.
     let pick = best;
     for (let i = 0; i < votes.length; i++) if (votes[i] >= total * 0.3 && luma[best] - luma[i] > 48 && luma[i] < luma[pick]) pick = i;
-    best = pick;
-    const o = (y * width + x) * 4, c = palette[best];
+    const o = (y * width + x) * 4, c = palette[pick];
     data[o] = c[0]; data[o + 1] = c[1]; data[o + 2] = c[2]; data[o + 3] = 255;
   }
   return { width, height, data };

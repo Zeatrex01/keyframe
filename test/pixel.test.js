@@ -37,6 +37,16 @@ test('a pixel takes the colour most of it shows, never a blend, and is kept only
   for (let i = 3; i < out.data.length; i += 4) assert.ok(out.data[i] === 0 || out.data[i] === 255, 'no partial alpha');
 });
 
+test('a line thinner than a pixel stays an unbroken line; a solid shape grows no fringe', () => {
+  // A vertical line one subpixel wide (a quarter of a pixel), and beside it a solid block whose
+  // soft edge covers a quarter of the next pixel.
+  const hi = image(24, 16, x => (x === 5 || (x >= 12 && x < 17) ? [...DARK, 255] : null));
+  const out = pixelate(hi, 4, [RED, DARK]);
+  for (let y = 0; y < 4; y++) assert.deepEqual(px(out, 1, y), [...DARK, 255], `the line holds at row ${y}`);
+  for (let y = 0; y < 4; y++) assert.equal(px(out, 4, y)[3], 0, `the block's edge stays clean at row ${y}`);
+  assert.deepEqual(px(out, 3, 0), [...DARK, 255]);
+});
+
 test('a clearly darker line keeps the pixels it holds a good share of', () => {
   const block = darkCols => image(4, 4, x => (x < darkCols ? [...DARK, 255] : [...RED, 255]));
   assert.deepEqual(px(pixelate(block(1), 4, [RED, DARK]), 0, 0), [...RED, 255], 'a quarter of a pixel: the fill wins');
