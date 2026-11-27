@@ -115,6 +115,24 @@ The pile always rises up the screen, also under a turning camera (a Camera2D wit
 node keeps its `z_index` at its screen row so piles overlap right; keep the ground at `z_index` -1
 or below. `spacing` makes the pile taller or flatter, `tint` colours it.
 
+A 3D look for every pile at once, off by default:
+
+- `KeyframeStack.shade = 0.34` darkens the low slices and `shade_top = 0.1` lightens the top, over
+  `shade_height` rig units, so walls read as lit from above.
+- `KeyframeStack.perspective = 0.0007` leans every pile on screen away from the middle of the
+  screen (or from `view_center`), a little more the further out it stands, so tall piles show the
+  wall that faces the middle, as under a real camera. Only piles on screen re-lean, in steps of
+  about a pixel, so a slow pan redraws few of them.
+- A `KeyframeStackShadows` node (the exported `godot/keyframe_stack_shadows.gd`) draws every
+  pile's sun shadow with the pile's own outline, long for a tower, short for a car. All shadows
+  draw into this one CanvasGroup, so overlaps merge instead of darkening.
+  `KeyframeStackShadows.sun` is the shadow's offset per unit of height; `color` its colour and
+  darkness. Keep the group above the ground and below the piles. A pile with `casts_shadow` off has
+  none.
+
+After changing `shade` in play, redraw the piles:
+`get_tree().call_group("keyframe_stacks", "queue_redraw")`.
+
 ## The runtime API in one place
 
 | On the rig's root | Does |
