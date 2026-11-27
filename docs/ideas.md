@@ -72,3 +72,46 @@ one is still a maintainer decision before anything is taken (rule 5, `docs/conce
 
 The 0.2 engine already plays what these need: flipbooks (sequences), additive blending and layers,
 in the players and in Godot.
+
+## 2026-11-27: simple low-poly 3D models from drawn views
+
+Sprite stacks carry a top-down game only so far. The next path for real 3D assets: very simple
+meshes whose painted texture holds the detail, as in early 3D console games (PS1/PS2 era), and
+also flat-colour low-poly kits. The agent draws the object as flat views in the studio; the
+studio turns them into a textured low-poly model that Godot imports, and that the existing
+model-to-stack baker can still turn into a stack.
+
+Proposed shape (not built; a first working draft exists outside the repo):
+
+- No new tool: `export_art` gains kind `model`. The drawing's parts are named after the views:
+  `front`, `back`, `left`, `right`, `top`, `bottom`; front (or back), one side and top (or bottom)
+  are enough, the rest are mirrored (the bottom darkened).
+- Conventions: +Y up, +Z is the front (glTF and Godot's model front), +X the object's left.
+  Front: facing the nose. Left: standing at its left, nose to your left. Right: nose to your right.
+  Top: from above, nose up. Bottom: from below, nose up.
+- Three shapes: `box` (six quads, one view each: crates, cabinets, building blocks), `round`
+  (turned around the up axis, 8 sides by default, outline from the front and side views: barrels,
+  posts, bottles), `hull` (lofted along the length, cross-sections where the side and top outlines
+  change, each cut to the front outline: cars, boats, sofas).
+- Every triangle takes the view it faces most (box projection). One texture atlas of the views at
+  one texel density, clear pixels filled with the nearest colour so no edge shows the background.
+- Output: `model/<name>.glb` (texture inside, nearest or linear sampler, optional unlit material),
+  the texture PNG, a four-turn preview rendered by the studio, `model/model.json`.
+- Settings: shape, texture (px on the longest side, default 128), filter (nearest), meters per
+  rig unit (0.01, so views are drawn in centimetres), sides, levels, segments, smooth angle, lit.
+- Gate: views mirrored when missing; every triangle faces outward; the .glb parses back with
+  valid accessors; a side face samples the side drawing; Godot 4.7 imports it headless.
+
+What to learn from (read 2026-11-27, from summaries; check licenses before taking anything):
+
+| What | Where | What it teaches |
+|---|---|---|
+| PSX look in Godot | `MenacingMecha/godot-psx-style-demo` (MIT) | Very low-poly, smooth shading, extra edge loops only where the texture warps, low-res textures without filtering or mipmaps, vertex colours for faked light, posterised colours, low internal resolution, fog. |
+| Texture and triangle budgets | Polycount "Retro 3D art FAQ", itch.io 32-bit jam threads | PS1 textures usually 128x128 (256 max), PS2 128 to 256 (512 rare); PS1 characters about 250-750 triangles; PS2 hero characters a few thousand. |
+| Low-poly modelling with pixel textures | `JannisX11/blockbench` (GPL-3.0, models are the user's own) | Cuboids with per-face UVs and pixel-art textures; a model of the per-view mapping. |
+| Tile-based low poly | Crocotile 3D (paid) | Building simple geometry from tiles of one texture sheet; orthographic placement. |
+| Flat-colour low-poly kits | Kenney (CC0), Quaternius (CC0) | One small palette texture or flat material colours per part; silhouettes carry the shape. |
+| Hand-painted diffuse-only textures | 80.lv, Polycount, Sketchfab spotlights | Light and shade painted into the texture, the engine shading kept flat or unlit so it is not doubled; geometry only where it changes the outline. |
+
+Order when it is picked up: the export kind with its gate, a workflow page (docs) for drawing
+views, then one car and one prop drawn in the studio and checked in Godot 4.7 as 3D and as a stack.
