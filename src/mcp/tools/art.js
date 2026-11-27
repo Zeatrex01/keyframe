@@ -21,6 +21,7 @@ import { pixelOptions, paletteFiles } from '../../render/pixel.js';
 
 /** The Godot node that draws an exported sprite stack (shipped in the add-on, copied beside the export). */
 const STACK_NODE = new URL('../../../integrations/godot/addons/keyframe/keyframe_stack.gd', import.meta.url);
+const STACK_SHADOWS = new URL('../../../integrations/godot/addons/keyframe/keyframe_stack_shadows.gd', import.meta.url);
 
 const KINDS = [...EXPORT_KINDS, 'web'];
 
@@ -129,7 +130,10 @@ export const exportArtTool = {
     const out = drawing.length ? exportDrawing(doc, { scales: scales?.length ? scales : [1, 2], kinds: drawing, pixels, padding: padding ?? 2, turns: turns ?? 16, pixel }) : { files: {}, manifest: { scales: [] }, palette: null };
     Object.assign(files, out.files);
     let palette = out.palette;
-    if (wanted.includes('stack')) files['godot/keyframe_stack.gd'] = fs.readFileSync(STACK_NODE);
+    if (wanted.includes('stack')) {
+      files['godot/keyframe_stack.gd'] = fs.readFileSync(STACK_NODE);
+      files['godot/keyframe_stack_shadows.gd'] = fs.readFileSync(STACK_SHADOWS);
+    }
     let clip = null, web = null;
     if (wanted.includes('clip') || wanted.includes('web')) {
       if ((doc.kind ?? 'rig') !== 'rig') throw new StudioError('bad-argument', 'An artboard has no skeleton; draw it as a rig to animate it or play it on a page.', {});
@@ -172,7 +176,7 @@ export const exportArtTool = {
       ...(clip ? { clip } : {}),
       ...(pixel ? { pixel: { folder: 'pixel/', colors: (palette ?? []).length, palette: 'pixel/palette.hex', filter: 'nearest' } } : {}),
       ...(web ? { web } : {}),
-      ...(turnSheet ? { stack: { strip: names.filter(n => n.startsWith('stack@') && n.endsWith('.png')), turns: turns ?? 16, godot: 'godot/keyframe_stack.gd' } } : {}),
+      ...(turnSheet ? { stack: { strip: names.filter(n => n.startsWith('stack@') && n.endsWith('.png')), turns: turns ?? 16, godot: 'godot/keyframe_stack.gd', shadows: 'godot/keyframe_stack_shadows.gd' } } : {}),
       next: 'Engines: the sprite sheet and its JSON, or the per-part PNGs with parts.json (pivots in pixels). Web: the SVG files; for animation on a page, the standalone player.',
     };
     // A stack is seen before it is called done: its turn sheet comes back as an image.

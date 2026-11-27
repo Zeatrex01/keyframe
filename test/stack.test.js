@@ -120,7 +120,7 @@ test('export_art exports a stacked drawing by default with the Godot node and sh
     const e = await call('export_art', { file: 'car.parts.json', scales: [2], turns: 8 });
     assert.equal(e.image?.mimeType, 'image/png', 'the turns come back to look at');
     const out = path.join(dir, 'car-export');
-    for (const f of ['stack@2x.png', 'stack@2x.json', 'turn@2x.png', 'turn@2x.json', 'godot/keyframe_stack.gd', 'car@2x.png']) assert.ok(fs.existsSync(path.join(out, f)), f);
+    for (const f of ['stack@2x.png', 'stack@2x.json', 'turn@2x.png', 'turn@2x.json', 'godot/keyframe_stack.gd', 'godot/keyframe_stack_shadows.gd', 'car@2x.png']) assert.ok(fs.existsSync(path.join(out, f)), f);
     const node = fs.readFileSync(path.join(out, 'godot/keyframe_stack.gd'), 'utf8');
     assert.match(node, /class_name KeyframeStack/);
     assert.match(node, /draw_texture_rect_region/);
@@ -129,4 +129,24 @@ test('export_art exports a stacked drawing by default with the Godot node and sh
     const refused = await call('export_art', { file: 'flat.parts.json', kinds: ['stack'] });
     assert.match(JSON.stringify(refused), /height band/);
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('the Godot node has a 3D look that is off by default: height shade, perspective lean, sun shadows', () => {
+  const read = f => fs.readFileSync(new URL(`../integrations/godot/addons/keyframe/${f}`, import.meta.url), 'utf8');
+  const node = read('keyframe_stack.gd'), shadows = read('keyframe_stack_shadows.gd');
+  // Off by default, so a game that does not ask for it draws exactly as before.
+  for (const v of ['shade', 'shade_top', 'perspective']) assert.match(node, new RegExp(`static var ${v} := 0\\.0\\n`), `${v} starts off`);
+  // The lean: away from the middle of the screen, turned into the node's frame, only for piles on screen.
+  assert.match(node, /\(global_position - center\) \* perspective/, 'leans away from the centre');
+  assert.match(node, /up \+= \(_lean \* spacing \/ _scale\)\.rotated\(-global_rotation\)/, 'the lean adds to every slice step');
+  assert.match(node, /get_viewport_rect\(\)\.grow\(200\.0\)\.has_point/, 'only piles on screen re-lean');
+  // A redraw while panning is only draw calls: rects and colours are cached per slice.
+  assert.match(node, /func _cache_slices\(\)/);
+  assert.doesNotMatch(node.slice(node.indexOf('func _draw()')), /draw_set_transform/, 'no transform per slice');
+  // Shadows: one CanvasGroup so overlapping shadows merge, each pile drawn again along the sun.
+  assert.match(shadows, /class_name KeyframeStackShadows\nextends CanvasGroup/);
+  assert.match(shadows, /KeyframeStackShadows\.sun\.rotated\(-global_rotation\)/);
+  assert.match(shadows, /get_nodes_in_group\("keyframe_stacks"\)/, 'finds the piles already in the scene');
+  assert.match(node, /add_to_group\("keyframe_stacks"\)/);
+  assert.match(node, /func slices_info\(\) -> Dictionary/);
 });

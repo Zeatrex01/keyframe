@@ -7,6 +7,12 @@ All notable changes to this project. The format follows
 
 ### Added
 
+- A 3D look for sprite stacks in Godot, off by default: height shade (`KeyframeStack.shade`,
+  `shade_top`), a perspective lean away from the middle of the screen
+  (`KeyframeStack.perspective`), and sun shadows with each pile's own outline from the new
+  `KeyframeStackShadows` node, which export_art ships beside `keyframe_stack.gd`. A pile's redraw
+  is now only draw calls (slice rects and colours are cached), so panning with the lean on stays
+  cheap.
 - Path constraints on the studio's own engine: bones laid along a path attachment (open or
   closed, constant speed or not, weighted and deformed too), every position, spacing and rotate
   mode of Spine 4.2, keyed by path timelines. Inherit timelines and skin-only bones and
