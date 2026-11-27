@@ -15,7 +15,8 @@ All notable changes to this project. The format follows
 - Godot layers ease in and out: `play_layer(clip, seconds, fade_out)` blends in from the clip
   beneath and, for a clip that plays once, back out over its last `fade_out` seconds;
   `stop_layer(seconds)` eases any layer off and stops it, so a looping overlay (a carry pose, a
-  wave) can end without a cut.
+  wave) can end without a cut. The fades count the layer's own clock, so a player advanced by
+  hand, slowed or paused stays in step.
 
 - Aseprite import: `draw_rig` with `aseprite: { file }` builds a rig from an `.aseprite` or `.ase`
   file in the project, read with the standard library from the published file format (RGBA,

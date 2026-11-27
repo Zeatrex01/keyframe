@@ -77,6 +77,10 @@ const PHYSICS_META := "keyframe_physics"
 var _slot_map := {}
 ## Counts the layers played and stopped, so a fade that ends after the next one began leaves it be.
 var _layer_serial := 0
+## What the layer waits for, counted on its own clock, so a player advanced by hand, slowed or
+## paused stays in step: "at" eases a one-shot layer off when its clip reaches that time; "fade"
+## stops the layer once it has blended that long into the clip beneath. Empty for nothing.
+var _layer_wait := {}
 var _springs: Array[Spring] = []
 var _origin := Vector2.ZERO
 var _origin_known := false
@@ -204,8 +208,9 @@ func play_layer(clip: String, seconds: float = 0.0, fade_out: float = 0.0) -> bo
 	else:
 		layer.play(clip)
 	var length := library.get_animation(clip).length
+	_layer_wait = {}
 	if fade_out > 0.0 and library.get_animation(clip).loop_mode == Animation.LOOP_NONE:
-		_after(layer, maxf(length - fade_out, 0.0), _ease_off_layer.bind(_layer_serial, minf(fade_out, length)))
+		_wait_on(layer, {"at": maxf(length - fade_out, 0.0), "seconds": minf(fade_out, length)})
 	return true
 
 
@@ -221,15 +226,16 @@ func stop_layer(seconds: float = -1.0) -> bool:
 	if current.contains(UNDER):
 		return true                               # already easing off
 	_layer_serial += 1
+	_layer_wait = {}
 	var fade := blend_time if seconds < 0.0 else seconds
-	var under := _under(base, layer, current) if fade > 0.0 and layer.speed_scale != 0.0 else ""
+	var speed := _speed_under(base, layer)
+	var under := _under(base, layer, current) if fade > 0.0 and layer.speed_scale != 0.0 and absf(speed) > 0.0001 else ""
 	if under == "":
 		layer.stop()
 		return true
-	layer.play(under, fade, _speed_under(base, layer))
+	layer.play(under, fade, speed)
 	layer.seek(base.current_animation_position)
-	# Godot's blend runs on the player's own clock; a frame late is harmless (it shows the clip beneath).
-	_after(layer, fade + 1.0 / 60.0, _end_layer.bind(_layer_serial))
+	_wait_on(layer, {"fade": fade, "speed": speed, "beneath": String(base.current_animation)})
 	return true
 
 
@@ -275,15 +281,45 @@ func _speed_under(base: AnimationPlayer, layer: AnimationPlayer) -> float:
 	return base.get_playing_speed() / layer.speed_scale if layer.speed_scale != 0.0 else 1.0
 
 
-## Calls `then` after `seconds` of the player's clock (its speed scale), in the player's process
-## step. Bound to the rig, so it pauses with it and dies with it.
-func _after(player: AnimationPlayer, seconds: float, then: Callable) -> void:
-	var tween := create_tween()
-	if player.callback_mode_process == AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_PHYSICS:
-		tween.set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
-	tween.set_speed_scale(maxf(absf(player.speed_scale), 0.001))
-	tween.tween_interval(maxf(seconds, 0.0))
-	tween.tween_callback(then)
+## Waits on the layer's own clock (see `_layer_wait`): the layer reports each time it has posed the
+## rig, in whatever way it is advanced.
+func _wait_on(layer: AnimationPlayer, wait: Dictionary) -> void:
+	wait["serial"] = _layer_serial
+	wait["animation"] = String(layer.current_animation)
+	wait["last"] = layer.current_animation_position
+	wait["done"] = 0.0
+	_layer_wait = wait
+	if not layer.mixer_applied.is_connected(_on_layer_applied):
+		layer.mixer_applied.connect(_on_layer_applied)
+
+
+func _on_layer_applied() -> void:
+	var layer := get_node_or_null("LayerPlayer") as AnimationPlayer
+	if layer == null or _layer_wait.is_empty():
+		return
+	var wait := _layer_wait
+	if int(wait.serial) != _layer_serial or not layer.is_playing() or String(layer.current_animation) != String(wait.animation):
+		_layer_wait = {}
+		return
+	var played := layer.current_animation_position
+	if wait.has("at"):
+		if played >= float(wait.at):
+			_layer_wait = {}
+			_ease_off_layer.call_deferred(_layer_serial, float(wait.seconds))
+		return
+	# Easing off: the copy of the clip beneath runs at `speed` times the player's clock, the clock
+	# the blend runs on, so the time it has played says how far the blend has come.
+	var speed := float(wait.speed)
+	var step := played - float(wait.last)
+	if step * speed < 0.0:
+		step += layer.get_animation(layer.current_animation).length * signf(speed)   # it looped
+	wait["last"] = played
+	wait["done"] = float(wait.done) + absf(step / speed)
+	var base := get_node_or_null("AnimationPlayer") as AnimationPlayer
+	# Done, or the clip beneath changed (the copy would hold the old one): the layer stops.
+	if float(wait.done) >= float(wait.fade) or base == null or String(base.current_animation) != String(wait.beneath):
+		_layer_wait = {}
+		_end_layer.call_deferred(_layer_serial)
 
 
 ## Plays `clip` on the AnimationPlayer, blending from what it played over `seconds` (Godot's own

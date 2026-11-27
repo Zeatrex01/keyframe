@@ -67,7 +67,9 @@ what the clip beneath shows over 0.2 s and, for a clip that plays once, back out
 0.3 s. A looping layer (a carry pose, a wave that repeats) plays until `rig.stop_layer(0.3)`, which
 blends it back into the clip beneath and stops it (`stop_layer()` uses `blend_time`, `stop_layer(0)`
 cuts). The layer blends from and into its own copy of the clip beneath, on the layer's tracks only
-and without events, kept in time with the AnimationPlayer.
+and without events, kept in time with the AnimationPlayer. The fades count the layer's own clock,
+so a slowed or paused player stays in step; a game that advances its players by hand keeps
+advancing `LayerPlayer` until the layer has eased off, or the fade waits where it is.
 
 ## Crossfades, physics and flipbooks
 

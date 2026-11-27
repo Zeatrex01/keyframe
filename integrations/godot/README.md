@@ -90,7 +90,7 @@ tracks win while it plays. When the layer ends, the arms go back to the clip und
 The layer copies the AnimationPlayer's process mode when it starts, not its speed (a run sped up
 to the character's pace does not speed up the punch): if your game runs
 the AnimationPlayer in manual mode and calls `advance()` itself, advance `$warrior/LayerPlayer`
-the same way.
+the same way, also while a layer eases off (the fades count the layer's own clock).
 
 A layer can ease in and out instead of cutting, and a looping one plays until it is stopped:
 

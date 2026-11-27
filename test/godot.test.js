@@ -485,11 +485,17 @@ test('the add-on runs the springs after both players, in the game only, and ease
     'func play_layer(clip: String, seconds: float = 0.0, fade_out: float = 0.0) -> bool', 'func stop_layer(seconds: float = -1.0) -> bool']) assert.ok(rig.includes(api), api);
   // Easing a layer: from and into the layer's copy of the clip beneath, on the layer's own tracks, with no events.
   assert.match(rig, /layer\.play\(under, -1\.0, _speed_under\(base, layer\)\)\n\t\tlayer\.seek\(base\.current_animation_position, true\)\n\t\tlayer\.play\(clip, seconds\)/);
-  assert.match(rig, /layer\.play\(under, fade, _speed_under\(base, layer\)\)\n\tlayer\.seek\(base\.current_animation_position\)/);
+  assert.match(rig, /var speed := _speed_under\(base, layer\)/);
+  assert.match(rig, /layer\.play\(under, fade, speed\)\n\tlayer\.seek\(base\.current_animation_position\)/);
   assert.match(rig, /if copy\.track_get_type\(i\) == Animation\.TYPE_METHOD or not keyed\.has\(copy\.track_get_path\(i\)\):\n\t\t\tcopy\.remove_track\(i\)/);
-  assert.match(rig, /_after\(layer, maxf\(length - fade_out, 0\.0\), _ease_off_layer\.bind\(_layer_serial, minf\(fade_out, length\)\)\)/);
+  assert.match(rig, /_wait_on\(layer, \{"at": maxf\(length - fade_out, 0\.0\), "seconds": minf\(fade_out, length\)\}\)/);
+  assert.match(rig, /_wait_on\(layer, \{"fade": fade, "speed": speed, "beneath": String\(base\.current_animation\)\}\)/);
   assert.match(rig, /func _end_layer\(serial: int\) -> void:\n\tvar layer := get_node_or_null\("LayerPlayer"\) as AnimationPlayer\n\tif serial == _layer_serial and layer != null:\n\t\tlayer\.stop\(\)/, 'a fade that ends after a new layer began leaves it be');
-  assert.match(rig, /tween\.set_speed_scale\(maxf\(absf\(player\.speed_scale\), 0\.001\)\)/, 'the wait runs on the player\'s clock');
+  // The waits run on the layer's own clock (a player advanced by hand, slowed or paused stays in step), not on a timer.
+  assert.match(rig, /layer\.mixer_applied\.connect\(_on_layer_applied\)/);
+  assert.match(rig, /wait\["done"\] = float\(wait\.done\) \+ absf\(step \/ speed\)/);
+  assert.match(rig, /step \+= layer\.get_animation\(layer\.current_animation\)\.length \* signf\(speed\)/);
+  assert.doesNotMatch(rig, /create_tween|create_timer/);
 });
 
 test('a sequence (flipbook) switches its texture coordinates frame by frame in Godot', () => {
