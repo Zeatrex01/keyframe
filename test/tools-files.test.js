@@ -118,6 +118,16 @@ test('export_godot writes the Godot scene beside the skeleton and backs up the l
     assert.equal(scene.format, 'keyframe-godot');
     assert.deepEqual(out.clips.map(c => c.name), Object.keys(p.base.animations));
     assert.ok((await p.call('export_godot', {})).backup);
+    // Live physics: the springs travel in the scene instead of keys.
+    const sk = JSON.parse(fs.readFileSync(path.join(p.dir, 'logo.json'), 'utf8'));
+    const bone = sk.bones.find(b => b.parent).name;
+    sk.physics = [{ name: 'sway', bone, rotate: 1, inertia: 0.5, strength: 80, damping: 0.9 }];
+    fs.writeFileSync(path.join(p.dir, 'logo.json'), JSON.stringify(sk));
+    const live = await p.call('export_godot', { physics: 'live' });
+    assert.deepEqual(live.live, ['physics sway']);
+    assert.deepEqual(JSON.parse(fs.readFileSync(path.join(p.dir, 'logo.kfscene'), 'utf8')).physics.map(c => c.bone), [bone]);
+    assert.equal((await p.call('export_godot', {})).live, undefined, 'baked by default');
+    assert.match((await p.call('export_godot', { physics: 'springs' })).error?.message ?? '', /baked \| live/);
   } finally { p.cleanup(); }
 });
 

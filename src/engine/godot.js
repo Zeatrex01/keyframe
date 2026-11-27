@@ -6,7 +6,9 @@
 // Godot has no counterpart for (IK, transform and physics constraints, inherit modes other than
 // normal, shear under rotation) is baked from the engine's world transforms into dense keys, and
 // named in `report`; physics is played from the start on the engine's fixed grid, a looping clip
-// one lap warmed up so its seam closes. Colour, draw order and mesh deform are sampled at `fps`;
+// one lap warmed up so its seam closes. With `physics: 'live'` physics is not baked: the scene
+// carries each physics constraint's numbers, and the add-on's rig runs the same spring every frame,
+// so a scarf or a cape also feels the game moving the rig. Colour, draw order and mesh deform are sampled at `fps`;
 // attachments switch on a nearest track, and a sequence (a flipbook) switches its polygon's
 // texture coordinates frame by frame. Every clip keys all that any clip animates (the rest of it
 // in tracks marked `fill`), and rotations start within half a turn of rest, so clips crossfade
@@ -74,11 +76,11 @@ function frames(duration, fps) {
 }
 
 /** Which bones a clip can key as Godot tracks (the rest are baked), and why not. */
-function keyability(model) {
+function keyability(model, live) {
   const why = new Map();
   for (const c of model.ik) for (const b of c.bones) why.set(b, `ik ${c.name}`);
   for (const c of model.transform) for (const b of c.bones) why.set(b, `transform ${c.name}`);
-  for (const c of model.physics) why.set(c.bone, `physics ${c.name}`);
+  if (!live) for (const c of model.physics) why.set(c.bone, `physics ${c.name}`);
   for (const b of model.bones) {
     if (b.inherit !== 0) why.set(b.index, 'inherit mode');
     else if (b.shearX || b.shearY) why.set(b.index, 'shear');
@@ -121,17 +123,19 @@ const GODOT_PROPERTY = { rotation: 'rotation', x: 'position:x', y: 'position:y',
 /**
  * The scene description of a skeleton for the Godot add-on.
  * @param {object} json  Spine 4.2 JSON or a Keyframe document
- * @param {{ atlasText: string, fps?: number, skin?: string, name?: string, loops?: Record<string, boolean> }} options  `loops`: per clip, loops or plays once (wins over the written answer and the guess)
+ * @param {{ atlasText: string, fps?: number, skin?: string, name?: string, loops?: Record<string, boolean>, physics?: 'baked'|'live' }} options  `loops`: per clip, loops or plays once (wins over the written answer and the guess); `physics`: baked into keys (default) or run live by the rig
  */
-export function godotScene(json, { atlasText, fps = 30, skin, name, loops } = /** @type {any} */ ({})) {
+export function godotScene(json, { atlasText, fps = 30, skin, name, loops, physics = 'baked' } = /** @type {any} */ ({})) {
   if (typeof atlasText !== 'string') throw new StudioError('bad-argument', 'The Godot scene needs the skeleton\'s atlas.');
   if (!(fps >= 1 && fps <= 240)) throw new StudioError('bad-argument', 'fps must be between 1 and 240.', { fps });
+  if (physics !== 'baked' && physics !== 'live') throw new StudioError('bad-argument', 'physics is "baked" or "live".', { physics });
   const source = isKeyframeDocument(json) ? toSkeletonJson(json) : json;
   const model = compileSkeleton(source);
   const atlas = parseAtlas(atlasText);
   const regionOf = atlasRegions(atlas);
-  const report = { baked: [], approximated: [], skipped: [...model.unsupported] };
-  const blocked = keyability(model);
+  const live = physics === 'live' && model.physics.length > 0;
+  const report = { baked: [], approximated: [], skipped: [...model.unsupported], live: [] };
+  const blocked = keyability(model, live);
 
   const setup = new Pose(model, { skin }).updateWorld();
   const globals = setup.bones.map(toGodot);
@@ -207,21 +211,31 @@ export function godotScene(json, { atlasText, fps = 30, skin, name, loops } = /*
       blend: BLEND_NAMES[s.blend] ?? 'normal', attachment: shown?.name ?? null, attachments, ...(clip ? { clip } : {}) };
   });
 
-  const animations = [...model.animations.values()].map(animation => sceneAnimation(model, animation, { fps, skin, blocked, slots, report, asked: loopAnswer(animation.name, loops, json) }));
+  const animations = [...model.animations.values()].map(animation => sceneAnimation(model, animation, { fps, skin, blocked, slots, report, live, asked: loopAnswer(animation.name, loops, json) }));
   settle(animations, bones, slots);
+  // Live physics: each constraint's numbers, in the order the skeleton evaluates them.
+  const springs = live ? model.constraints.filter(c => c.kind === 'physics').map(c => ({ name: c.name, bone: model.bones[c.bone].name,
+    length: round(model.bones[c.bone].length), reference: model.referenceScale || 100,
+    // The step is kept exact: one frame of time must make one step, as in the engine.
+    ...Object.fromEntries(['x', 'y', 'rotate', 'scaleX', 'shearX', 'limit', 'inertia', 'strength', 'damping', 'mass', 'wind', 'gravity', 'mix'].map(k => [k, round(c[k])])), step: c.step })) : [];
+  for (const c of springs) report.live.push(`physics ${c.name}`);
   return { format: GODOT_FORMAT, version: 1, name: name ?? model.name ?? 'skeleton', fps,
     pages: atlas.pages.map(p => ({ name: p.name, width: p.width, height: p.height, pma: p.pma, ...(p.magFilter === 'Nearest' ? { filter: 'nearest' } : {}) })), bones, slots, animations,
-    report: { baked: [...new Set(report.baked)], approximated: [...new Set(report.approximated)], skipped: [...new Set(report.skipped)].sort() } };
+    ...(live ? { physics: springs } : {}),
+    report: { baked: [...new Set(report.baked)], approximated: [...new Set(report.approximated)], skipped: [...new Set(report.skipped)].sort(), ...(live ? { live: report.live } : {}) } };
 }
 
-function sceneAnimation(model, animation, { fps, skin, blocked: always, slots, report, asked }) {
+function sceneAnimation(model, animation, { fps, skin, blocked: always, slots, report, live, asked }) {
   const blocked = new Map(always);
   const duration = animation.duration;
   const times = frames(duration, fps);
   let poses = times.map(t => new Pose(model, { skin }).apply(animation, Math.fround(t)).updateWorld());
   // Whether it loops is read off the motion as written: physics never lands exactly where it started.
   const loops = clipLoops(animation.name, seamless(poses), asked);
-  if (model.physics.length) {
+  if (live && animation.timelines.some(t => t.kind === 'physics' || t.kind === 'physicsReset')) {
+    report.approximated.push(`physics keys in ${animation.name}: live physics runs on the setup numbers`);
+  }
+  if (model.physics.length && !live) {
     // Physics plays from the start; a clip that loops is recorded on its second lap, so the swing
     // at its end runs on into its start.
     const warm = loops && duration > 0 ? duration : 0;

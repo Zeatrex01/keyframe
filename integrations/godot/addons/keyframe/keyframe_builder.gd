@@ -127,10 +127,22 @@ static func build(data: Dictionary, base_dir: String) -> Node2D:
 	library.add_animation("RESET", reset)
 	player.add_animation_library("", library)
 
+	# Live physics: the rig's springs find their bones by path.
+	var springs := []
+	for spring in data.get("physics", []):
+		if bone_nodes.has(spring.bone):
+			var entry: Dictionary = spring.duplicate()
+			entry["path"] = String(root.get_path_to(bone_nodes[spring.bone]))
+			springs.append(entry)
+	if springs.size() > 0:
+		root.set_meta(RIG_SCRIPT.PHYSICS_META, springs)
+
 	root.set_meta("keyframe_report", data.get("report", {}))
 	var report: Dictionary = data.get("report", {})
 	for line in report.get("baked", []):
 		print("Keyframe: baked ", line)
+	for line in report.get("live", []):
+		print("Keyframe: live ", line)
 	for line in report.get("skipped", []):
 		print("Keyframe: not imported ", line)
 	return root

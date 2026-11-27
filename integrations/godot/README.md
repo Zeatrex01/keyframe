@@ -92,6 +92,14 @@ to the character's pace does not speed up the punch): if your game runs
 the AnimationPlayer in manual mode and calls `advance()` itself, advance `$warrior/LayerPlayer`
 the same way.
 
+A layer can ease in and out instead of cutting, and a looping one plays until it is stopped:
+
+```gdscript
+$hero.play_layer("wave", 0.2, 0.3)             # blends in over 0.2 s, back out over its last 0.3 s
+$hero.play_layer("carry", 0.25)                # a looping pose over the walk...
+$hero.stop_layer(0.3)                          # ...eased back into the walk, then stopped
+```
+
 To change clips without a pop, `crossfade` blends from the clip that was playing:
 
 ```gdscript
@@ -101,7 +109,10 @@ $warrior.crossfade("jab", 0.08)                # while "jab" plays: a second jab
 
 Hair, tails and capes driven by physics constraints arrive baked into the bones' tracks (Skeleton2D
 has no physics of its own), recorded from the studio's engine; a looping clip is recorded on its
-second lap, so the swing runs on across the loop. Flipbooks (fire, smoke, frame-by-frame eyes) swap
+second lap, so the swing runs on across the loop. Exported with `physics: "live"`, they are not
+baked: the rig runs the engine's spring every frame instead, after the AnimationPlayers, so a scarf
+also trails the game moving the character. `reset_physics()` after a teleport, `live_physics = false`
+to turn it off, `step_physics(delta)` after advancing an AnimationPlayer in manual mode. Flipbooks (fire, smoke, frame-by-frame eyes) swap
 their texture coordinates frame by frame.
 
 ## How it is checked

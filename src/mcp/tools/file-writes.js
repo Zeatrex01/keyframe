@@ -119,15 +119,16 @@ export const exportGodotTool = {
       file: { type: 'string', short: 'skeleton; empty = the folder base', description: 'Project-relative skeleton JSON (Spine 4.2 or Keyframe).' },
       fps: { type: 'number', short: 'bake rate (default 30)', description: 'Frames per second for baked keys (constraints, colour, draw order, deform). Default 30.' },
       loops: { type: 'object', short: 'per clip: loops or plays once', additionalProperties: { type: 'boolean' }, description: 'Whether each named clip loops in Godot: { idle: true, cross: false }. Wins over the loop each clip was written with (write_animation `loop`) and over the guess (a clip that ends in its first pose loops unless its name is an action such as attack, jab, cross, block, step). A clip that plays once fires animation_finished.' },
+      physics: { type: 'string', enum: ['baked', 'live'], short: 'baked or live', description: 'baked (default): the swing the studio shows, as keys. live: the rig runs the same springs in the game, so a scarf or a cape also reacts to the game moving the character.' },
     },
   },
-  run({ file, fps = 30, loops }, { session }) {
+  run({ file, fps = 30, loops, physics = 'baked' }, { session }) {
     const project = projectOf(session);
     const { sk, rel, abs } = project.skeleton(file);
     const atlas = project.atlasFor(abs);
     if (!atlas) throw new StudioError('file-not-found', `No atlas beside ${rel}: Godot needs the art.`, { file: rel });
     const name = path.basename(abs).replace(/(\.keyframe)?\.json$/i, '');
-    const scene = godotScene(sk, { atlasText: atlas.text, fps, name, loops });
+    const scene = godotScene(sk, { atlasText: atlas.text, fps, name, loops, physics: physics === 'live' ? 'live' : 'baked' });
     const targetAbs = abs.replace(/(\.keyframe)?\.json$/i, '.kfscene');
     const text = `${JSON.stringify(scene)}\n`;
     const pending = fs.existsSync(targetAbs) ? snapshotBytesDeferred(project.dir, fs.readFileSync(targetAbs), project.rel(targetAbs), '.kfscene') : null;
@@ -138,7 +139,7 @@ export const exportGodotTool = {
       throw new StudioError('write-failed', `The Godot scene could not be written: ${err.message}`, { file: rel });
     }
     return { file: rel, written: project.rel(targetAbs), pages: scene.pages.map(p => p.name), clips: scene.animations.map(a => ({ name: a.name, length: a.length, loop: a.loop })),
-      baked: scene.report.baked, notImported: scene.report.skipped, backup: pending ? pending.commit() : null,
+      baked: scene.report.baked, ...(scene.report.live ? { live: scene.report.live } : {}), notImported: scene.report.skipped, backup: pending ? pending.commit() : null,
       next: 'Copy the .kfscene and its pages into a Godot 4 project with the Keyframe add-on enabled (integrations/godot); Godot imports it as a scene.' };
   },
 };

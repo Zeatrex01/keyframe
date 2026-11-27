@@ -21,7 +21,9 @@ import { compactSchema } from '../src/mcp/describe.js';
 // object whose fields the description explains.
 // 2026-11-27: raised to 30,850 for draw_rig's `aseprite` (a rig from an Aseprite file), one
 // object whose fields the description explains.
-const BUDGET_BYTES = 30850;
+// 2026-11-27: raised to 30,920 for export_godot's `physics` (springs run live in the game, so a
+// scarf reacts to the character moving), one enum.
+const BUDGET_BYTES = 30920;
 const SUMMARY_MAX = 220;      // one or two sentences
 
 test('the compact listing of the real tool set stays under budget', async () => {

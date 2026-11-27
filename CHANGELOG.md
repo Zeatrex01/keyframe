@@ -7,6 +7,16 @@ All notable changes to this project. The format follows
 
 ### Added
 
+- Live physics in Godot: `export_godot` with `physics: "live"` leaves the physics bones unbaked and
+  the add-on's rig runs the studio engine's own spring every frame, after the AnimationPlayers, so
+  a scarf, a ponytail or a cape also trails the game moving the character, not only the clips.
+  `reset_physics()`, `live_physics` and `step_physics(delta)` on the rig. The gate runs the
+  add-on's GDScript spring against the engine.
+- Godot layers ease in and out: `play_layer(clip, seconds, fade_out)` blends in from the clip
+  beneath and, for a clip that plays once, back out over its last `fade_out` seconds;
+  `stop_layer(seconds)` eases any layer off and stops it, so a looping overlay (a carry pose, a
+  wave) can end without a cut.
+
 - Aseprite import: `draw_rig` with `aseprite: { file }` builds a rig from an `.aseprite` or `.ase`
   file in the project, read with the standard library from the published file format (RGBA,
   grayscale and indexed sprites, linked cels, groups, both palette chunks). Each visible layer
@@ -74,6 +84,12 @@ All notable changes to this project. The format follows
 - Wardrobe for the side figure (`bare: true`, `wear: [...]`): a bald, shaped body; hair in seven
   styles; shirt, trousers, boots; head-wear (headband, beanie, cap, hat, glasses, shades, moustache,
   beard, mask); plate armour piece by piece. Each item is its own part, shown or hidden by the game.
+
+### Changed
+
+- A drawing holds up to 128 parts (was 64), so a dressed figure with its wardrobe fits; `draw_rig`
+  still takes up to 64 per call, and `merge` adds the rest. An Aseprite file may have as many
+  visible layers.
 
 ### Fixed
 

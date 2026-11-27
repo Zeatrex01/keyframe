@@ -7,7 +7,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { rasterizeSvg, parseColor, pathPoints, parseTransform } from '../src/engine/svg.js';
-import { buildSvgRig } from '../src/render/svg-rig.js';
+import { buildSvgRig, MAX_PARTS } from '../src/render/svg-rig.js';
+import { MAX_PARTS as BOARD_MAX_PARTS } from '../web/draw-model.js';
 import { decodePng } from '../src/render/png.js';
 import { renderFrames } from '../src/render/frames.js';
 import { checkSkeleton } from '../src/spine/check.js';
@@ -115,6 +116,28 @@ test('a drawing is refused with every problem named', () => {
   assert.throws(() => buildSvgRig({ name: 'x', parts: [{ name: 'a', svg: BODY, at: [0, 0], parent: 'b' }, { name: 'b', svg: BODY, at: [0, 0], parent: 'a' }] }), /loop/);
   assert.throws(() => buildSvgRig({ name: 'x', parts: [{ name: 'a', svg: BODY, at: [0, 0] }, { name: 'a', svg: BODY, at: [0, 0] }] }), /twice/);
   assert.throws(() => buildSvgRig({ name: '../x', parts: PARTS }), { code: 'bad-argument' });
+});
+
+test('a dressed figure fits: a drawing grows past 64 parts call by call, up to the cap', async () => {
+  assert.equal(MAX_PARTS, 128);
+  assert.equal(BOARD_MAX_PARTS, MAX_PARTS, 'the drawing board holds as many parts as the builder');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'kf-many-'));
+  const sent = [];
+  const { wire } = createServer({ session: { dir, writable: () => true }, version: 'test', write: m => sent.push(m), all: true });
+  const call = async args => { sent.length = 0; await wire.handle({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'draw_rig', arguments: args } }); return sent[0].result.structuredContent; };
+  const piece = i => ({ name: `piece${i}`, at: [(i % 16) * 6, Math.floor(i / 16) * 6], svg: '<svg viewBox="0 0 4 4"><rect width="4" height="4" fill="#5E7BFF"/></svg>', ...(i ? { parent: 'piece0' } : {}) });
+  try {
+    for (let from = 0; from < MAX_PARTS; from += 64) {
+      const r = await call({ name: 'hero', merge: from > 0, parts: Array.from({ length: 64 }, (_, k) => piece(from + k)) });
+      assert.equal(r.error, undefined, JSON.stringify(r.error));
+    }
+    const sk = JSON.parse(fs.readFileSync(path.join(dir, 'hero.json'), 'utf8'));
+    assert.equal(sk.slots.length, MAX_PARTS, 'every piece is drawn');
+    assert.deepEqual(checkSkeleton(sk).filter(f => f.level === 'fatal'), []);
+    const over = await call({ name: 'hero', merge: true, parts: [piece(MAX_PARTS)] });
+    assert.match(over.error?.message ?? '', /at most 128 parts/);
+    assert.equal(JSON.parse(fs.readFileSync(path.join(dir, 'hero.json'), 'utf8')).slots.length, MAX_PARTS, 'a refused call leaves the drawing as it was');
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
 test('draw_rig writes the rig, keeps clips on a redraw, and never redraws a file it did not draw', async () => {

@@ -88,8 +88,12 @@ skips the checks that do not apply to the subject.
 bones with their rest transform in Godot's coordinates (y down, radians), slots with their
 attachments as polygons with UVs in page pixels (and weights when skinned), and clips as tracks
 the add-on turns into Godot tracks one to one. A page whose atlas filter is Nearest carries
-`"filter": "nearest"` and its polygons draw with `texture_filter` nearest. `report` lists what was
-baked, approximated or skipped. See [godot.md](godot.md).
+`"filter": "nearest"` and its polygons draw with `texture_filter` nearest. Exported with live
+physics, `physics` lists each physics constraint in evaluation order (`name`, `bone`, the bone's
+`length`, the skeleton's `reference` scale, `x`, `y`, `rotate`, `scaleX`, `shearX`, `limit`,
+`step`, `inertia`, `strength`, `damping`, `mass`, `wind`, `gravity`, `mix`, as in Spine 4.2) and
+its bones carry no baked keys. `report` lists what was baked, approximated or skipped (and, with
+live physics, what runs `live`). See [godot.md](godot.md).
 
 ## Asset pack (`pack.json`)
 
