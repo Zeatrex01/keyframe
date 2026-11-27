@@ -9,7 +9,7 @@
 export const NAME = /^[A-Za-z0-9_][A-Za-z0-9_ .-]{0,63}$/;
 export const SHAPES = ['ellipse', 'rect'];
 export const PALETTE = ['#FFC890', '#3B2A55', '#5E7BFF', '#2E2A52', '#FFB36B', '#F06A82', '#4FC9A6', '#FFFFFF'];
-export const MAX_PARTS = 64;
+export const MAX_PARTS = 128; // the same as src/render/svg-rig.js
 const round = v => Math.round(v * 100) / 100;
 const HEX = /^#[0-9a-f]{6}$/i;
 

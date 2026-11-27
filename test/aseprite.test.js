@@ -271,9 +271,9 @@ test('draw_rig aseprite: bones on layers, blends, a second import that keeps wri
     [{ name: 'x', aseprite: { file: 'art/hero.aseprite', layers: { nope: { pivot: [0, 0] } } } }, /not a visible layer/],
     [{ name: 'x', aseprite: { file: 'art/hero.aseprite', layers: { dot: { size: [1, 1] } } } }, /not one of pivot, parent, physics/],
   ]) assert.match(await call('draw_rig', args, { fails: true }), pattern);
-  const many = asepriteFile({ width: 2, height: 2, layers: Array.from({ length: 65 }, (_, i) => ({ name: `l${i}` })), frames: [{ cels: Array.from({ length: 65 }, (_, layer) => ({ layer, ...DOT })) }] });
+  const many = asepriteFile({ width: 2, height: 2, layers: Array.from({ length: 129 }, (_, i) => ({ name: `l${i}` })), frames: [{ cels: Array.from({ length: 129 }, (_, layer) => ({ layer, ...DOT })) }] });
   fs.writeFileSync(path.join(dir, 'art/many.aseprite'), many);
-  assert.match(await call('draw_rig', { name: 'many', aseprite: { file: 'art/many.aseprite' } }, { fails: true }), /at most 64 parts/);
+  assert.match(await call('draw_rig', { name: 'many', aseprite: { file: 'art/many.aseprite' } }, { fails: true }), /at most 128 parts/);
 });
 
 test('a Nearest page is drawn without smoothing where it is magnified, on the canvas and in Godot', () => {

@@ -62,15 +62,45 @@ the clip that is running, so the character punches while its legs keep running; 
 ends, the arms go back to the clip underneath. The layer copies the AnimationPlayer's process mode
 (a game that advances it by hand advances `LayerPlayer` the same way), not its speed.
 
+A layer can ease in and out instead of cutting: `rig.play_layer("wave", 0.2, 0.3)` blends in from
+what the clip beneath shows over 0.2 s and, for a clip that plays once, back out over its last
+0.3 s. A looping layer (a carry pose, a wave that repeats) plays until `rig.stop_layer(0.3)`, which
+blends it back into the clip beneath and stops it (`stop_layer()` uses `blend_time`, `stop_layer(0)`
+cuts). The layer blends from and into its own copy of the clip beneath, on the layer's tracks only
+and without events, kept in time with the AnimationPlayer. The fades count the layer's own clock,
+so a slowed or paused player stays in step; a game that advances its players by hand keeps
+advancing `LayerPlayer` until the layer has eased off, or the fade waits where it is.
+
 ## Crossfades, physics and flipbooks
 
 `rig.crossfade("run", 0.2)` changes clips with Godot's own blend between them, so a character goes
 from idle to run without a pop (`blend_time` on the rig is the default when no time is given).
+Asked for the clip that is already playing (a second jab), it starts it again with the same blend,
+through a twin of the clip named `<clip>__again`, instead of snapping to its first frame.
+
+Clips are made to blend the way they do in the runtimes. Every clip keys every bone, colour, draw
+order and flipbook that any clip animates: what a clip leaves alone holds its rest value there
+(Godot otherwise leaves an unkeyed property where the clip before put it, so a hand bent by a palm
+strike would stay bent). These tracks are marked as fills, and `play_layer` plays a clip without
+them, so the legs stay with the clip beneath. Which attachment a slot shows is left to the game
+where a clip does not key it (the weapon stays through the run). Each bone's rotation track
+starts within half a turn of its rest angle, so two clips that hold one pose never spin a limb the
+long way round in a crossfade. A page whose atlas filter is Nearest (pixel art) draws with
+`texture_filter` nearest.
 
 Physics constraints (hair, tails, capes) and transform constraints have no Skeleton2D counterpart,
 so the export plays them on the studio's engine and bakes the result into the bones' tracks; a
 clip that loops is recorded on its second lap, so the swing at its end runs on into its start. The
-report lists each one. A flipbook (a sequence attachment: fire, smoke, frame-by-frame eyes) is one
+report lists each one.
+
+Baked physics only knows the clips. With `export_godot` `physics: "live"` the physics bones are not
+baked: the scene carries each constraint's numbers and the rig runs the engine's own spring every
+frame, after both AnimationPlayers have posed it, so a scarf or a ponytail also trails the game
+moving the character (a run across the level, a jump). The springs feel the rig node's motion in
+its own axes, a flipped rig included. `rig.reset_physics()` puts them at rest (after a teleport),
+`rig.live_physics = false` turns them off, and a game that advances its AnimationPlayer by hand
+calls `rig.step_physics(delta)` after it. Physics keys in clips (a gust of wind) are not played
+live; the report says so. Transform and IK constraints stay baked. A flipbook (a sequence attachment: fire, smoke, frame-by-frame eyes) is one
 Polygon2D whose `uv` (and `polygon`, and `texture` when its frames are on several pages) switches
 frame by frame on nearest tracks.
 
@@ -92,6 +122,8 @@ or below. `spacing` makes the pile taller or flatter, `tint` colours it.
 | `look` (Inspector or code) | dresses every piece that has that look; `""` is the look it was drawn in |
 | `weapon` | what the `weapon` slot shows; `""` puts it away |
 | `set_look(look)`, `set_attachment(slot, attachment)`, `get_attachments(slot)` | the same, piece by piece |
-| `play_layer(clip)` | plays an upper-body clip over the running one; `false` for an unknown clip |
+| `play_layer(clip, seconds, fade_out)` | plays an upper-body clip over the running one, easing in over `seconds` and, once through, out over its last `fade_out`; `false` for an unknown clip |
+| `stop_layer(seconds)` | eases the layer back into the clip beneath and stops it (a looping layer ends here); `false` when no layer plays |
+| `live_physics`, `reset_physics()`, `step_physics(delta)` | live springs of a scene exported with `physics: "live"`: on or off, at rest again, stepped by hand |
 | `crossfade(clip, seconds)`, `blend_time` | plays a clip blending from the one before; `false` for an unknown clip |
 | `keyframe_event` (signal) | the clip's events, with their int, float and string values |

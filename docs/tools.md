@@ -1044,6 +1044,7 @@ Writes the Godot scene description of a skeleton beside it (<file>.kfscene). In 
 | `file` | string | Project-relative skeleton JSON (Spine 4.2 or Keyframe). |
 | `fps` | number | Frames per second for baked keys (constraints, colour, draw order, deform). Default 30. |
 | `loops` | object | Whether each named clip loops in Godot: { idle: true, cross: false }. Wins over the loop each clip was written with (write_animation `loop`) and over the guess (a clip that ends in its first pose loops unless its name is an action such as attack, jab, cross, block, step). A clip that plays once fires animation_finished. |
+| `physics` | `baked` \\| `live` | baked (default): the swing the studio shows, as keys. live: the rig runs the same springs in the game, so a scarf or a cape also reacts to the game moving the character. |
 
 Example:
 

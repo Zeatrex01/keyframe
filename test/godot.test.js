@@ -9,7 +9,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { godotScene, compose, decompose, multiply, inverse, toGodot, GODOT_FORMAT } from '../src/engine/godot.js';
-import { compileSkeleton, Pose, Playhead, collectDraws, parseAtlas, atlasRegions } from '../src/engine/index.js';
+import { compileSkeleton, Pose, Playhead, collectDraws, parseAtlas, atlasRegions, PHYSICS_RATE } from '../src/engine/index.js';
+import { gdClass } from './helpers/gdscript.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -261,7 +262,7 @@ test('the dressable warrior reaches Godot with every look and weapon, each stanc
   assert.equal(shown('punch', 'weapon'), null);
   // The add-on's rig finds slots by name and swaps looks and weapons.
   const rig = fs.readFileSync(path.join(ROOT, 'integrations/godot/addons/keyframe/keyframe_rig.gd'), 'utf8');
-  for (const api of ['func play_layer(clip: String) -> bool', 'func set_attachment(slot_name: String, attachment: String) -> bool', 'func set_look(new_look: String) -> void', 'func get_attachments(slot_name: String) -> PackedStringArray']) assert.ok(rig.includes(api), api);
+  for (const api of ['func play_layer(clip: String, seconds: float = 0.0, fade_out: float = 0.0) -> bool', 'func set_attachment(slot_name: String, attachment: String) -> bool', 'func set_look(new_look: String) -> void', 'func get_attachments(slot_name: String) -> PackedStringArray']) assert.ok(rig.includes(api), api);
   assert.match(rig, /layer\.callback_mode_process = base\.callback_mode_process/, 'the layer keeps the process mode of the base player');
   assert.doesNotMatch(rig, /layer\.speed_scale = base/, 'the layer keeps its own speed');
   const builder = fs.readFileSync(path.join(ROOT, 'integrations/godot/addons/keyframe/keyframe_builder.gd'), 'utf8');
@@ -339,6 +340,164 @@ test('a looping clip with physics is recorded on its second lap, so its seam clo
   assert.ok(Math.abs(first - last) < Math.abs(first) * 0.5 + 0.02, `the seam is close (${first} vs ${last})`);
 });
 
+// ---- live physics: the add-on's own spring, run on the scene as Godot plays it ---------------
+
+const RIG_GD = () => fs.readFileSync(path.join(ROOT, 'integrations/godot/addons/keyframe/keyframe_rig.gd'), 'utf8');
+/** Godot's is_equal_approx. */
+const approxGodot = (a, b) => a === b || Math.abs(a - b) < Math.max(1e-5 * Math.abs(a), 1e-5);
+const readProps = p => [p.position[0], p.position[1], p.rotation, p.scale[0], p.scale[1], p.skew];
+const writeProps = (p, v) => { p.position = [v[0], v[1]]; p.rotation = v[2]; p.scale = [v[3], v[4]]; p.skew = v[5]; };
+
+/**
+ * A rig with live physics, frame by frame as Godot runs it: the AnimationPlayer writes what its
+ * clip keys (and leaves the rest where it was), then the rig's step_physics takes back what the
+ * springs wrote where no clip wrote, and runs each spring, the add-on's own GDScript
+ * (Spring.spring), in the rig's axes. `origin(k)`: where the game puts the rig at frame k.
+ */
+function liveGodot(scene, clip, { frames, origin = () => [0, 0] }) {
+  const Spring = gdClass(RIG_GD(), 'Spring');
+  const props = new Map(scene.bones.map(b => [b.name, { position: [...b.rest.position], rotation: b.rest.rotation, scale: [...b.rest.scale], skew: b.rest.skew }]));
+  const parentOf = new Map(scene.bones.map(b => [b.name, b.parent]));
+  const globals = () => {
+    const g = new Map();
+    for (const b of scene.bones) { const l = compose(props.get(b.name)); g.set(b.name, b.parent ? multiply(g.get(b.parent), l) : l); }
+    return g;
+  };
+  const springs = scene.physics.map(entry => ({ bone: entry.bone, self: Spring.create(entry, null), animated: null, applied: null }));
+  const dt = 1 / PHYSICS_RATE;
+  let last = null;
+  const out = [];
+  for (let k = 0; k <= frames; k++) {
+    for (const track of clip?.tracks ?? []) {
+      if (track.target !== 'bone') continue;
+      const p = props.get(track.name), v = trackValue(track, k * dt), [prop, axis] = track.property.split(':');
+      if (axis) p[prop][axis === 'x' ? 0 : 1] = v; else p[prop] = Array.isArray(v) ? [...v] : v;
+    }
+    const o = origin(k);
+    const moved = last ? [o[0] - last[0], o[1] - last[1]] : [0, 0];
+    last = o;
+    for (const s of springs) {
+      const p = props.get(s.bone);
+      if (s.applied) writeProps(p, readProps(p).map((v, i) => (approxGodot(v, s.applied[i]) ? s.animated[i] : v)));
+      s.animated = readProps(p); s.applied = null;
+    }
+    for (const s of springs) {
+      const g = globals(), t = g.get(s.bone);
+      const r = Spring.call(s.self, 'spring', dt, { x: moved[0], y: -moved[1] }, t.x[0], -t.y[0], -t.x[1], t.y[1], t.o[0], -t.o[1]);
+      if (!r.length) continue;
+      const world = { x: [r[0], -r[2]], y: [-r[1], r[3]], o: [r[4], -r[5]] };
+      const parent = parentOf.get(s.bone);
+      props.set(s.bone, decompose(parent ? multiply(inverse(g.get(parent)), world) : world));
+      s.applied = readProps(props.get(s.bone));
+    }
+    out.push(globals());
+  }
+  return out;
+}
+
+test('live physics: the scene carries the springs instead of keys, and the add-on\'s spring swings as the engine does', () => {
+  const json = { skeleton: { spine: '4.2.43' },
+    bones: [{ name: 'root' }, { name: 'body', parent: 'root' }, { name: 'cape', parent: 'body', rotation: -80, length: 40 }, { name: 'hem', parent: 'cape', x: 40, length: 20 },
+      { name: 'bob', parent: 'body', x: 10, y: 30 }],
+    slots: [],
+    physics: [{ name: 'cape', bone: 'cape', rotate: 1, inertia: 0.8, strength: 60, damping: 0.9, gravity: 2 },
+      { name: 'hem', bone: 'hem', rotate: 1, shearX: 0.3, scaleX: 0.5, inertia: 0.7, strength: 90, damping: 0.85, wind: 1 },
+      { name: 'bob', bone: 'bob', x: 1, y: 1, inertia: 0.5, strength: 80, damping: 0.8, mass: 2 }],
+    animations: { dash: {
+      bones: { body: { translate: [{ y: 0 }, { time: 0.3, x: 40, y: 80 }, { time: 1, x: 40, y: 80 }], rotate: [{ value: 0 }, { time: 0.4, value: 25 }, { time: 1, value: 0 }] },
+        cape: { rotate: [{ value: 0 }, { time: 0.5, value: -15 }, { time: 1, value: 0 }] } } } } };
+  const scene = godotScene(json, { atlasText: '', fps: 30, physics: 'live' });
+  const clip = scene.animations[0];
+  assert.deepEqual(scene.physics.map(c => c.bone), ['cape', 'hem', 'bob'], 'in the order the skeleton evaluates them');
+  assert.deepEqual(scene.physics[1], { name: 'hem', bone: 'hem', length: 20, reference: 100, x: 0, y: 0, rotate: 1, scaleX: 0.5, shearX: 0.3, limit: 5000,
+    inertia: 0.7, strength: 90, damping: 0.85, mass: 1, wind: 1, gravity: 0, mix: 1, step: 1 / 60 });
+  assert.ok(!clip.tracks.some(t => ['hem', 'bob'].includes(t.name)), 'the springs are not baked');
+  assert.equal(clip.tracks.find(t => t.name === 'cape' && t.property === 'rotation')?.type, 'bezier', 'the cape\'s own keys stay editable');
+  assert.deepEqual(scene.report.live, ['physics cape', 'physics hem', 'physics bob']);
+  assert.ok(!scene.report.baked.some(b => b.includes('physics')));
+  assert.equal(godotScene(json, { atlasText: '' }).physics, undefined, 'baked unless asked');
+  assert.throws(() => godotScene(json, { atlasText: '', physics: 'yes' }), /baked" or "live/);
+
+  const model = compileSkeleton(json);
+  const head = new Playhead(model, 'dash');
+  const frames = liveGodot(scene, clip, { frames: 90 });
+  let swung = 0;
+  for (let k = 0; k <= 90; k += 3) {
+    const pose = head.at(k / PHYSICS_RATE);
+    for (const bone of pose.bones) {
+      const want = toGodot(bone), got = frames[k].get(bone.data.name);
+      for (const [w, g, what] of [[want.o, got.o, 'origin'], [want.x, got.x, 'x axis'], [want.y, got.y, 'y axis']]) {
+        assert.ok(Math.abs(w[0] - g[0]) < 1e-3 && Math.abs(w[1] - g[1]) < 1e-3, `${bone.data.name} ${what} at frame ${k}: engine ${w}, Godot ${g}`);
+      }
+    }
+    const still = new Pose(model).apply(model.animations.get('dash'), Math.fround(k / PHYSICS_RATE)).updateWorld().bones[3];
+    swung = Math.max(swung, Math.abs(Math.atan2(pose.bones[3].c, pose.bones[3].a) - Math.atan2(still.c, still.a)));
+  }
+  assert.ok(swung > 0.05, `the hem swings (${swung})`);
+});
+
+test('live physics: the game moving the rig swings it as a clip moving the root would', () => {
+  const json = { skeleton: { spine: '4.2.43' },
+    bones: [{ name: 'root' }, { name: 'scarf', parent: 'root', y: 50, rotation: 190, length: 30 }, { name: 'tip', parent: 'scarf', x: 30, length: 20 }],
+    slots: [],
+    physics: [{ name: 'scarf', bone: 'scarf', rotate: 1, x: 0.5, inertia: 0.9, strength: 50, damping: 0.9 }, { name: 'tip', bone: 'tip', rotate: 1, inertia: 0.9, strength: 70, damping: 0.9 }],
+    // The run and the jump as a clip, for the engine: the root moves.
+    animations: { run: { bones: { root: { translate: [{ x: 0, y: 0 }, { time: 0.4, x: 120, y: 30 }, { time: 0.6, x: 160, y: 0 }, { time: 2, x: 160, y: 0 }] } } } } };
+  const model = compileSkeleton(json);
+  const head = new Playhead(model, 'run');
+  const engine = Array.from({ length: 121 }, (_, k) => {
+    const pose = head.at(k / PHYSICS_RATE);
+    const root = toGodot(pose.bones[0]);
+    return { origin: root.o, bones: pose.bones.map(b => multiply(inverse(root), toGodot(b))) };
+  });
+  // In Godot the clips leave the root alone and the game moves the rig node the same way.
+  const scene = godotScene({ ...json, animations: {} }, { atlasText: '', physics: 'live' });
+  const frames = liveGodot(scene, null, { frames: 120, origin: k => engine[k].origin });
+  let swung = 0;
+  for (let k = 0; k <= 120; k += 4) {
+    for (const [i, name] of [[1, 'scarf'], [2, 'tip']]) {
+      const want = engine[k].bones[i], got = frames[k].get(name);
+      assert.ok(Math.abs(want.o[0] - got.o[0]) < 1e-3 && Math.abs(want.o[1] - got.o[1]) < 1e-3 && Math.abs(want.x[0] - got.x[0]) < 1e-3 && Math.abs(want.x[1] - got.x[1]) < 1e-3,
+        `${name} at frame ${k}: engine ${JSON.stringify(want)}, Godot ${JSON.stringify(got)}`);
+    }
+    swung = Math.max(swung, Math.abs(decompose(frames[k].get('tip')).rotation - decompose(frames[0].get('tip')).rotation));
+  }
+  assert.ok(swung > 0.1, `the scarf trails the run (${swung})`);
+  const settled = decompose(frames[120].get('scarf')).rotation - decompose(frames[0].get('scarf')).rotation;
+  assert.ok(Math.abs(settled) < 0.05, `and settles when the rig stops (${settled})`);
+});
+
+test('the add-on runs the springs after both players, in the game only, and eases layers in and out', () => {
+  const rig = RIG_GD();
+  const builder = fs.readFileSync(path.join(ROOT, 'integrations/godot/addons/keyframe/keyframe_builder.gd'), 'utf8');
+  // The springs find their bones, run after the players, never in the editor, and feel the rig move.
+  assert.match(builder, /entry\["path"\] = String\(root\.get_path_to\(bone_nodes\[spring\.bone\]\)\)/);
+  assert.match(builder, /root\.set_meta\(RIG_SCRIPT\.PHYSICS_META, springs\)/);
+  assert.match(rig, /const PHYSICS_META := "keyframe_physics"/);
+  assert.match(rig, /var running := not _springs\.is_empty\(\) and not Engine\.is_editor_hint\(\)\n\tif running:\n\t\tprocess_priority = 1\n\t\tprocess_physics_priority = 1\n\tset_process\(running\)/);
+  assert.match(rig, /moved = to_rig\.basis_xform\(global_position - _origin\)/);
+  assert.match(rig, /for spring in _springs:\n\t\tspring\.restore\(\)\n\tfor spring in _springs:\n\t\tspring\.step\(delta, Vector2\(moved\.x, -moved\.y\), to_rig\)/, 'every bone back to the clips before any spring reads them');
+  // The step hands the spring the bone in skeleton space, in the order the gate above calls it.
+  assert.match(rig, /var bone := spring\(delta, moved, t\.x\.x, -t\.y\.x, -t\.x\.y, t\.y\.y, t\.origin\.x, -t\.origin\.y\)/);
+  assert.match(rig, /var world := Transform2D\(Vector2\(bone\[0\], -bone\[2\]\), Vector2\(-bone\[1\], bone\[3\]\), Vector2\(bone\[4\], -bone\[5\]\)\)/);
+  assert.match(rig, /if is_equal_approx\(now\[i\], applied\[i\]\):\n\t\t\t\t\tnow\[i\] = animated\[i\]/, 'what no clip wrote goes back to the clips\' value');
+  for (const api of ['func step_physics(delta: float) -> void', 'func reset_physics() -> void', '@export var live_physics: bool = true',
+    'func play_layer(clip: String, seconds: float = 0.0, fade_out: float = 0.0) -> bool', 'func stop_layer(seconds: float = -1.0) -> bool']) assert.ok(rig.includes(api), api);
+  // Easing a layer: from and into the layer's copy of the clip beneath, on the layer's own tracks, with no events.
+  assert.match(rig, /layer\.play\(under, -1\.0, _speed_under\(base, layer\)\)\n\t\tlayer\.seek\(base\.current_animation_position, true\)\n\t\tlayer\.play\(clip, seconds\)/);
+  assert.match(rig, /var speed := _speed_under\(base, layer\)/);
+  assert.match(rig, /layer\.play\(under, fade, speed\)\n\tlayer\.seek\(base\.current_animation_position\)/);
+  assert.match(rig, /if copy\.track_get_type\(i\) == Animation\.TYPE_METHOD or not keyed\.has\(copy\.track_get_path\(i\)\):\n\t\t\tcopy\.remove_track\(i\)/);
+  assert.match(rig, /_wait_on\(layer, \{"at": maxf\(length - fade_out, 0\.0\), "seconds": minf\(fade_out, length\)\}\)/);
+  assert.match(rig, /_wait_on\(layer, \{"fade": fade, "speed": speed, "beneath": String\(base\.current_animation\)\}\)/);
+  assert.match(rig, /func _end_layer\(serial: int\) -> void:\n\tvar layer := get_node_or_null\("LayerPlayer"\) as AnimationPlayer\n\tif serial == _layer_serial and layer != null:\n\t\tlayer\.stop\(\)/, 'a fade that ends after a new layer began leaves it be');
+  // The waits run on the layer's own clock (a player advanced by hand, slowed or paused stays in step), not on a timer.
+  assert.match(rig, /layer\.mixer_applied\.connect\(_on_layer_applied\)/);
+  assert.match(rig, /wait\["done"\] = float\(wait\.done\) \+ absf\(step \/ speed\)/);
+  assert.match(rig, /step \+= layer\.get_animation\(layer\.current_animation\)\.length \* signf\(speed\)/);
+  assert.doesNotMatch(rig, /create_tween|create_timer/);
+});
+
 test('a sequence (flipbook) switches its texture coordinates frame by frame in Godot', () => {
   const json = { skeleton: { spine: '4.2.43' }, bones: [{ name: 'root' }],
     slots: [{ name: 'fire', bone: 'root', attachment: 'flame' }],
@@ -354,4 +513,46 @@ test('a sequence (flipbook) switches its texture coordinates frame by frame in G
   assert.deepEqual([0, 0.1, 0.2, 0.3].map(t => u(t + 0.01)), [0, 16, 32, 0], 'frame 1, 2, 3, then round again');
   const builder = fs.readFileSync(path.join(ROOT, 'integrations/godot/addons/keyframe/keyframe_builder.gd'), 'utf8');
   assert.match(builder, /track\.get\("interpolation", "linear"\)/, 'the add-on keys polygon, uv and texture tracks by their interpolation');
+});
+
+test('clips blend in Godot as in the runtimes: rotations start near rest, and every clip holds the rest of what other clips move', () => {
+  const skeleton = { skeleton: { spine: '4.2.43' },
+    bones: [{ name: 'root' }, { name: 'arm', parent: 'root', rotation: 170, length: 20 }, { name: 'hand', parent: 'arm', x: 20, length: 6 }],
+    slots: [{ name: 'fist', bone: 'hand', attachment: 'fist' }],
+    skins: [{ name: 'default', attachments: { fist: { fist: { width: 4, height: 4 }, palm: { width: 4, height: 4 } } } }],
+    animations: {
+      // The same held pose written as +200 and -160 degrees from the setup angle.
+      guard: { bones: { arm: { rotate: [{ time: 0, value: 200 }, { time: 1, value: 200 }] } } },
+      block: { bones: { arm: { rotate: [{ time: 0, value: -160 }, { time: 1, value: -160 }] } } },
+      // A palm strike bends the hand, flashes the slot and shows the open palm.
+      palm: { bones: { hand: { rotate: [{ time: 0, value: 0 }, { time: 0.2, value: 60 }] } },
+        slots: { fist: { rgba: [{ time: 0, color: 'ff0000ff' }], attachment: [{ time: 0, name: 'palm' }] } } },
+    } };
+  const scene = godotScene(skeleton, { atlasText: 'p.png\nsize:8,8\nfilter:Linear,Linear\npma:false\nfist\nbounds:0,0,4,4\npalm\nbounds:4,0,4,4\n' });
+  const clip = name => scene.animations.find(a => a.name === name);
+  const track = (name, target, who, property) => clip(name).tracks.find(t => t.target === target && t.name === who && t.property === property);
+  const rest = scene.bones.find(b => b.name === 'arm').rest.rotation;
+  const guard = track('guard', 'bone', 'arm', 'rotation').keys[0].value, block = track('block', 'bone', 'arm', 'rotation').keys[0].value;
+  assert.ok(Math.abs(guard - rest) <= Math.PI + 1e-6 && Math.abs(block - rest) <= Math.PI + 1e-6, 'each clip starts within half a turn of rest');
+  assert.ok(Math.abs(guard - block) < 1e-3, `one pose, one number: ${guard} and ${block}, so a crossfade between them does not spin the arm`);
+  // The hand the palm strike bends is held at rest by the clips that do not move it; so is the flash.
+  for (const name of ['guard', 'block']) {
+    const hand = track(name, 'bone', 'hand', 'rotation');
+    assert.ok(hand?.fill, `${name} holds the hand`);
+    assert.equal(hand.keys.length, 1);
+    assert.equal(hand.keys[0].value, scene.bones.find(b => b.name === 'hand').rest.rotation);
+    assert.deepEqual(track(name, 'slot', 'fist', 'modulate')?.keys[0].value, scene.slots[0].color, `${name} holds the slot colour`);
+    assert.equal(track(name, 'slot', 'fist', 'attachment'), undefined, 'which attachment shows is left to the game');
+  }
+  assert.ok(!track('palm', 'bone', 'hand', 'rotation').fill, 'a clip\'s own keys are not fills');
+  assert.ok(track('palm', 'bone', 'arm', 'rotation').fill, 'the palm strike holds the arm the guard moves');
+  // The add-on marks the fills, plays layers without them, and starts a playing clip again through a twin.
+  const builder = fs.readFileSync(path.join(ROOT, 'integrations/godot/addons/keyframe/keyframe_builder.gd'), 'utf8');
+  assert.match(builder, /if track\.get\("fill", false\):\n\t\t\t\tfor index in range\(before, animation\.get_track_count\(\)\):\n\t\t\t\t\tfills\.append\(index\)/);
+  assert.match(builder, /animation\.set_meta\(RIG_SCRIPT\.FILL_META, fills\)/);
+  const rig = fs.readFileSync(path.join(ROOT, 'integrations/godot/addons/keyframe/keyframe_rig.gd'), 'utf8');
+  assert.match(rig, /for i in range\(fills\.size\(\) - 1, -1, -1\):\n\t\t\town\.remove_track\(fills\[i\]\)/, 'a layer plays only its own tracks');
+  assert.doesNotMatch(rig, /layer\.add_animation_library\("", base\.get_animation_library\(""\)\)/, 'not the base clips, whose fills would hold the legs');
+  assert.match(rig, /if base\.is_playing\(\) and base\.current_animation == clip:\n\t\ttarget = clip \+ AGAIN/);
+  assert.match(rig, /const AGAIN := "__again"/);
 });

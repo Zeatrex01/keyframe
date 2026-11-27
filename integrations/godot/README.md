@@ -27,7 +27,7 @@ The demo project in this folder shows it: open `integrations/godot/` in Godot an
 | Region and mesh attachments | a `Polygon2D` per attachment, textured from the atlas page, shown when it is the slot's attachment |
 | Weighted meshes | a skinned `Polygon2D` (bone weights, the skeleton set), beside the skeleton |
 | Additive and multiply blending, premultiplied pages | a `CanvasItemMaterial` |
-| Clips | an `Animation` each in the `AnimationPlayer`'s library, plus `RESET` with the rest values |
+| Clips | an `Animation` each in the `AnimationPlayer`'s library, plus `RESET` with the rest values; each clip also holds at rest what other clips move and it does not (fill tracks, left out by `play_layer`) |
 | Bone rotate, translate, scale keys | bezier tracks (`rotation`, `position:x`, ...) with the authored handles |
 | Attachment keys | `visible` tracks on the attachments (nearest) |
 | Colour keys | `modulate` tracks, sampled at the export rate |
@@ -90,17 +90,29 @@ tracks win while it plays. When the layer ends, the arms go back to the clip und
 The layer copies the AnimationPlayer's process mode when it starts, not its speed (a run sped up
 to the character's pace does not speed up the punch): if your game runs
 the AnimationPlayer in manual mode and calls `advance()` itself, advance `$warrior/LayerPlayer`
-the same way.
+the same way, also while a layer eases off (the fades count the layer's own clock).
+
+A layer can ease in and out instead of cutting, and a looping one plays until it is stopped:
+
+```gdscript
+$hero.play_layer("wave", 0.2, 0.3)             # blends in over 0.2 s, back out over its last 0.3 s
+$hero.play_layer("carry", 0.25)                # a looping pose over the walk...
+$hero.stop_layer(0.3)                          # ...eased back into the walk, then stopped
+```
 
 To change clips without a pop, `crossfade` blends from the clip that was playing:
 
 ```gdscript
 $warrior.crossfade("run", 0.2)                 # idle melts into run over a fifth of a second
+$warrior.crossfade("jab", 0.08)                # while "jab" plays: a second jab blends in from the first
 ```
 
 Hair, tails and capes driven by physics constraints arrive baked into the bones' tracks (Skeleton2D
 has no physics of its own), recorded from the studio's engine; a looping clip is recorded on its
-second lap, so the swing runs on across the loop. Flipbooks (fire, smoke, frame-by-frame eyes) swap
+second lap, so the swing runs on across the loop. Exported with `physics: "live"`, they are not
+baked: the rig runs the engine's spring every frame instead, after the AnimationPlayers, so a scarf
+also trails the game moving the character. `reset_physics()` after a teleport, `live_physics = false`
+to turn it off, `step_physics(delta)` after advancing an AnimationPlayer in manual mode. Flipbooks (fire, smoke, frame-by-frame eyes) swap
 their texture coordinates frame by frame.
 
 ## How it is checked

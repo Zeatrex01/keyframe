@@ -113,16 +113,36 @@ static func build(data: Dictionary, base_dir: String) -> Node2D:
 		var animation := Animation.new()
 		animation.length = maxf(float(clip.length), 0.001)
 		animation.loop_mode = Animation.LOOP_LINEAR if clip.get("loop", false) else Animation.LOOP_NONE
+		# Tracks that only hold the rest of what other clips animate; play_layer leaves them out.
+		var fills := PackedInt32Array()
 		for track in clip.tracks:
+			var before := animation.get_track_count()
 			_add_track(animation, reset, reset_paths, track, data, bone_paths, slot_paths, root)
+			if track.get("fill", false):
+				for index in range(before, animation.get_track_count()):
+					fills.append(index)
+		if fills.size() > 0:
+			animation.set_meta(RIG_SCRIPT.FILL_META, fills)
 		library.add_animation(String(clip.name), animation)
 	library.add_animation("RESET", reset)
 	player.add_animation_library("", library)
+
+	# Live physics: the rig's springs find their bones by path.
+	var springs := []
+	for spring in data.get("physics", []):
+		if bone_nodes.has(spring.bone):
+			var entry: Dictionary = spring.duplicate()
+			entry["path"] = String(root.get_path_to(bone_nodes[spring.bone]))
+			springs.append(entry)
+	if springs.size() > 0:
+		root.set_meta(RIG_SCRIPT.PHYSICS_META, springs)
 
 	root.set_meta("keyframe_report", data.get("report", {}))
 	var report: Dictionary = data.get("report", {})
 	for line in report.get("baked", []):
 		print("Keyframe: baked ", line)
+	for line in report.get("live", []):
+		print("Keyframe: live ", line)
 	for line in report.get("skipped", []):
 		print("Keyframe: not imported ", line)
 	return root

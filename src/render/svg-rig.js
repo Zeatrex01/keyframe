@@ -26,6 +26,8 @@ import { stackProblems } from './stack.js';
 export const PARTS_FORMAT = 'keyframe-parts';
 const NAME = /^[A-Za-z0-9_][A-Za-z0-9_ .-]{0,63}$/;
 const PAD = 2, MAX_PAGE = 4096;
+/** The most parts one drawing holds (a dressed figure with its wardrobe fits; one atlas page is the other bound). */
+export const MAX_PARTS = 128;
 const round = v => Math.round(v * 100) / 100;
 const pair = (v, label) => {
   if (!Array.isArray(v) || v.length !== 2 || !v.every(Number.isFinite)) throw new StudioError('bad-argument', `${label} is [x, y] in rig units.`, { value: v });
@@ -73,7 +75,7 @@ function physics(p, where, problems) {
 /** Check a parts document; returns the cleaned parts or throws with every problem. */
 export function validateParts(parts) {
   if (!Array.isArray(parts) || !parts.length) throw new StudioError('bad-argument', 'A drawing has at least one part.', {});
-  if (parts.length > 64) throw new StudioError('bad-argument', 'A drawing has at most 64 parts.', { parts: parts.length });
+  if (parts.length > MAX_PARTS) throw new StudioError('bad-argument', `A drawing has at most ${MAX_PARTS} parts.`, { parts: parts.length });
   const seen = new Set(['root']), problems = [];
   const out = parts.map((p, i) => {
     const where = `parts[${i}]`;

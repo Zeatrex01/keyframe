@@ -14,6 +14,7 @@
 import { inflateSync } from 'node:zlib';
 import { createHash } from 'node:crypto';
 import { StudioError } from '../shared/errors.js';
+import { MAX_PARTS } from './svg-rig.js';
 
 const DIRECTIONS = ['forward', 'reverse', 'pingpong', 'pingpong-reverse'];
 // Aseprite blend modes the runtime can draw; the others draw as normal and are named.
@@ -273,7 +274,7 @@ export function asepriteDrawing(ase, { file = '' } = {}) {
     kept.push({ ...l, cels });
   }
   if (!kept.length) throw bad('The file has no visible layer with pixels.', { skipped });
-  if (kept.length > 64) throw bad(`The file has ${kept.length} visible layers; a drawing has at most 64 parts (merge layers in Aseprite, or hide the ones not needed).`, { layers: kept.length });
+  if (kept.length > MAX_PARTS) throw bad(`The file has ${kept.length} visible layers; a drawing has at most ${MAX_PARTS} parts (merge layers in Aseprite, or hide the ones not needed).`, { layers: kept.length });
   const names = partNames(kept);
   const frameCount = ase.frames.length;
   const parts = [], flip = new Map();
