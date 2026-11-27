@@ -35,12 +35,14 @@ export class Pose {
     this.skin = skin ? model.skins.get(skin) : null;
     this.scaleX = 1; this.scaleY = 1; this.x = 0; this.y = 0;
     this.color = { r: 1, g: 1, b: 1, a: 1 };
-    this.bones = model.bones.map(data => ({ data, x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1, shearX: 0, shearY: 0, a: 1, b: 0, c: 0, d: 1, worldX: 0, worldY: 0 }));
+    this.bones = model.bones.map(data => ({ data, inherit: data.inherit, x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1, shearX: 0, shearY: 0, a: 1, b: 0, c: 0, d: 1, worldX: 0, worldY: 0 }));
     this.slots = model.slots.map(data => ({ data, color: { ...data.color }, dark: data.dark ? { ...data.dark } : null, attachment: null, deform: null, sequenceIndex: -1 }));
     this.drawOrder = this.slots.slice();
     this.ik = (model.ik ?? []).map(c => ({ mix: c.mix, softness: c.softness, bendDirection: c.bendDirection, compress: c.compress, stretch: c.stretch, uniform: c.uniform }));
     this.transform = (model.transform ?? []).map(c => ({ ...TRANSFORM_SETUP(c) }));
     this.physics = (model.physics ?? []).map(c => ({ ...PHYSICS_SETUP(c), state: freshPhysicsState() }));
+    this.path = (model.path ?? []).map(c => ({ ...PATH_SETUP(c) }));
+    this.activate(skin ?? 'default');
     this.setupPose();
   }
 
@@ -53,6 +55,7 @@ export class Pose {
   setupPose() {
     for (const b of this.bones) {
       const d = b.data;
+      b.inherit = d.inherit;
       b.x = d.x; b.y = d.y; b.rotation = d.rotation; b.scaleX = d.scaleX; b.scaleY = d.scaleY; b.shearX = d.shearX; b.shearY = d.shearY;
     }
     for (const s of this.slots) this.setupSlot(s);
@@ -60,7 +63,31 @@ export class Pose {
     (this.model.ik ?? []).forEach((c, i) => Object.assign(this.ik[i], { mix: c.mix, softness: c.softness, bendDirection: c.bendDirection, compress: c.compress, stretch: c.stretch }));
     (this.model.transform ?? []).forEach((c, i) => Object.assign(this.transform[i], TRANSFORM_SETUP(c)));
     (this.model.physics ?? []).forEach((c, i) => Object.assign(this.physics[i], PHYSICS_SETUP(c)));
+    (this.model.path ?? []).forEach((c, i) => Object.assign(this.path[i], PATH_SETUP(c)));
   }
+
+  /**
+   * Which bones and constraints act under a skin: those not marked `skin`, and those the skin
+   * lists. A bone acts only while its parent does; a constraint only while its bones, its target
+   * bone (or the target slot's bone) act too. What does not act is not posed and not drawn.
+   */
+  activate(skinName) {
+    const listed = this.model.skinRequires?.get(skinName) ?? { bones: new Set(), constraints: new Set() };
+    this.active = this.model.bones.map(() => true);
+    for (const b of this.model.bones) {
+      this.active[b.index] = (!b.skinRequired || listed.bones.has(b.index)) && (b.parent < 0 || this.active[b.parent]);
+    }
+    const on = c => {
+      if (c.skinRequired && !listed.constraints.has(c.name)) return false;
+      const bones = c.kind === 'physics' ? [c.bone] : c.bones;
+      const target = c.kind === 'path' ? this.model.slots[c.target].bone : c.target;
+      return bones.every(i => this.active[i]) && (target === undefined || this.active[target]);
+    };
+    this.constraintActive = (this.model.constraints ?? []).map(on);
+  }
+
+  /** A mesh's or a path's vertices in world space, with the slot's deform. */
+  worldVertices(slot, att) { return meshVertices(this, slot, att); }
 
   /** Physics at rest where the bones are now (at the next updateWorld). */
   resetPhysics() { for (const c of this.physics) c.state = freshPhysicsState(); }
@@ -137,6 +164,16 @@ export class Pose {
           c.bendDirection = t.bend[i]; c.compress = t.compress[i]; c.stretch = t.stretch[i];
           break;
         }
+        case 'inherit': {
+          const i = keyIndex(t.times, time);
+          if (i >= 0) this.bones[t.bone].inherit = t.modes[i];
+          break;
+        }
+        case 'path': {
+          const c = this.path[t.constraint];
+          for (const [field, channel] of t.channels) { const v = channelValue(channel, time); if (v !== undefined) c[field] = v; }
+          break;
+        }
         case 'transform': {
           const c = this.transform[t.constraint];
           for (const [mix, channel] of t.channels) { const v = channelValue(channel, time); if (v !== undefined) c[mix] = v; }
@@ -191,7 +228,7 @@ export class Pose {
    * @param {{ physics?: 'pose' | 'none' | 'update' | 'reset', delta?: number }} [options]
    */
   updateWorld({ physics = /** @type {'pose' | 'none' | 'update' | 'reset'} */ ('pose'), delta = 0 } = {}) {
-    for (const bone of this.bones) this.updateBone(bone, bone);
+    for (const bone of this.bones) if (this.active[bone.data.index]) this.updateBone(bone, bone);
     applyConstraints(this, { physics, delta });
     return this;
   }
@@ -206,11 +243,13 @@ export class Pose {
     this.bones.forEach((b, i) => { const o = i * 7; bones[o] = b.x; bones[o + 1] = b.y; bones[o + 2] = b.rotation; bones[o + 3] = b.scaleX; bones[o + 4] = b.scaleY; bones[o + 5] = b.shearX; bones[o + 6] = b.shearY; });
     return {
       bones,
+      inherits: this.bones.map(b => b.inherit),
       slots: this.slots.map(s => ({ color: { ...s.color }, dark: s.dark ? { ...s.dark } : null, attachment: s.attachment, deform: s.deform, sequenceIndex: s.sequenceIndex })),
       drawOrder: this.drawOrder.slice(),
       ik: this.ik.map(c => ({ ...c })),
       transform: this.transform.map(c => ({ ...c })),
       physics: this.physics.map(({ state, ...c }) => c),
+      path: this.path.map(c => ({ ...c })),
     };
   }
 
@@ -218,9 +257,11 @@ export class Pose {
     this.bones.forEach((b, i) => { const o = i * 7; b.x = st.bones[o]; b.y = st.bones[o + 1]; b.rotation = st.bones[o + 2]; b.scaleX = st.bones[o + 3]; b.scaleY = st.bones[o + 4]; b.shearX = st.bones[o + 5]; b.shearY = st.bones[o + 6]; });
     this.slots.forEach((s, i) => { const v = st.slots[i]; Object.assign(s.color, v.color); if (s.dark && v.dark) Object.assign(s.dark, v.dark); s.attachment = v.attachment; s.deform = v.deform; s.sequenceIndex = v.sequenceIndex; });
     this.drawOrder = st.drawOrder.slice();
+    if (st.inherits) this.bones.forEach((b, i) => { b.inherit = st.inherits[i]; });
     this.ik.forEach((c, i) => Object.assign(c, st.ik[i]));
     this.transform.forEach((c, i) => Object.assign(c, st.transform[i]));
     this.physics.forEach((c, i) => Object.assign(c, st.physics[i]));
+    this.path.forEach((c, i) => Object.assign(c, st.path[i]));
     return this;
   }
 
@@ -249,6 +290,8 @@ export class Pose {
       bone.shearX = lerp(a.bones[o + 5], b.bones[o + 5]); bone.shearY = lerp(a.bones[o + 6], b.bones[o + 6]);
     });
     const late = t >= 0.5;
+    const inherits = (late && !add ? b : a).inherits;
+    if (inherits) this.bones.forEach((bone, i) => { bone.inherit = inherits[i]; });
     this.slots.forEach((s, i) => {
       const x = a.slots[i], y = add ? a.slots[i] : b.slots[i];
       for (const k of ['r', 'g', 'b', 'a']) s.color[k] = lerp(x.color[k], y.color[k]);
@@ -278,10 +321,12 @@ export class Pose {
       mixNumbers(this.ik, a.ik, b.ik, ['bendDirection']);
       mixNumbers(this.transform, a.transform, b.transform);
       mixNumbers(this.physics, a.physics, b.physics);
+      mixNumbers(this.path, a.path, b.path);
     } else {
       this.ik.forEach((c, i) => Object.assign(c, a.ik[i]));
       this.transform.forEach((c, i) => Object.assign(c, a.transform[i]));
       this.physics.forEach((c, i) => Object.assign(c, a.physics[i]));
+      this.path.forEach((c, i) => Object.assign(c, a.path[i]));
     }
     return this;
   }
@@ -314,7 +359,7 @@ export class Pose {
     const { a: pa, b: pb, c: pc, d: pd } = parent;
     bone.worldX = pa * x + pb * y + parent.worldX;
     bone.worldY = pc * x + pd * y + parent.worldY;
-    const mode = bone.data.inherit;
+    const mode = bone.inherit ?? bone.data.inherit;
     let m; // [a, b, c, d] before the skeleton's scale
     if (mode === 0) {
       const [la, lc] = axisX(rotation + shearX, scaleX), [lb, ld] = axisX(rotation + 90 + shearY, scaleY);
@@ -382,7 +427,7 @@ export class Pose {
     const [ia, ib, ic, id] = inv(parent.a, parent.b, parent.c, parent.d);
     const dx = bone.worldX - parent.worldX, dy = bone.worldY - parent.worldY;
     const x = ia * dx + ib * dy, y = ic * dx + id * dy;
-    const mode = bone.data.inherit;
+    const mode = bone.inherit ?? bone.data.inherit;
     if (mode === 1) return decompose(a, b, c, d, x, y);
     let q = [parent.a, parent.b, parent.c, parent.d];
     if (mode === 2) {
@@ -434,6 +479,7 @@ export class Pose {
 }
 
 const TRANSFORM_SETUP = c => ({ mixRotate: c.mixRotate, mixX: c.mixX, mixY: c.mixY, mixScaleX: c.mixScaleX, mixScaleY: c.mixScaleY, mixShearY: c.mixShearY });
+const PATH_SETUP = c => ({ position: c.position, spacing: c.spacing, mixRotate: c.mixRotate, mixX: c.mixX, mixY: c.mixY });
 const PHYSICS_SETUP = c => ({ inertia: c.inertia, strength: c.strength, damping: c.damping, mass: c.mass, wind: c.wind, gravity: c.gravity, mix: c.mix });
 
 /** The deform values a mesh has with no deform key: its own vertices (unweighted) or zero offsets (weighted). */

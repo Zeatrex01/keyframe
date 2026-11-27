@@ -5,11 +5,13 @@
 // paused, speed, setAnimation, animationState.getCurrent / apply / addListener, skeleton.data,
 // dispose), so the stage drives it, or the official player when the Spine add-on is on, the
 // same way. On top of that it plays a layer over the clip (`setLayer`) and crossfades between
-// clips (`mix`), on the engine's mixer, with physics stepped every frame.
+// clips (`mix`), on the engine's mixer, with physics stepped every frame, and shows onion skin
+// (`onion`): faint ghosts of the clip a few instants before and after the one on screen.
 
 import { compileSkeleton, Pose, Mixer, collectDraws, clipFrames, parseAtlas, atlasRegions } from '/src/engine/index.js';
 import { createCanvasRenderer, fitView } from '/src/engine/canvas.js';
 import { toSkeletonJson, isKeyframeDocument } from '/src/engine/keyframe-format.js';
+import { ghostTimes } from './lanes.js';
 
 const loadImage = url => new Promise((resolve, reject) => {
   const image = new Image();
@@ -62,6 +64,8 @@ export class KeyframePlayer {
     };
     /** Seconds a new clip crossfades from the one before (0 cuts). */
     this.mix = 0;
+    /** Onion skin: ghosts of the clip around the instant shown. */
+    this.onion = false;
     this.load().catch(err => { if (!this.disposed) config.error?.(this, String(err?.message ?? err)); });
   }
 
@@ -81,6 +85,7 @@ export class KeyframePlayer {
     this.regions = atlasRegions(parsed);
     this.pages = pages;
     this.pose = new Pose(model);
+    this.ghost = new Pose(model);
     this.mixer = new Mixer(model, { pose: this.pose });
     this.mixer.addListener({ complete: ({ track, entry }) => { if (track === 0) for (const l of this.listeners) l.complete?.(entry); } });
     // The framing of each clip: the setup pose and everything the clip draws, sampled densely enough
@@ -126,6 +131,18 @@ export class KeyframePlayer {
     return this.mixer.setAnimation(1, name, { loop: true, mix, alpha });
   }
 
+  /** The onion-skin ghosts of the clip on track 0, faintest first, each a list of draws. */
+  ghostDraws() {
+    const e = this.entry;
+    if (!this.onion || !e?.animation) return [];
+    const duration = e.animation.duration;
+    const now = duration > 0 ? (e.loop ? e.trackTime % duration : Math.min(e.trackTime, duration)) : 0;
+    return ghostTimes(now, duration, { loop: e.loop }).map(({ time, alpha }) => {
+      this.ghost.apply(e.animation, Math.fround(time)).updateWorld();
+      return collectDraws(this.ghost, this.regions).draws.map(d => ({ ...d, light: { ...d.light, a: d.light.a * alpha } }));
+    });
+  }
+
   play() { this.paused = false; }
   pause() { this.paused = true; }
 
@@ -147,7 +164,9 @@ export class KeyframePlayer {
     else draws = collectDraws(this.pose.updateWorld(), this.regions).draws;
     const vp = this.config.viewport;
     const box = vp && vp.width > 0 ? vp : this.skeleton.data;
-    this.renderer.render(ctx, draws, page => this.pages.get(page), fitView(box, w, h));
+    const view = fitView(box, w, h), pageOf = page => this.pages.get(page);
+    for (const ghost of this.ghostDraws()) this.renderer.render(ctx, ghost, pageOf, view);
+    this.renderer.render(ctx, draws, pageOf, view);
   }
 
   dispose() {

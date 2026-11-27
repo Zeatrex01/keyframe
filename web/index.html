@@ -160,6 +160,7 @@
       <select class="clip-pick" id="clip" data-i18n-label="stage.clip" disabled></select>
       <select class="clip-pick hide-phone" id="overlay" data-i18n-label="stage.layer" disabled></select>
       <button type="button" class="btn ghost sm hide-phone" id="blend" aria-pressed="false"><span data-i18n="stage.blend"></span></button>
+      <button type="button" class="btn ghost sm hide-phone" id="onion" aria-pressed="false"><span data-i18n="stage.onion"></span></button>
       <span class="timecode" id="time"><b>0.00</b> / 0.00 s</span>
       <span class="grow"></span>
       <button type="button" class="btn ghost sm hide-phone" id="loop" aria-pressed="true">
@@ -176,6 +177,8 @@
       <div class="timeline" id="timeline" role="group" data-i18n-label="keys.title" hidden>
         <div class="corner"><svg class="ic" aria-hidden="true"><use href="#i-timeline"/></svg><span data-i18n="keys.bones"></span></div>
         <div class="ruler" id="ruler" role="slider" tabindex="0" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" data-i18n-label="stage.scrub"></div>
+        <div class="curve-label" id="curveLabel" hidden></div>
+        <div class="curve" id="curve" hidden></div>
         <div class="labels" id="laneLabels"></div>
         <div class="lanes" id="lanes"><span class="range" id="laneRange" hidden></span><span class="playhead" id="playhead"></span></div>
       </div>

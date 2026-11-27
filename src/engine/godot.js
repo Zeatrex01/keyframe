@@ -3,7 +3,7 @@
 //
 // Everything Godot's own 2D stack can carry stays editable there: a bone channel with normal
 // inheritance and no constraint becomes a bezier track that keeps the authored handles. What
-// Godot has no counterpart for (IK, transform and physics constraints, inherit modes other than
+// Godot has no counterpart for (IK, transform, path and physics constraints, inherit modes other than
 // normal, shear under rotation) is baked from the engine's world transforms into dense keys, and
 // named in `report`; physics is played from the start on the engine's fixed grid, a looping clip
 // one lap warmed up so its seam closes. With `physics: 'live'` physics is not baked: the scene
@@ -80,6 +80,8 @@ function keyability(model, live) {
   const why = new Map();
   for (const c of model.ik) for (const b of c.bones) why.set(b, `ik ${c.name}`);
   for (const c of model.transform) for (const b of c.bones) why.set(b, `transform ${c.name}`);
+  for (const c of model.path ?? []) for (const b of c.bones) why.set(b, `path ${c.name}`);
+  for (const animation of model.animations.values()) for (const t of animation.timelines) if (t.kind === 'inherit') why.set(t.bone, 'inherit keys');
   if (!live) for (const c of model.physics) why.set(c.bone, `physics ${c.name}`);
   for (const b of model.bones) {
     if (b.inherit !== 0) why.set(b.index, 'inherit mode');

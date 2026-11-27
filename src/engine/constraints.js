@@ -4,14 +4,18 @@
 //              mix, bend direction, stretch, compress, uniform and a soft reach near full length
 //   transform  bones follow a target's rotation, position, scale and shear, in world or local
 //              space, absolute or relative, each part by its own mix
+//   path       bones are laid along a path attachment's bezier curves: placed at a distance along
+//              it (fixed or a share of its length), spaced by their lengths, a fixed step, a share
+//              of the path or in proportion, turned along its tangent or toward the next bone
 //   physics    a bone's origin, direction and length lag behind the motion and spring back, with
 //              inertia, strength, damping, mass, wind and gravity, stepped on a fixed grid
 //
 // Written from the geometry and from the documented meaning of each Spine 4.2 field, not from any
 // runtime's code. IK and transform constraints are exact formulas; physics is the studio's own
 // simulation: it reads the same fields and moves the same way, but its numbers are not Spine's
-// to the pixel (the model says so in `approximations`). Path constraints are not evaluated: the
-// model lists them, and `bake_animation` with the Spine add-on turns them into plain keys.
+// to the pixel (the model says so in `approximations`). Path lengths follow the format's own
+// convention: a constant-speed path measures each curve as ten straight pieces; any other path
+// uses the `lengths` written into the attachment and moves along each curve's parameter.
 //
 // Physics needs time. A pose posed once shows the constraint's resting state; the engine's
 // samplers (src/engine/index.js) replay physics from 0 on the fixed grid, and the players step it
@@ -76,9 +80,34 @@ export function compilePhysics(json, boneIndex) {
   });
 }
 
+const POSITION_MODES = ['fixed', 'percent'];
+const SPACING_MODES = ['length', 'fixed', 'percent', 'proportional'];
+const ROTATE_MODES = ['tangent', 'chain', 'chainScale'];
+
+/** Compile the skeleton's `path` array. `target` is a slot whose attachment is the path. */
+export function compilePath(json, boneIndex, slotIndex) {
+  return (json.path ?? []).map((c, i) => {
+    const bones = (c.bones ?? []).map(name => boneOf(boneIndex, name, 'Path constraint', c.name));
+    const target = slotIndex.get(c.target);
+    if (target === undefined) throw new StudioError('bad-skeleton', `Path constraint "${c.name}" names target slot "${c.target}", which does not exist.`, { constraint: c.name, slot: c.target });
+    const mode = (value, list, fallback, field) => {
+      const v = value ?? fallback;
+      if (!list.includes(v)) throw new StudioError('bad-skeleton', `Path constraint "${c.name}" has ${field} "${v}"; it is one of ${list.join(', ')}.`, { constraint: c.name, [field]: v });
+      return v;
+    };
+    const mixX = num(c.mixX, 1);
+    return { kind: 'path', name: c.name, index: i, order: num(c.order, 0), bones, target,
+      positionMode: mode(c.positionMode, POSITION_MODES, 'percent', 'positionMode'),
+      spacingMode: mode(c.spacingMode, SPACING_MODES, 'length', 'spacingMode'),
+      rotateMode: mode(c.rotateMode, ROTATE_MODES, 'tangent', 'rotateMode'),
+      offsetRotation: num(c.rotation, 0), position: num(c.position, 0), spacing: num(c.spacing, 0),
+      mixRotate: num(c.mixRotate, 1), mixX, mixY: num(c.mixY, mixX) };
+  });
+}
+
 /** Every constraint in the order the skeleton evaluates them (by `order`, then by kind as Spine lists them). */
-export function constraintOrder(ik, transform, physics) {
-  const all = [...ik, ...transform, ...physics];
+export function constraintOrder(ik, transform, physics, path = []) {
+  const all = [...ik, ...transform, ...path, ...physics];
   return all.map((c, i) => ({ c, i })).sort((a, b) => a.c.order - b.c.order || a.i - b.i).map(({ c }) => c);
 }
 
@@ -120,6 +149,32 @@ export function compileTransformTimelines(section, byName, where) {
     };
     out.push({ kind: 'transform', constraint: constraint.index,
       channels: TRANSFORM_MIXES.map((m, f) => [m, channelOf(keys, read[m], f, `${where}/transform/${name}`)]) });
+  }
+  return out;
+}
+
+/**
+ * Compile an animation's `path` section: { <constraint>: { position|spacing: [{ time, value }], mix: [{ time, mixRotate, mixX, mixY }] } }.
+ */
+export function compilePathTimelines(section, byName, where) {
+  const out = [];
+  for (const [name, channels] of Object.entries(section ?? {})) {
+    const constraint = byName.get(name);
+    if (!constraint) throw new StudioError('bad-animation', `${where}: path constraint "${name}" does not exist.`, { constraint: name });
+    for (const [property, keys] of Object.entries(channels ?? {})) {
+      if (!Array.isArray(keys) || !keys.length) continue;
+      const at = `${where}/path/${name}/${property}`;
+      if (property === 'position' || property === 'spacing') {
+        out.push({ kind: 'path', constraint: constraint.index, channels: [[property, channelOf(keys, k => num(k.value, 0), 0, at)]] });
+      } else if (property === 'mix') {
+        out.push({ kind: 'path', constraint: constraint.index, channels: [
+          ['mixRotate', channelOf(keys, k => num(k.mixRotate, 1), 0, at)],
+          ['mixX', channelOf(keys, k => num(k.mixX, 1), 1, at)],
+          ['mixY', channelOf(keys, k => num(k.mixY, num(k.mixX, 1)), 2, at)]] });
+      } else {
+        throw new StudioError('bad-animation', `${at}: a path timeline is position, spacing or mix.`, { property });
+      }
+    }
   }
   return out;
 }
@@ -343,6 +398,143 @@ function applyTransform(pose, data) {
   return data.bones;
 }
 
+// ── path ─────────────────────────────────────────────────────────────────────
+
+const SEGMENTS = 10;   // a constant-speed curve is measured as this many straight pieces
+
+/** The cubic bezier at `t`: [x, y], and the direction it travels there (radians). */
+function bezierAt(q, t) {
+  const u = 1 - t;
+  const x = u * u * u * q[0] + 3 * u * u * t * q[2] + 3 * u * t * t * q[4] + t * t * t * q[6];
+  const y = u * u * u * q[1] + 3 * u * u * t * q[3] + 3 * u * t * t * q[5] + t * t * t * q[7];
+  // The derivative, up to its factor 3; at the very start the curve leaves toward its first handle.
+  let dx = u * u * (q[2] - q[0]) + 2 * u * t * (q[4] - q[2]) + t * t * (q[6] - q[4]);
+  let dy = u * u * (q[3] - q[1]) + 2 * u * t * (q[5] - q[3]) + t * t * (q[7] - q[5]);
+  if (t < 0.001 || Math.hypot(dx, dy) < 1e-9) { dx = q[2] - q[0]; dy = q[3] - q[1]; }
+  return [x, y, Math.atan2(dy, dx)];
+}
+
+/** The curves of a path in world space: eight numbers each (start, two handles, end). */
+function pathCurves(pose, slot, att) {
+  const w = pose.worldVertices(slot, att);
+  const points = w.length / 2, triples = points / 3;
+  const point = i => [w[(i % points) * 2], w[(i % points) * 2 + 1]];
+  const curves = [];
+  const count = att.closed ? triples : triples - 1;
+  for (let k = 0; k < count; k++) curves.push([...point(3 * k + 1), ...point(3 * k + 2), ...point(3 * k + 3), ...point(3 * k + 4)]);
+  return curves;
+}
+
+/** Cumulative chord lengths of one curve over SEGMENTS pieces. */
+function chordLengths(q) {
+  const out = new Float64Array(SEGMENTS);
+  let [px, py] = [q[0], q[1]], sum = 0;
+  for (let i = 1; i <= SEGMENTS; i++) {
+    const [x, y] = bezierAt(q, i / SEGMENTS);
+    sum += Math.hypot(x - px, y - py);
+    out[i - 1] = sum; px = x; py = y;
+  }
+  return out;
+}
+
+/**
+ * Points along a path at the given distances from its start: [x, y, direction] each. An open
+ * path goes on in a straight line past either end, along its end handle; a closed one wraps.
+ */
+function pointsAlong(curves, att, cumulative, distances) {
+  const total = cumulative.length ? cumulative[cumulative.length - 1] : 0;
+  const chords = att.constantSpeed ? curves.map(chordLengths) : null;
+  return distances.map(p => {
+    if (att.closed) { p = total > 0 ? p % total : 0; if (p < 0) p += total; }
+    else if (p < 0) {
+      const q = curves[0], r = Math.atan2(q[3] - q[1], q[2] - q[0]);
+      return [q[0] + p * Math.cos(r), q[1] + p * Math.sin(r), r];
+    } else if (p > total) {
+      const q = curves[curves.length - 1], r = Math.atan2(q[7] - q[5], q[6] - q[4]);
+      return [q[6] + (p - total) * Math.cos(r), q[7] + (p - total) * Math.sin(r), r];
+    }
+    let k = 0;
+    while (k < cumulative.length - 1 && p > cumulative[k]) k++;
+    const start = k ? cumulative[k - 1] : 0, length = cumulative[k] - start;
+    let t;
+    if (!chords) t = length > 0 ? (p - start) / length : 0;
+    else {
+      // Distance along this curve, read off its chords and back to the curve parameter.
+      const c = chords[k], local = length > 0 ? (p - start) / length * c[SEGMENTS - 1] : 0;
+      let j = 0;
+      while (j < SEGMENTS - 1 && local > c[j]) j++;
+      const from = j ? c[j - 1] : 0, piece = c[j] - from;
+      t = (j + (piece > 0 ? (local - from) / piece : 0)) / SEGMENTS;
+    }
+    return bezierAt(curves[k], Math.max(0, Math.min(1, t)));
+  });
+}
+
+function applyPath(pose, data) {
+  const m = pose.path[data.index];
+  if (!(m.mixRotate > 0 || m.mixX > 0 || m.mixY > 0)) return [];
+  const slot = pose.slots[data.target];
+  const att = slot.attachment;
+  if (!att || att.type !== 'path') return [];
+  const curves = pathCurves(pose, slot, att);
+  if (!curves.length) return [];
+  let cumulative;
+  if (att.constantSpeed) {
+    cumulative = [];
+    let sum = 0;
+    for (const q of curves) { sum += chordLengths(q)[SEGMENTS - 1]; cumulative.push(sum); }
+  } else cumulative = Array.from(att.lengths.slice(0, curves.length));
+  const total = cumulative.length ? cumulative[cumulative.length - 1] : 0;
+
+  const bones = data.bones.map(i => pose.bones[i]);
+  const tangents = data.rotateMode === 'tangent', scaled = data.rotateMode === 'chainScale';
+  const count = tangents ? bones.length : bones.length + 1;
+  // The step from each bone to the next, along the path, and each bone's world length.
+  const lengths = bones.map(b => b.data.length * Math.hypot(b.a, b.c));
+  const steps = new Float64Array(count);
+  if (data.spacingMode === 'percent') steps.fill(m.spacing * total, 1);
+  else if (data.spacingMode === 'proportional') {
+    let sum = 0;
+    for (let i = 0; i < count - 1; i++) { const l = bones[i].data.length < 1e-5 ? 0 : lengths[i]; steps[i + 1] = l || m.spacing; sum += l; }
+    if (sum > 0) for (let i = 1; i < count; i++) steps[i] *= m.spacing * total / sum;
+  } else {
+    for (let i = 0; i < count - 1; i++) {
+      const setup = bones[i].data.length;
+      steps[i + 1] = setup < 1e-5 ? m.spacing : (data.spacingMode === 'length' ? setup + m.spacing : m.spacing) * lengths[i] / setup;
+    }
+  }
+  let at = data.positionMode === 'percent' ? m.position * total : m.position;
+  const distances = Array.from(steps, s => (at += s));
+  const points = pointsAlong(curves, att, cumulative, distances);
+
+  const holder = pose.bones[slot.data.bone];
+  const flipped = holder.a * holder.d - holder.b * holder.c < 0;
+  const offset = data.offsetRotation * DEG * (flipped ? -1 : 1);
+  const tip = data.offsetRotation === 0 && data.rotateMode === 'chain';
+  let [x0, y0] = points[0];
+  bones.forEach((bone, i) => {
+    bone.worldX += (x0 - bone.worldX) * m.mixX;
+    bone.worldY += (y0 - bone.worldY) * m.mixY;
+    const next = points[i + 1] ?? points[i];
+    const dx = next[0] - x0, dy = next[1] - y0;
+    if (scaled && lengths[i] > 0) { const s = (Math.hypot(dx, dy) / lengths[i] - 1) * m.mixRotate + 1; bone.a *= s; bone.c *= s; }
+    x0 = next[0]; y0 = next[1];
+    if (m.mixRotate > 0) {
+      const aim = tangents ? points[i][2] : steps[i + 1] === 0 ? next[2] : Math.atan2(dy, dx);
+      let r = aim - Math.atan2(bone.c, bone.a);
+      if (tip) {
+        // The next bone starts at this one's tip, as far as the turn goes.
+        const L = bone.data.length, cos = Math.cos(r), sin = Math.sin(r);
+        x0 += (L * (cos * bone.a - sin * bone.c) - dx) * m.mixRotate;
+        y0 += (L * (sin * bone.a + cos * bone.c) - dy) * m.mixRotate;
+      } else r += offset;
+      rotateColumns(bone, wrapRad(r) * m.mixRotate);
+    }
+    syncApplied(pose, bone);
+  });
+  return data.bones;
+}
+
 // ── physics ──────────────────────────────────────────────────────────────────
 
 /**
@@ -425,10 +617,12 @@ function applyPhysics(pose, data, mode, delta) {
  */
 export function applyConstraints(pose, { physics = 'pose', delta = 0 } = {}) {
   const list = pose.model.constraints ?? [];
-  for (const data of list) {
+  for (const [n, data] of list.entries()) {
+    if (pose.constraintActive && !pose.constraintActive[n]) continue;
     let moved;
     if (data.kind === 'ik') moved = applyIk(pose, data);
     else if (data.kind === 'transform') moved = applyTransform(pose, data);
+    else if (data.kind === 'path') moved = applyPath(pose, data);
     else if (physics === 'none') continue;
     else moved = applyPhysics(pose, data, physics, delta);
     if (!moved.length) continue;
@@ -436,7 +630,7 @@ export function applyConstraints(pose, { physics = 'pose', delta = 0 } = {}) {
     const done = new Set();
     for (const root of moved) {
       for (const bone of descendants(pose, root)) {
-        if (skip.has(bone.data.index) || done.has(bone.data.index)) continue;
+        if (skip.has(bone.data.index) || done.has(bone.data.index) || (pose.active && !pose.active[bone.data.index])) continue;
         done.add(bone.data.index);
         pose.updateBone(bone, localOf(bone));
       }

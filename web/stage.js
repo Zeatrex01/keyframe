@@ -65,6 +65,7 @@ export function playerReady(player) {
   player.speed = S.speed;
   if (S.anim && player.skeleton.data.findAnimation(S.anim)) player.setAnimation(S.anim, S.loop);
   if ('mix' in player) player.mix = S.blend ? 0.2 : 0;
+  if ('onion' in player) player.onion = S.onion;
   if (S.overlay && typeof player.setLayer === 'function' && player.skeleton.data.findAnimation(S.overlay)) player.setLayer(S.overlay, { mix: 0 });
   player.play();
   S.lastTime = 0;
@@ -151,6 +152,13 @@ export function setBlend(on) {
   renderTransport();
 }
 
+/** Onion skin: faint ghosts of the clip before and after the instant on the stage. */
+export function setOnion(on) {
+  S.onion = on;
+  if (S.player && 'onion' in S.player) { S.player.onion = on; S.player.dirty = true; }
+  renderTransport();
+}
+
 export function setLoop(on) {
   S.loop = on;
   const c = entry();
@@ -199,6 +207,9 @@ export function renderTransport() {
   el.blend.hidden = !layering;
   el.blend.setAttribute('aria-pressed', String(S.blend));
   el.blend.title = t('stage.blendHint');
+  el.onion.hidden = !layering;
+  el.onion.setAttribute('aria-pressed', String(S.onion));
+  el.onion.title = t('stage.onionHint');
   el.play.disabled = !live;
   el.loop.setAttribute('aria-pressed', String(S.loop));
   for (const b of el.speed.querySelectorAll('button')) b.setAttribute('aria-pressed', String(Number(b.dataset.speed) === S.speed));

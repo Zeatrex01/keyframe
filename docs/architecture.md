@@ -335,9 +335,10 @@ after the notice that it needs their own Spine license.
   world positions, matrices, attachments, colours and draw order to agree (0.01). Key times are
   float32, as in every Spine runtime, so posing on a key lands on it exactly.
 - `src/runtime` keeps one API with two backends. `parseSkeleton` uses the engine unless the file
-  needs what the engine does not evaluate yet (path constraints, skin-only bones and
-  constraints) and the add-on is on. Since 2026-11-27 the engine evaluates IK (with softness),
-  transform and physics constraints and sequences itself (`src/engine/constraints.js`); physics
+  needs what the engine does not evaluate and the add-on is on. Since 2026-11-27 the engine
+  evaluates IK (with softness), transform, path and physics constraints, sequences, inherit
+  timelines and skin-only bones and constraints itself (`src/engine/constraints.js`), so no
+  Spine 4.2 file needs the add-on to pose; physics
   is the studio's own damped spring on Spine's parameters, listed in `model.approximations`. Without the add-on such a file still poses, and
   `data.limits` names what was left out, so `check_skeleton`, `see_animation` and
   `sample_animation` say so (`notEvaluated`) instead of pretending.
