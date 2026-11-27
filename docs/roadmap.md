@@ -123,7 +123,9 @@ or art is taken. In order:
   whole-number blow-up, so a rig drawn as vectors ships as crisp pixel art (`export_art` `pixel`).
   Done.
 - Aseprite import: an `.aseprite` file's layers become parts and its frames and tags become
-  flipbook clips, read from the published file format with the standard library.
+  flipbook clips, read from the published file format with the standard library
+  (`draw_rig` `aseprite`). Atlas pages with a Nearest filter are shown pixel-sharp everywhere.
+  Done.
 
 ### Phase 3: the agent understands what it animates
 

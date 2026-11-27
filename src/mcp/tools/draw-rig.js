@@ -17,6 +17,7 @@ import { projectStyle } from '../style-file.js';
 import { drawingSvg } from '../../render/compose-svg.js';
 import { rasterizeSvg } from '../../engine/svg.js';
 import { encodePng } from '../../render/png.js';
+import { readAseprite, asepriteDrawing } from '../../render/aseprite.js';
 
 const PART = {
   type: 'object', required: ['name', 'at'], additionalProperties: false,
@@ -83,6 +84,28 @@ function feedEvents(rel, name, document, drawn) {
   ];
 }
 
+/**
+ * The parts and clips of an Aseprite file, with the bones the caller placed on its layers
+ * ({ <layer>: { pivot, parent, physics } }, by layer or part name).
+ */
+function fromAseprite(project, { file, layers = {} }) {
+  if (!/\.(aseprite|ase)$/i.test(file)) throw new StudioError('bad-argument', 'aseprite.file is an .aseprite or .ase file in the project.', { file });
+  const abs = project.resolve(file);
+  if (!fs.existsSync(abs)) throw new StudioError('file-not-found', `${file} is not in the project.`, { file });
+  const drawing = asepriteDrawing(readAseprite(fs.readFileSync(abs)), { file: project.rel(abs) });
+  if (!layers || typeof layers !== 'object' || Array.isArray(layers)) throw new StudioError('bad-argument', 'aseprite.layers maps a layer to { pivot, parent, physics }.', {});
+  const byLayer = new Map(drawing.parts.flatMap(p => [[p.name, p], [p.source.layer, p]]));
+  for (const [layer, set] of Object.entries(layers)) {
+    const part = byLayer.get(layer);
+    if (!part) throw new StudioError('bad-argument', `aseprite.layers: "${layer}" is not a visible layer of ${file} (layers: ${drawing.parts.map(p => p.name).join(', ')}).`, { layer });
+    for (const [k, v] of Object.entries(set ?? {})) {
+      if (!['pivot', 'parent', 'physics'].includes(k)) throw new StudioError('bad-argument', `aseprite.layers.${layer}.${k} is not one of pivot, parent, physics.`, { layer });
+      part[k] = k === 'parent' ? byLayer.get(v)?.name ?? v : v;
+    }
+  }
+  return drawing;
+}
+
 /** The animations, events and extra skins of a rig drawn before, kept across a redraw. */
 function carryOver(previous, skeleton) {
   if (!previous) return [];
@@ -110,6 +133,7 @@ export default {
   summary: 'Draws placeholder art as SVG parts and builds the rig from it: a skeleton, an atlas and a page image the studio plays at once.',
   description: `Starts a project from a description: draw each part (head, body, arm_l, lid, coin) as one small SVG, place it (\`at\`), say where it turns (\`pivot\`) and what carries it (\`parent\`). The studio draws the SVGs into an atlas page and writes <folder>/<name>.json (a Spine 4.2 skeleton whose setup pose is the finished picture), <name>.atlas, <name>.png and <name>.parts.json (the parts, which the drawing board in the page edits and rebuilds from). Parts are listed back to front.
 SVG that is drawn: rect, circle, ellipse, line, polyline, polygon, path (all commands), g with transform, fill and stroke (colours, linear and radial gradients), opacity, stroke-linecap. Not drawn (and named in \`skipped\`): text, filters, masks, clip paths, images, <use>. Prefer \`shapes\` and \`component\` over raw SVG: they cost a tenth of the tokens and follow the project's style guide (style_guide) by name, with labels in the built-in stroke font and icons from the family (${GLYPH_NAMES.length} glyphs: ${GLYPH_NAMES.join(', ')}). \`restyle: true\` with no parts redraws every part drawn from shapes or a component with the current guide. Keep one part per moving piece. Ready-made props and effect sprites (coin, star, spark, heart, gem, cloud, leaf, drop) come from the bundled asset library as \`svg: "asset:keyframe-basics/coin"\`.
+\`aseprite: { file }\` builds the rig from an Aseprite file in the project instead of drawn parts (the file is only read): each visible image layer becomes a part named after it, drawn pixel for pixel (one rig unit is one pixel, the canvas's bottom centre is the origin, the atlas is drawn at a whole \`resolution\`, default 1, and magnified without smoothing); a layer whose cels change becomes a flipbook of its distinct cels; every tag becomes a clip of the same name playing its frames in its direction (forward, reverse, ping-pong) at the file's frame durations, a layer empty in a frame hidden there (no tags: one clip "all"). Layer opacity, normal, multiply, screen and addition blends are kept; hidden, reference and tilemap layers are left out and listed. To animate the parts with bones as well, \`layers: { arm: { pivot: [x, y], parent: "body", physics: true } }\` places a layer's bone (rig units). Importing again under the same name reads the file again and keeps the clips written since.
 With \`merge: true\` the parts are added to the drawing of the same name (a part with an existing name replaces it in place, a new one goes in front) and the rest is kept: draw a figure one part or a few parts per call, back to front, and the page shows each part being drawn as it arrives (every call is shown live on the drawing board). Drawing again under the same name without \`merge\` replaces the whole drawing and keeps the clips already written (keys on a part that no longer exists are dropped and listed); every file is backed up first. A name whose files the studio did not draw is refused. Then animate it with write_animation and look at it with see_animation.`,
   inputSchema: {
     type: 'object', required: ['name'], additionalProperties: false,
@@ -121,10 +145,14 @@ With \`merge: true\` the parts are added to the drawing of the same name (a part
       as: { type: 'string', enum: ['rig', 'artboard'], short: 'rig (default) or artboard', description: 'rig (default): a skeleton to animate. artboard: a design that is never rigged (an icon set, a logo, a UI sheet): writes <name>.svg and <name>.png with the parts, no skeleton. A drawing keeps its kind when drawn again.' },
       restyle: { type: 'boolean', short: 'redraw with the current style guide', description: 'Redraw every part of the drawing that was drawn from shapes or a component with the current style guide (no parts needed). Parts given as SVG stay as they are.' },
       merge: { type: 'boolean', short: 'add to the drawing (part by part)', description: 'Add these parts to the drawing of the same name (same name replaces in place, a new name goes in front) and keep the others. Default false: the parts are the whole drawing.' },
+      aseprite: { type: 'object', required: ['file'], short: '{ file, layers? }: rig from Aseprite', description: 'Build from an Aseprite file in the project instead of parts: { file: "<x>.aseprite", layers?: { <layer>: { pivot: [x, y], parent: <layer>, physics } } }. Layers become parts, changing cels flipbooks, tags clips.',
+        properties: { file: { type: 'string', short: '.aseprite file', description: 'Project-relative .aseprite or .ase file (read only).' } } },
     },
   },
-  run({ name, parts, folder = '', resolution, merge = false, restyle = false, as }, { session }) {
+  run({ name, parts, folder = '', resolution, merge = false, restyle = false, as, aseprite }, { session }) {
     const project = projectOf(session);
+    if (aseprite && (parts || merge || restyle || as === 'artboard')) throw new StudioError('bad-argument', 'aseprite builds the whole rig from the file: leave out parts, merge, restyle and as.', {});
+    if (aseprite && resolution !== undefined && !Number.isInteger(resolution)) throw new StudioError('bad-argument', 'With aseprite, resolution is a whole number of atlas pixels per pixel (1 to 8), so every pixel stays sharp.', { resolution });
     const dirAbs = folder ? project.resolve(folder) : project.dir;
     const abs = Object.fromEntries(Object.entries({ json: `${name}.json`, atlas: `${name}.atlas`, png: `${name}.png`, parts: `${name}.parts.json`, svg: `${name}.svg` })
       .map(([k, f]) => [k, path.join(dirAbs, f)]));
@@ -137,7 +165,9 @@ With \`merge: true\` the parts are added to the drawing of the same name (a part
     const kind = as ?? previousDoc?.kind ?? 'rig';
     const { style } = projectStyle(project.dir);
     let input = parts ?? [];
-    if (restyle) {
+    const ase = aseprite ? fromAseprite(project, aseprite) : null;
+    if (ase) input = ase.parts;
+    else if (restyle) {
       if (!previousDoc) throw new StudioError('bad-argument', `There is no drawing "${name}" to restyle.`, { name });
       input = sourcesOf(previousDoc);
     } else if (!input.length) throw new StudioError('bad-argument', 'Give the parts to draw (or restyle: true to redraw the drawing with the current style guide).', {});
@@ -149,9 +179,11 @@ With \`merge: true\` the parts are added to the drawing of the same name (a part
     }
     const expanded = expandParts(read, style);
     const all = merge && !restyle ? mergeParts(previousDoc, expanded.parts) : expanded.parts;
-    const built = buildSvgRig({ name, parts: all, resolution: resolution ?? (merge || restyle ? previousDoc?.resolution : undefined) ?? 2 });
+    const built = buildSvgRig({ name, parts: all, resolution: resolution ?? (merge || restyle ? previousDoc?.resolution : undefined) ?? (ase ? 1 : 2),
+      filter: ase || ((merge || restyle) && previousDoc?.filter === 'nearest') ? 'nearest' : 'linear' });
     if (kind === 'artboard') built.document.kind = 'artboard';
     const dropped = kind === 'rig' ? carryOver(previous, built.skeleton) : [];
+    if (ase) Object.assign(built.skeleton.animations, ase.clips);
     const findings = kind === 'rig' ? checkSkeleton(built.skeleton).filter(f => f.level === 'fatal') : [];
     if (findings.length) throw new StudioError('check-failed', `The drawn rig does not pass the check: ${findings.map(f => f.message).join(' ')}`, { findings });
     // A rig writes the skeleton, its atlas and page; an artboard (an icon sheet, a logo, a UI sheet
@@ -193,7 +225,11 @@ With \`merge: true\` the parts are added to the drawing of the same name (a part
       ...(kind === 'rig' && previous ? { keptClips: Object.keys(built.skeleton.animations) } : {}),
       ...(dropped.length ? { dropped } : {}),
       ...(built.skipped.length ? { skipped: built.skipped } : {}),
-      next: kind === 'rig'
+      ...(ase ? { aseprite: { file: ase.parts[0].source.aseprite, clips: Object.keys(ase.clips), flipbooks: ase.parts.filter(p => p.frames).map(p => `${p.name} (${p.frames.length})`),
+        ...(ase.skipped.length ? { leftOut: ase.skipped } : {}), ...(ase.notes.length ? { notes: ase.notes } : {}), palette: ase.palette.length,
+        place: built.document.parts.map(p => `${p.name} at [${p.at}] size [${p.size}]`) } } : {}),
+      next: ase ? `see_animation { file: "${project.rel(abs.json)}", animation: "${Object.keys(ase.clips)[0] ?? ''}" } to look at it; export_art { file: "${project.rel(abs.parts)}", pixel: { palette: [...] } } keeps the file's own colours.`
+        : kind === 'rig'
         ? `critique_art { file: "${project.rel(abs.parts)}" } to check the drawing; then write_animation { file: "${project.rel(abs.json)}", ... }.`
         : `critique_art { file: "${project.rel(abs.parts)}" } to check the drawing; export_art to get PNGs at other scales.`,
     };

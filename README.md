@@ -44,7 +44,8 @@ those things for whichever AI you use:
 - **Draw like an art director.** A style guide per project, parts drawn from components (buttons,
   panels, icons, a waist-up or side-view figure) and shapes, an art critique that looks at the
   drawing the way an art director would, and exports for any engine: trimmed PNGs, sprite sheets
-  with a map, pixel art on a fixed palette, clean SVG and an embeddable web player. Draw mode does
+  with a map, pixel art on a fixed palette, clean SVG and an embeddable web player. Aseprite files
+  come in as rigs: layers become parts, tags become clips, every pixel stays sharp. Draw mode does
   the same by hand in the page.
 - **Dressable game characters.** The side-view figure takes swappable armour and weapons in one
   skeleton, a stance and an attack per weapon, feet that stay planted, and upper-body clips that

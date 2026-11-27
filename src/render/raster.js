@@ -23,8 +23,10 @@ export function createCanvas(width, height) {
  * Turn decoded 8-bit RGBA into a premultiplied float texture.
  * @param {{ width: number, height: number, data: Uint8Array }} image
  * @param {boolean} alreadyPremultiplied true when the atlas page says pma
+ * @param {boolean} [nearest]  the page magnifies with Nearest (pixel art): where a texel covers a
+ *   pixel or more it is sampled without blending its neighbours
  */
-export function prepareTexture(image, alreadyPremultiplied) {
+export function prepareTexture(image, alreadyPremultiplied, nearest = false) {
   const { width, height, data } = image;
   const out = new Float32Array(width * height * 4);
   for (let i = 0; i < data.length; i += 4) {
@@ -32,7 +34,15 @@ export function prepareTexture(image, alreadyPremultiplied) {
     const k = alreadyPremultiplied ? 1 / 255 : a / 255;
     out[i] = data[i] * k; out[i + 1] = data[i + 1] * k; out[i + 2] = data[i + 2] * k; out[i + 3] = a;
   }
-  return { width, height, data: out };
+  return { width, height, data: out, nearest: !!nearest };
+}
+
+// The texel under normalized (u, v), clamped to the edge. Writes into `out`.
+function sampleNearest(texture, u, v, out) {
+  const { width, height, data } = texture;
+  const x = Math.min(width - 1, Math.max(0, Math.floor(u * width))), y = Math.min(height - 1, Math.max(0, Math.floor(v * height)));
+  const i = (y * width + x) * 4;
+  out[0] = data[i]; out[1] = data[i + 1]; out[2] = data[i + 2]; out[3] = data[i + 3];
 }
 
 // Bilinear sample at normalized (u, v), clamped to the edge. Writes into `out`.
@@ -82,6 +92,9 @@ export function drawTriangles(canvas, { positions, uvs, indices, texture, light,
     if (minX > maxX || minY > maxY) continue;
     const u0 = uvs[i0], v0 = uvs[i0 + 1], u1 = uvs[i1], v1 = uvs[i1 + 1], u2 = uvs[i2], v2 = uvs[i2 + 1];
     const inv = 1 / area;
+    // Magnified (a texel covers a pixel or more) on a Nearest page: no blending between texels.
+    const texels = Math.abs((u1 - u0) * (v2 - v0) - (u2 - u0) * (v1 - v0)) * texture.width * texture.height;
+    const pick = texture.nearest && Math.abs(area) >= texels ? sampleNearest : sample;
     // Top-left fill rule, so shared edges are drawn exactly once.
     const bias = (ax, ay, bx, by) => {
       const dy = by - ay, dx = bx - ax;
@@ -97,7 +110,7 @@ export function drawTriangles(canvas, { positions, uvs, indices, texture, light,
         const w1 = ((x0 - x2) * (cy - y2) - (y0 - y2) * (cx - x2)) * inv;
         const w2 = ((x1 - x0) * (cy - y0) - (y1 - y0) * (cx - x0)) * inv;
         if (w0 + b0 < 0 || w1 + b1 < 0 || w2 + b2 < 0) continue;
-        sample(texture, u0 * w0 + u1 * w1 + u2 * w2, v0 * w0 + v1 * w1 + v2 * w2, texel);
+        pick(texture, u0 * w0 + u1 * w1 + u2 * w2, v0 * w0 + v1 * w1 + v2 * w2, texel);
         const ta = texel[3];
         if (dark) {
           for (let c = 0; c < 3; c++) {
