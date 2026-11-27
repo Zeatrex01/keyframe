@@ -27,7 +27,7 @@ The demo project in this folder shows it: open `integrations/godot/` in Godot an
 | Region and mesh attachments | a `Polygon2D` per attachment, textured from the atlas page, shown when it is the slot's attachment |
 | Weighted meshes | a skinned `Polygon2D` (bone weights, the skeleton set), beside the skeleton |
 | Additive and multiply blending, premultiplied pages | a `CanvasItemMaterial` |
-| Clips | an `Animation` each in the `AnimationPlayer`'s library, plus `RESET` with the rest values |
+| Clips | an `Animation` each in the `AnimationPlayer`'s library, plus `RESET` with the rest values; each clip also holds at rest what other clips move and it does not (fill tracks, left out by `play_layer`) |
 | Bone rotate, translate, scale keys | bezier tracks (`rotation`, `position:x`, ...) with the authored handles |
 | Attachment keys | `visible` tracks on the attachments (nearest) |
 | Colour keys | `modulate` tracks, sampled at the export rate |
@@ -96,6 +96,7 @@ To change clips without a pop, `crossfade` blends from the clip that was playing
 
 ```gdscript
 $warrior.crossfade("run", 0.2)                 # idle melts into run over a fifth of a second
+$warrior.crossfade("jab", 0.08)                # while "jab" plays: a second jab blends in from the first
 ```
 
 Hair, tails and capes driven by physics constraints arrive baked into the bones' tracks (Skeleton2D

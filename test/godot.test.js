@@ -355,3 +355,45 @@ test('a sequence (flipbook) switches its texture coordinates frame by frame in G
   const builder = fs.readFileSync(path.join(ROOT, 'integrations/godot/addons/keyframe/keyframe_builder.gd'), 'utf8');
   assert.match(builder, /track\.get\("interpolation", "linear"\)/, 'the add-on keys polygon, uv and texture tracks by their interpolation');
 });
+
+test('clips blend in Godot as in the runtimes: rotations start near rest, and every clip holds the rest of what other clips move', () => {
+  const skeleton = { skeleton: { spine: '4.2.43' },
+    bones: [{ name: 'root' }, { name: 'arm', parent: 'root', rotation: 170, length: 20 }, { name: 'hand', parent: 'arm', x: 20, length: 6 }],
+    slots: [{ name: 'fist', bone: 'hand', attachment: 'fist' }],
+    skins: [{ name: 'default', attachments: { fist: { fist: { width: 4, height: 4 }, palm: { width: 4, height: 4 } } } }],
+    animations: {
+      // The same held pose written as +200 and -160 degrees from the setup angle.
+      guard: { bones: { arm: { rotate: [{ time: 0, value: 200 }, { time: 1, value: 200 }] } } },
+      block: { bones: { arm: { rotate: [{ time: 0, value: -160 }, { time: 1, value: -160 }] } } },
+      // A palm strike bends the hand, flashes the slot and shows the open palm.
+      palm: { bones: { hand: { rotate: [{ time: 0, value: 0 }, { time: 0.2, value: 60 }] } },
+        slots: { fist: { rgba: [{ time: 0, color: 'ff0000ff' }], attachment: [{ time: 0, name: 'palm' }] } } },
+    } };
+  const scene = godotScene(skeleton, { atlasText: 'p.png\nsize:8,8\nfilter:Linear,Linear\npma:false\nfist\nbounds:0,0,4,4\npalm\nbounds:4,0,4,4\n' });
+  const clip = name => scene.animations.find(a => a.name === name);
+  const track = (name, target, who, property) => clip(name).tracks.find(t => t.target === target && t.name === who && t.property === property);
+  const rest = scene.bones.find(b => b.name === 'arm').rest.rotation;
+  const guard = track('guard', 'bone', 'arm', 'rotation').keys[0].value, block = track('block', 'bone', 'arm', 'rotation').keys[0].value;
+  assert.ok(Math.abs(guard - rest) <= Math.PI + 1e-6 && Math.abs(block - rest) <= Math.PI + 1e-6, 'each clip starts within half a turn of rest');
+  assert.ok(Math.abs(guard - block) < 1e-3, `one pose, one number: ${guard} and ${block}, so a crossfade between them does not spin the arm`);
+  // The hand the palm strike bends is held at rest by the clips that do not move it; so is the flash.
+  for (const name of ['guard', 'block']) {
+    const hand = track(name, 'bone', 'hand', 'rotation');
+    assert.ok(hand?.fill, `${name} holds the hand`);
+    assert.equal(hand.keys.length, 1);
+    assert.equal(hand.keys[0].value, scene.bones.find(b => b.name === 'hand').rest.rotation);
+    assert.deepEqual(track(name, 'slot', 'fist', 'modulate')?.keys[0].value, scene.slots[0].color, `${name} holds the slot colour`);
+    assert.equal(track(name, 'slot', 'fist', 'attachment'), undefined, 'which attachment shows is left to the game');
+  }
+  assert.ok(!track('palm', 'bone', 'hand', 'rotation').fill, 'a clip\'s own keys are not fills');
+  assert.ok(track('palm', 'bone', 'arm', 'rotation').fill, 'the palm strike holds the arm the guard moves');
+  // The add-on marks the fills, plays layers without them, and starts a playing clip again through a twin.
+  const builder = fs.readFileSync(path.join(ROOT, 'integrations/godot/addons/keyframe/keyframe_builder.gd'), 'utf8');
+  assert.match(builder, /if track\.get\("fill", false\):\n\t\t\t\tfor index in range\(before, animation\.get_track_count\(\)\):\n\t\t\t\t\tfills\.append\(index\)/);
+  assert.match(builder, /animation\.set_meta\(RIG_SCRIPT\.FILL_META, fills\)/);
+  const rig = fs.readFileSync(path.join(ROOT, 'integrations/godot/addons/keyframe/keyframe_rig.gd'), 'utf8');
+  assert.match(rig, /for i in range\(fills\.size\(\) - 1, -1, -1\):\n\t\t\town\.remove_track\(fills\[i\]\)/, 'a layer plays only its own tracks');
+  assert.doesNotMatch(rig, /layer\.add_animation_library\("", base\.get_animation_library\(""\)\)/, 'not the base clips, whose fills would hold the legs');
+  assert.match(rig, /if base\.is_playing\(\) and base\.current_animation == clip:\n\t\ttarget = clip \+ AGAIN/);
+  assert.match(rig, /const AGAIN := "__again"/);
+});

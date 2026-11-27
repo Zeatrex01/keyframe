@@ -98,6 +98,27 @@ export function plantFeet(skeleton, name, plant, { fps = 30 } = {}) {
     pose.apply(anim, r.from).updateWorld();
     r.angle = worldAngle(pose.bones[index(r.foot)]) - (r.on ? worldAngle(pose.bones[index(r.on)]) : 0);
   }
+  // The side the knee (or elbow) bends to, held for the whole window, so a deep crouch or a leg
+  // keyed straight or bent back cannot fold it the wrong way or flip it between frames: the rig's
+  // own bend in its setup pose; for a limb drawn straight, the side the toes point to (a knee bends
+  // over the toes; the foot bone points along the foot); else the side the clip bends it to at
+  // `from`. Counted in the thigh's parent's frame, so a mirrored rig bends the mirrored way.
+  const sideOf = r => {
+    const thigh = pose.bones[index(r.thigh)], shin = pose.bones[index(r.shin)], foot = pose.bones[index(r.foot)];
+    const parent = thigh.data.parent >= 0 ? pose.bones[thigh.data.parent] : null;
+    const lx = foot.worldX - thigh.worldX, ly = foot.worldY - thigh.worldY, l = Math.hypot(lx, ly);
+    const kx = shin.worldX - thigh.worldX, ky = shin.worldY - thigh.worldY, k = Math.hypot(kx, ky);
+    const tx = foot.a, ty = foot.c, tl = Math.hypot(tx, ty);
+    const bent = (kx * ly - ky * lx) / (k * l || 1), toes = (tx * ly - ty * lx) / (tl * l || 1);
+    return { bent: Math.abs(bent) > 0.02 ? Math.sign(bent) * Math.sign(det(parent) || 1) : 0,
+      toes: Math.abs(toes) > 0.2 ? Math.sign(toes) * Math.sign(det(parent) || 1) : 0 };
+  };
+  for (const r of requests) {
+    pose.setupPose(); pose.updateWorld();
+    const setup = sideOf(r);
+    pose.apply(anim, r.from).updateWorld();
+    r.side = setup.bent || setup.toes || sideOf(r).bent || 1;
+  }
 
   const reach = new Map();
   /** The rotate value of every leg bone at time t, planted feet solved. */
@@ -119,9 +140,8 @@ export function plantFeet(skeleton, name, plant, { fps = 30 } = {}) {
       const D = [at[0] - hip[0], at[1] - hip[1]], dRaw = Math.hypot(D[0], D[1]);
       const d = Math.max(Math.abs(L1 - L2) + 1e-6, Math.min(L1 + L2 - 1e-6, dRaw));
       reach.set(r.foot, Math.max(reach.get(r.foot) ?? 0, dRaw / (L1 + L2)));
-      // The knee bends to the side it bends to in the clip as written.
-      const cross = (knee[0] - hip[0]) * (ankle[1] - hip[1]) - (knee[1] - hip[1]) * (ankle[0] - hip[0]);
-      const side = cross === 0 ? 1 : Math.sign(cross);
+      const parentOfThigh = thigh.data.parent >= 0 ? pose.bones[thigh.data.parent] : null;
+      const side = r.side * Math.sign(det(parentOfThigh) || 1);
       const phi = Math.atan2(D[1], D[0]) / DEG;
       const alpha = Math.acos(Math.max(-1, Math.min(1, (L1 * L1 + d * d - L2 * L2) / (2 * L1 * d)))) / DEG;
       const a1 = phi - side * alpha;
@@ -154,11 +174,12 @@ export function plantFeet(skeleton, name, plant, { fps = 30 } = {}) {
   }
   const values = new Map();   // bone -> [time, value]
   // Each bone's turn taken the short way from one sample to the next: a solved angle that crosses
-  // ±180 must not spin the limb a full turn between two keys.
+  // ±180 must not spin the limb a full turn between two keys. The first starts within half a turn
+  // of the setup pose, so clips that blend into each other stay near the same angles.
   for (const [t, offsets] of samples) for (const [bone, v] of offsets) {
     if (!values.has(bone)) values.set(bone, []);
     const list = values.get(bone), prev = list[list.length - 1];
-    list.push([t, prev ? prev[1] + wrap(v - prev[1]) : v]);
+    list.push([t, prev ? prev[1] + wrap(v - prev[1]) : wrap(v)]);
   }
 
   // Dense linear keys; a value that does not change between neighbours is left out.

@@ -13,7 +13,8 @@ extends Node2D
 ## over the clip the AnimationPlayer is playing, so the legs keep running:
 ##   rig.play_layer("punch_upper")
 ##
-## Changing clips without a pop: the old clip blends into the new one over `seconds`.
+## Changing clips without a pop: the old clip blends into the new one over `seconds`. A clip that
+## is playing blends into a fresh start of itself (a second jab), through a twin "<clip>__again".
 ##   rig.crossfade("run", 0.2)
 
 ## Emitted when a clip passes one of its events.
@@ -41,6 +42,11 @@ signal keyframe_event(event_name: String, int_value: int, float_value: float, st
 
 ## The slot `weapon` drives; set_look leaves it alone.
 const WEAPON_SLOT := "weapon"
+## The meta of a clip listing its tracks that only hold the rest of what other clips animate
+## (every clip keys everything, so none inherits the last clip's pose); layers play without them.
+const FILL_META := "keyframe_fill"
+## The twin a clip crossfades through into a fresh start of itself.
+const AGAIN := "__again"
 
 var _slot_map := {}
 
@@ -139,7 +145,17 @@ func play_layer(clip: String) -> bool:
 		layer.name = "LayerPlayer"
 		add_child(layer)                          # after the AnimationPlayer: its tracks are applied last
 		layer.root_node = base.root_node
-		layer.add_animation_library("", base.get_animation_library(""))
+		layer.add_animation_library("", AnimationLibrary.new())
+	# The layer's own copy of the clip, without the tracks that only hold the rest of the rig: the
+	# legs stay with the clip beneath.
+	var library := layer.get_animation_library("")
+	if not library.has_animation(clip):
+		var source := base.get_animation(clip)
+		var own := source.duplicate() as Animation
+		var fills: PackedInt32Array = source.get_meta(FILL_META, PackedInt32Array())
+		for i in range(fills.size() - 1, -1, -1):
+			own.remove_track(fills[i])
+		library.add_animation(clip, own)
 	layer.callback_mode_process = base.callback_mode_process   # a manual base stays manual
 	layer.stop()
 	layer.play(clip)
@@ -148,10 +164,21 @@ func play_layer(clip: String) -> bool:
 
 
 ## Plays `clip` on the AnimationPlayer, blending from what it played over `seconds` (Godot's own
-## blend between clips; below 0 uses `blend_time`). Returns false when the rig has no such clip.
+## blend between clips; below 0 uses `blend_time`). Asked for the clip that is playing, it starts it
+## again with a blend instead of snapping to its first frame: it plays the clip's twin
+## "<clip>__again" (made the first time), and the clip again the time after. Returns false when the
+## rig has no such clip.
 func crossfade(clip: String, seconds: float = -1.0) -> bool:
 	var base := get_node_or_null("AnimationPlayer") as AnimationPlayer
 	if base == null or not base.has_animation(clip):
 		return false
-	base.play(clip, blend_time if seconds < 0.0 else seconds)
+	var target := clip
+	if base.is_playing() and base.current_animation == clip:
+		target = clip + AGAIN
+		if not base.has_animation(target):
+			var source := base.get_animation(clip)
+			var twin := source.duplicate() as Animation
+			twin.set_meta(FILL_META, source.get_meta(FILL_META, PackedInt32Array()))
+			base.get_animation_library("").add_animation(target, twin)
+	base.play(target, blend_time if seconds < 0.0 else seconds)
 	return true

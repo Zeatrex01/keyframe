@@ -8,7 +8,9 @@
 // named in `report`; physics is played from the start on the engine's fixed grid, a looping clip
 // one lap warmed up so its seam closes. Colour, draw order and mesh deform are sampled at `fps`;
 // attachments switch on a nearest track, and a sequence (a flipbook) switches its polygon's
-// texture coordinates frame by frame.
+// texture coordinates frame by frame. Every clip keys all that any clip animates (the rest of it
+// in tracks marked `fill`), and rotations start within half a turn of rest, so clips crossfade
+// in Godot the way they do in the runtimes.
 //
 // Coordinates: Godot's y points down, so every y and every angle is mirrored; angles are radians.
 // Pure and isomorphic.
@@ -206,6 +208,7 @@ export function godotScene(json, { atlasText, fps = 30, skin, name, loops } = /*
   });
 
   const animations = [...model.animations.values()].map(animation => sceneAnimation(model, animation, { fps, skin, blocked, slots, report, asked: loopAnswer(animation.name, loops, json) }));
+  settle(animations, bones, slots);
   return { format: GODOT_FORMAT, version: 1, name: name ?? model.name ?? 'skeleton', fps,
     pages: atlas.pages.map(p => ({ name: p.name, width: p.width, height: p.height, pma: p.pma, ...(p.magFilter === 'Nearest' ? { filter: 'nearest' } : {}) })), bones, slots, animations,
     report: { baked: [...new Set(report.baked)], approximated: [...new Set(report.approximated)], skipped: [...new Set(report.skipped)].sort() } };
@@ -300,6 +303,53 @@ function sceneAnimation(model, animation, { fps, skin, blocked: always, slots, r
       int: e.int ?? 0, float: e.float ?? 0, string: e.string ?? '' })) });
   }
   return { name: animation.name, length: round(duration), loop: loops, tracks };
+}
+
+/**
+ * Clips made to blend in Godot. Each bone's rotation track starts within half a turn of the bone's
+ * rest angle: Godot blends rotations as plain numbers, so two clips holding one pose as 350 and -10
+ * degrees would spin the limb the long way round in a crossfade (the turns within a clip are kept).
+ * And every clip keys every bone, colour, draw order and flipbook any clip animates: what a clip
+ * leaves alone holds its rest value there, in a track marked `fill`, because Godot leaves an unkeyed
+ * property where the clip before put it (a hand stays bent after a palm strike). Which attachment
+ * a slot shows is not filled. The rig's play_layer plays a clip without the fills.
+ */
+function settle(animations, bones, slots) {
+  const TAU = 2 * Math.PI;
+  const restOf = new Map(bones.map(b => [b.name, b.rest]));
+  for (const clip of animations) for (const t of clip.tracks) {
+    if (t.target !== 'bone' || t.property !== 'rotation' || !t.keys.length) continue;
+    const turns = Math.round((t.keys[0].value - restOf.get(t.name).rotation) / TAU);
+    if (turns) for (const k of t.keys) k.value = round(k.value - turns * TAU);
+  }
+  const slotOf = new Map(slots.map(s => [s.name, s]));
+  const restValue = t => {
+    if (t.target === 'bone') {
+      const rest = restOf.get(t.name), [prop, axis] = t.property.split(':');
+      const v = rest?.[prop];
+      return axis ? v?.[axis === 'x' ? 0 : 1] : v;
+    }
+    const slot = slotOf.get(t.name);
+    if (t.target === 'slot') return { attachment: slot?.attachment ?? null, modulate: slot?.color, z_index: slot?.z }[t.property];
+    const att = slot?.attachments.find(a => a.name === t.attachment);
+    return att && { uv: att.uv, polygon: att.polygon, texture: att.page }[t.property];
+  };
+  const pathOf = t => `${t.target}|${t.name}|${t.attachment ?? ''}|${t.property}`;
+  const first = new Map();
+  // Which attachment a slot shows is left to the game where a clip does not say (the weapon a
+  // character carries stays through the run); events are not state.
+  const held = t => t.target !== 'root' && !(t.target === 'slot' && t.property === 'attachment');
+  for (const clip of animations) for (const t of clip.tracks) if (held(t) && !first.has(pathOf(t))) first.set(pathOf(t), t);
+  for (const clip of animations) {
+    const has = new Set(clip.tracks.map(pathOf));
+    for (const [path, t] of first) {
+      const value = has.has(path) ? undefined : restValue(t);
+      if (value === undefined) continue;
+      clip.tracks.push({ target: t.target, name: t.name, ...(t.attachment ? { attachment: t.attachment } : {}), property: t.property, type: t.type,
+        ...(t.interpolation ? { interpolation: t.interpolation } : {}), fill: true,
+        keys: [t.type === 'bezier' ? { time: 0, value, in: [0, 0], out: [0, 0] } : { time: 0, value }] });
+    }
+  }
 }
 
 /** A copy of what a sampled pose shows, so a playhead can go on posing the next frame. @returns {any} */

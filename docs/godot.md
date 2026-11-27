@@ -66,6 +66,18 @@ ends, the arms go back to the clip underneath. The layer copies the AnimationPla
 
 `rig.crossfade("run", 0.2)` changes clips with Godot's own blend between them, so a character goes
 from idle to run without a pop (`blend_time` on the rig is the default when no time is given).
+Asked for the clip that is already playing (a second jab), it starts it again with the same blend,
+through a twin of the clip named `<clip>__again`, instead of snapping to its first frame.
+
+Clips are made to blend the way they do in the runtimes. Every clip keys every bone, colour, draw
+order and flipbook that any clip animates: what a clip leaves alone holds its rest value there
+(Godot otherwise leaves an unkeyed property where the clip before put it, so a hand bent by a palm
+strike would stay bent). These tracks are marked as fills, and `play_layer` plays a clip without
+them, so the legs stay with the clip beneath. Which attachment a slot shows is left to the game
+where a clip does not key it (the weapon stays through the run). Each bone's rotation track
+starts within half a turn of its rest angle, so two clips that hold one pose never spin a limb the
+long way round in a crossfade. A page whose atlas filter is Nearest (pixel art) draws with
+`texture_filter` nearest.
 
 Physics constraints (hair, tails, capes) and transform constraints have no Skeleton2D counterpart,
 so the export plays them on the studio's engine and bakes the result into the bones' tracks; a

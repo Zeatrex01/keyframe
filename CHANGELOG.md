@@ -17,6 +17,11 @@ All notable changes to this project. The format follows
   and tilemap layers are left out and listed. `layers` places bones on layers (pivot, parent,
   physics) so pixel parts can be animated with bones too. Importing again keeps the clips
   written since. The source file is only read.
+- Godot clips blend the way they do in the runtimes: every clip holds at rest the bones, colours,
+  draw order and flipbooks other clips move and it does not (a hand bent by a palm strike no
+  longer stays bent in the next clip), and `play_layer` plays a clip without those holds; each
+  rotation track starts within half a turn of rest, so a crossfade never spins a limb the long way
+  round; `crossfade` into the clip that is playing starts it again with a blend (a second jab).
 - Pixel-sharp display: an atlas page whose filter magnifies with `Nearest` is drawn without
   smoothing wherever it is blown up, on the stage, in the standalone player, in rendered frames
   and in Godot (`texture_filter` nearest), as the runtimes draw it. Imported pixel art uses it.
@@ -69,6 +74,13 @@ All notable changes to this project. The format follows
 - Wardrobe for the side figure (`bare: true`, `wear: [...]`): a bald, shaped body; hair in seven
   styles; shirt, trousers, boots; head-wear (headband, beanie, cap, hat, glasses, shades, moustache,
   beard, mask); plate armour piece by piece. Each item is its own part, shown or hidden by the game.
+
+### Fixed
+
+- Planted feet (`write_animation` `plant`) keep each knee bending the rig's own way for the whole
+  window: its drawn bend, or over the toes for a leg drawn straight, or the clip's bend at the
+  start. A deep crouch, or a leg keyed straight or bent back, no longer folds a knee backwards or
+  flips it between frames; the baked turns start within half a turn of the setup pose.
 
 ## 0.0.1-beta - 2026-11-24
 

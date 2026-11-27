@@ -9,6 +9,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { createServer } from '../src/mcp/server.js';
 import { compileSkeleton, Pose } from '../src/engine/index.js';
+import { plantFeet } from '../src/deliver/plant.js';
 
 function studio() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'kf-plant-'));
@@ -120,3 +121,49 @@ test('a hand planted `on` another bone rides it: the back hand stays on the poin
     assert.match(JSON.stringify(self.error), /cannot hold on to itself/);
   } finally { s.done(); }
 });
+
+test('a deep crouch keeps each knee bending the rig\'s own way, smoothly, even when the clip keys the legs straight or bent back', async () => {
+  const s = studio();
+  try {
+    // The figure is drawn with straight legs: its knees bend over its toes.
+    await s.call('draw_rig', { name: 'hero', parts: [{ name: 'hero', component: { component: 'figure', build: 'side', h: 300 }, at: [0, 0] }] });
+    // The hips drop far below standing height; the front leg is keyed straight, the back one bent backwards.
+    const crouch = { bones: {
+      body: { translate: T([[0, 0, 0], [0.3, 6, -70], [0.6, 0, -70], [0.9, 0, 0]]) },
+      thighFront: { rotate: K([[0, 0], [0.9, 0]]) }, shinFront: { rotate: K([[0, 0], [0.9, 0]]) },
+      thighBack: { rotate: K([[0, -10], [0.9, -10]]) }, shinBack: { rotate: K([[0, 28], [0.9, 28]]) },
+    } };
+    const out = await s.call('write_animation', { from: 'hero.json', animation: 'crouch', clip: crouch, plant: ['footFront', 'footBack'] });
+    assert.equal(out.error, undefined, JSON.stringify(out.error));
+    const sk = JSON.parse(fs.readFileSync(path.join(s.dir, out.file), 'utf8'));
+    const legs = [['thighFront', 'shinFront', 'footFront'], ['thighBack', 'shinBack', 'footBack']];
+    kneesHold(sk, 'crouch', legs, (h, k, f) => Math.sign(f.a * (f.worldY - h.worldY) - f.c * (f.worldX - h.worldX)), 0.9);
+  } finally { s.done(); }
+  // A leg drawn bent keeps its drawn bend, even against the toes and against the clip.
+  const bone = (name, parent, x, y, rotation, length) => ({ name, ...(parent ? { parent } : {}), x, y, rotation, length });
+  const sk = { skeleton: { spine: '4.2.43' }, slots: [], skins: [{ name: 'default', attachments: {} }],
+    bones: [bone('root', null, 0, 0, 0, 0), bone('hip', 'root', 0, 100, 0, 0), bone('thigh', 'hip', 0, 0, -100, 52), bone('shin', 'thigh', 52, 0, 20, 52), bone('foot', 'shin', 52, 0, 80, 10)],
+    animations: { sit: { bones: { hip: { translate: [{ time: 0, x: 0, y: 0 }, { time: 0.5, x: 0, y: -60 }, { time: 1, x: 0, y: 0 }] }, shin: { rotate: [{ time: 0, value: -40 }, { time: 1, value: -40 }] } } } } };
+  plantFeet(sk, 'sit', ['foot']);
+  const drawn = (() => { const m = compileSkeleton(sk), p = new Pose(m); p.setupPose(); p.updateWorld(); const b = n => p.bones[m.boneIndex.get(n)]; return bendSign(b('thigh'), b('shin'), b('foot')); })();
+  kneesHold(sk, 'sit', [['thigh', 'shin', 'foot']], () => drawn, 1);
+});
+
+const bendSign = (h, k, f) => Math.sign((k.worldX - h.worldX) * (f.worldY - h.worldY) - (k.worldY - h.worldY) * (f.worldX - h.worldX));
+
+/** Every frame, each knee on the side `want` names, and no shin turning more than 25 degrees in a frame. */
+function kneesHold(sk, name, legs, want, end) {
+  const model = compileSkeleton(sk), pose = new Pose(model), at = n => pose.bones[model.boneIndex.get(n)];
+  const anim = model.animations.get(name);
+  pose.setupPose(); pose.updateWorld();
+  const sides = legs.map(([t, s, f]) => want(at(t), at(s), at(f)));
+  assert.ok(sides.every(v => v !== 0));
+  let last = null;
+  for (let i = 0; i <= Math.round(end * 60); i++) {
+    pose.apply(anim, i / 60).updateWorld();
+    legs.forEach(([t, s, f], j) => assert.equal(bendSign(at(t), at(s), at(f)), sides[j], `${s} bends its own way at ${(i / 60).toFixed(3)} s`));
+    const shins = legs.map(l => at(l[1]).rotation);
+    if (last) shins.forEach((v, j) => assert.ok(Math.abs(v - last[j]) < 25, `${legs[j][1]} turns ${Math.abs(v - last[j]).toFixed(1)} deg in one frame`));
+    last = shins;
+  }
+}

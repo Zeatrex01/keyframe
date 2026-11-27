@@ -113,8 +113,16 @@ static func build(data: Dictionary, base_dir: String) -> Node2D:
 		var animation := Animation.new()
 		animation.length = maxf(float(clip.length), 0.001)
 		animation.loop_mode = Animation.LOOP_LINEAR if clip.get("loop", false) else Animation.LOOP_NONE
+		# Tracks that only hold the rest of what other clips animate; play_layer leaves them out.
+		var fills := PackedInt32Array()
 		for track in clip.tracks:
+			var before := animation.get_track_count()
 			_add_track(animation, reset, reset_paths, track, data, bone_paths, slot_paths, root)
+			if track.get("fill", false):
+				for index in range(before, animation.get_track_count()):
+					fills.append(index)
+		if fills.size() > 0:
+			animation.set_meta(RIG_SCRIPT.FILL_META, fills)
 		library.add_animation(String(clip.name), animation)
 	library.add_animation("RESET", reset)
 	player.add_animation_library("", library)
