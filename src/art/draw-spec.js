@@ -59,6 +59,15 @@ export function expandParts(parts, style) {
   for (const p of parts) {
     if (!p || typeof p !== 'object') { out.push(p); continue; }
     const { component, shapes, box, states, ...rest } = p;
+    // A flipbook's frames: SVG documents, or { shapes } drawn in the style guide in the part's box.
+    if (Array.isArray(rest.frames)) {
+      rest.frames = rest.frames.map(f => {
+        if (typeof f === 'string' || !f || typeof f !== 'object' || !Array.isArray(f.shapes)) return f;
+        const drawn = renderShapes({ box: f.box ?? box, shapes: f.shapes }, style);
+        missing.push(...drawn.missing);
+        return drawn.svg;
+      });
+    }
     if (component !== undefined) {
       parametric++;
       const spec = typeof component === 'string' ? { component } : component;
@@ -98,7 +107,7 @@ export function expandParts(parts, style) {
       out.push({ ...rest, svg: drawn.svg, ...(stateSvgs ? { states: stateSvgs } : {}), source: { box, shapes, ...(states !== undefined ? { states } : {}), ...textsOf(drawn) } });
       continue;
     }
-    out.push(p.states && typeof p.states === 'object' && !Array.isArray(p.states) ? p : rest);
+    out.push(p.states && typeof p.states === 'object' && !Array.isArray(p.states) ? { ...p, ...(rest.frames ? { frames: rest.frames } : {}) } : rest);
   }
   return { parts: out, missing: [...new Set(missing)], parametric };
 }

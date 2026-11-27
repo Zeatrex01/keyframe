@@ -200,7 +200,7 @@ export function partAt(parts, [x, y]) {
 
 /** What the board sends to POST /api/drawing: the parts with only the fields draw_rig takes. */
 export function savePayload({ name, folder, parts, base }) {
-  const keep = ['name', 'svg', 'at', 'pivot', 'parent', 'size', 'blend', 'hidden', 'states', 'source'];
+  const keep = ['name', 'svg', 'at', 'pivot', 'parent', 'size', 'blend', 'hidden', 'states', 'frames', 'physics', 'stack', 'taper', 'source'];
   return { name, ...(folder ? { folder } : {}), ...(typeof base === 'string' && base ? { base } : {}),
     parts: parts.map(p => Object.fromEntries(keep.filter(k => p[k] !== undefined && p[k] !== null).map(k => [k, p[k]]))) };
 }

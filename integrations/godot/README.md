@@ -92,6 +92,17 @@ to the character's pace does not speed up the punch): if your game runs
 the AnimationPlayer in manual mode and calls `advance()` itself, advance `$warrior/LayerPlayer`
 the same way.
 
+To change clips without a pop, `crossfade` blends from the clip that was playing:
+
+```gdscript
+$warrior.crossfade("run", 0.2)                 # idle melts into run over a fifth of a second
+```
+
+Hair, tails and capes driven by physics constraints arrive baked into the bones' tracks (Skeleton2D
+has no physics of its own), recorded from the studio's engine; a looping clip is recorded on its
+second lap, so the swing runs on across the loop. Flipbooks (fire, smoke, frame-by-frame eyes) swap
+their texture coordinates frame by frame.
+
 ## How it is checked
 
 `test/godot.test.js` in the Keyframe Studio repository plays every shipped skeleton's scene

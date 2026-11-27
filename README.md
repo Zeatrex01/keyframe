@@ -218,9 +218,9 @@ plays upper-body clips over the running one (`play_layer`). A demo project is in
 ## Spine
 
 The studio reads and writes the Spine 4.2 JSON format for everyone, with no Spine code. The
-**Spine add-on** is different: it brings Esoteric Software's official Spine runtime, for physics,
-transform and path constraints, binary `.skel` files and the official verdict beside the studio's
-own. That runtime is under the [Spine Runtimes License](https://esotericsoftware.com/spine-runtimes-license),
+**Spine add-on** is different: it brings Esoteric Software's official Spine runtime, for path
+constraints, binary `.skel` files and the official verdict beside the studio's own (IK,
+transform and physics constraints, sequences and layered playback run on the studio's engine). That runtime is under the [Spine Runtimes License](https://esotericsoftware.com/spine-runtimes-license),
 so **you need your own Spine Editor license to use it**. It is not in this repository and is off by
 default. Only when you turn it on in Settings (or run `npm run spine-addon -- --accept-license`)
 does the studio download it from Esoteric Software's npm package into your app data. Turning it off

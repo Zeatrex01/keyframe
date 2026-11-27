@@ -7,6 +7,8 @@
 //
 //   const player = await KeyframePlayer.create(canvas, { skeleton: 'ui.json', animation: 'idle' });
 //   player.play('press', { loop: false });  player.on('complete', name => ...);
+//   player.play('run', { mix: 0.2 });        // crossfade from the clip before
+//   player.layer('punch_upper', { loop: false });  player.clearLayer();   // punch while running
 //   player.setLook('play', 'play_pressed');  player.stop();
 
 /* eslint-disable no-undef */
@@ -28,7 +30,7 @@ export function defineKeyframePlayer(load) {
      * Load a skeleton (URL or object) with its atlas and pages, and draw it on a canvas.
      * @param {HTMLCanvasElement} canvas
      * @param {{ skeleton: string | object, atlas?: string, atlasText?: string, images?: Record<string, string>, animation?: string,
-     *   loop?: boolean, speed?: number, autoplay?: boolean, background?: string | null, fit?: 'all' | 'setup' }} options
+     *   loop?: boolean, speed?: number, autoplay?: boolean, background?: string | null, fit?: 'all' | 'setup', mix?: number }} options  mix: default crossfade seconds for play (0)
      */
     static async create(canvas, options) {
       const skeletonUrl = typeof options.skeleton === 'string' ? resolveUrl(options.skeleton) : null;
@@ -57,15 +59,26 @@ export function defineKeyframePlayer(load) {
       this.renderer = createCanvasRenderer({ makeCanvas: (w, h) => Object.assign(document.createElement('canvas'), { width: w, height: h }) });
       this.background = options.background ?? null;
       this.speed = options.speed ?? 1;
+      this.mix = Math.max(0, options.mix ?? 0);
       this.looks = new Map();
       this.listeners = new Map();
-      this.current = null; this.time = 0; this.loop = options.loop ?? true; this.paused = !(options.autoplay ?? true); this.lastEvent = -1;
+      this.loop = options.loop ?? true; this.paused = !(options.autoplay ?? true);
+      // Tracks, layers and crossfades: the engine's mixer. Track 0 is the clip `play` plays.
+      this.mixer = new engine.Mixer(this.model, { pose: this.pose, defaultMix: this.mix });
+      this.mixer.addListener({
+        complete: ({ track, entry }) => {
+          if (track !== 0) return;
+          if (entry.loop) this.emit('loop', entry.name);
+          else { this.paused = true; this.emit('complete', entry.name); }
+        },
+        event: ({ event: e }) => this.emit('event', e.name, { ...(this.json.events?.[e.name] ?? {}), ...e }),
+      });
       const lists = [];
       for (const a of this.model.animations.values()) for (let i = 0; i <= 8; i++) lists.push(this.drawsAt(a, a.duration * i / 8));
       lists.push(this.drawsAt(null, 0));
       this.box = engine.boundsOf(options.fit === 'setup' ? [this.drawsAt(null, 0)] : lists) ?? { x: -100, y: -100, width: 200, height: 200 };
-      if (options.animation) this.play(options.animation, { loop: this.loop });
-      else if (this.model.animations.size && options.autoplay !== false) this.play([...this.model.animations.keys()][0], { loop: this.loop });
+      if (options.animation) this.play(options.animation, { loop: this.loop, mix: 0 });
+      else if (this.model.animations.size && options.autoplay !== false) this.play([...this.model.animations.keys()][0], { loop: this.loop, mix: 0 });
       this.last = performance.now();
       this.frame = this.frame.bind(this);
       this.raf = requestAnimationFrame(this.frame);
@@ -73,23 +86,45 @@ export function defineKeyframePlayer(load) {
 
     /** The clip names. */
     get animations() { return [...this.model.animations.keys()]; }
+    /** The clip `play` plays, or null. */
+    get current() { return this.mixer.current(0)?.animation ?? null; }
+    /** Seconds into it. */
+    get time() { return this.mixer.current(0)?.time ?? 0; }
     /** The current clip's length in seconds (0 with none). */
     get duration() { return this.current?.duration ?? 0; }
 
-    /** Play a clip from its start. */
-    play(name, { loop = this.loop } = {}) {
+    clip(name) {
       const clip = this.model.animations.get(name);
       if (!clip) throw new Error(`No animation "${name}". Clips: ${this.animations.join(', ')}`);
-      this.current = clip; this.time = 0; this.loop = loop; this.paused = false; this.lastEvent = -1;
+      return clip;
+    }
+    /** Play a clip from its start; `mix` seconds crossfade from the clip before (the player's `mix` option when left out). */
+    play(name, { loop = this.loop, mix = this.mix } = {}) {
+      this.clip(name);
+      this.loop = loop; this.paused = false;
+      this.mixer.setAnimation(0, name, { loop, mix });
       this.emit('start', name);
       return this;
     }
+    /**
+     * Lay a clip over the one playing, on track 1 or higher: what it keys wins by `alpha` (an
+     * upper-body punch over a run), what it leaves alone keeps playing; `add` adds its offsets
+     * instead (a breath on top). It fades in over `mix` seconds.
+     */
+    layer(name, { track = 1, loop = true, alpha = 1, add = false, mix = 0.2 } = {}) {
+      this.clip(name);
+      if (!(track >= 1)) throw new Error('A layer goes on track 1 or higher; track 0 is play().');
+      this.mixer.setAnimation(track, name, { loop, alpha, add, mix });
+      return this;
+    }
+    /** Fade a layer out over `mix` seconds. */
+    clearLayer(track = 1, { mix = 0.2 } = {}) { this.mixer.clearTrack(track, { mix }); return this; }
     /** Stop and show the setup pose. */
-    stop() { this.current = null; this.time = 0; this.paused = true; this.render(); return this; }
+    stop() { for (let i = 0; i < this.mixer.tracks.length; i++) this.mixer.clearTrack(i, { mix: 0 }); this.paused = true; this.render(); return this; }
     pause() { this.paused = true; return this; }
     resume() { this.paused = false; return this; }
     /** Jump to a time in the current clip (seconds). */
-    seek(seconds) { this.time = Math.max(0, seconds); this.render(); return this; }
+    seek(seconds) { const e = this.mixer.current(0); if (e) { e.time = Math.max(0, seconds); e.lastTime = null; } this.render(); return this; }
     setSpeed(speed) { this.speed = Math.max(0, Number(speed) || 0); return this; }
     /** Show another look of a slot (a drawn state such as play_pressed), or null to let clips decide again. */
     setLook(slot, attachment) { if (attachment === null || attachment === undefined) this.looks.delete(slot); else this.looks.set(slot, attachment); this.render(); return this; }
@@ -98,33 +133,22 @@ export function defineKeyframePlayer(load) {
     emit(type, ...args) { for (const fn of this.listeners.get(type) ?? []) { try { fn(...args); } catch (err) { setTimeout(() => { throw err; }); } } }
     destroy() { cancelAnimationFrame(this.raf); this.listeners.clear(); }
 
+    /** One clip at one instant (for framing), or with no clip what the mixer holds now. */
     drawsAt(clip, time) {
-      if (clip) this.pose.apply(clip, time); else this.pose.setupPose();
+      if (clip) this.pose.apply(clip, time).updateWorld();
+      else if (this.mixer) this.mixer.apply();
+      else this.pose.setupPose(), this.pose.updateWorld();
       for (const [slotName, att] of this.looks ?? []) {
         const s = this.pose.slots.find(x => x.data.name === slotName);
         if (s) this.pose.setAttachment(s, att);
       }
-      return engine.collectDraws(this.pose.updateWorld(), this.regions).draws;
-    }
-
-    events(from, to) {
-      const keys = this.json.animations?.[this.current?.name]?.events ?? [];
-      // The key's own values over the event's defaults: { name, time, int, float, string, audio, ... }.
-      for (const e of keys) { const t = e.time ?? 0; if (t > from && t <= to) this.emit('event', e.name, { ...(this.json.events?.[e.name] ?? {}), ...e }); }
+      return engine.collectDraws(this.pose, this.regions).draws;
     }
 
     frame(now) {
-      const dt = Math.min(0.1, (now - this.last) / 1000);
+      const dt = Math.max(0, Math.min(0.1, (now - this.last) / 1000)); // a frame stamp can precede the start
       this.last = now;
-      if (this.current && !this.paused) {
-        const before = this.time;
-        this.time += dt * this.speed;
-        const d = this.current.duration;
-        if (d > 0 && this.time >= d) {
-          if (this.loop) { this.events(before % d, d); this.time %= d; this.emit('loop', this.current.name); this.events(-1, this.time); }
-          else { this.events(before, d); this.time = d; this.paused = true; this.emit('complete', this.current.name); }
-        } else this.events(before, this.time);
-      }
+      if (!this.paused) this.mixer.update(dt * this.speed);
       this.render();
       this.raf = requestAnimationFrame(this.frame);
     }
@@ -138,9 +162,7 @@ export function defineKeyframePlayer(load) {
       ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = 'source-over';
       if (this.background) { ctx.fillStyle = this.background; ctx.fillRect(0, 0, w, h); } else ctx.clearRect(0, 0, w, h);
-      const d = this.current?.duration ?? 0;
-      const t = d > 0 ? Math.min(this.time, d) : 0;
-      this.renderer.render(ctx, this.drawsAt(this.current, t), page => this.pages.get(page), fitView(this.box, w, h));
+      this.renderer.render(ctx, this.drawsAt(null, 0), page => this.pages.get(page), fitView(this.box, w, h));
     }
   }
 

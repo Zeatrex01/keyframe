@@ -68,8 +68,8 @@ available to everyone.
   and event timelines, curves as presets or normalized handles.
 - Its own engine, pure and isomorphic (`src/engine`): pose, world transforms, vertices, clipping.
   No Spine runtime and no Spine license is needed to play a Keyframe file.
-- Spine 4.2 JSON is an adapter in both directions. What the engine does not play (transform,
-  path and physics constraints) is carried through untouched and reported by name; baking a clip
+- Spine 4.2 JSON is an adapter in both directions. What the engine does not play (path
+  constraints since 2026-11-27) is carried through untouched and reported by name; baking a clip
   (`bake_animation`) makes any Spine rig play exactly.
 - A parity gate poses every fixture and example with both the engine and the official runtime and
   fails on any difference above 0.01 units or 0.01 degrees.
@@ -95,6 +95,22 @@ AnimationTree:
 - The Keyframe format is designed with this mapping in mind (bone transforms, draw order, curves,
   events, loop flags). A gate builds the scene description in Node and compares it with the
   engine's poses; the real import is tested in the Godot editor on a Windows PC.
+
+### Phase 2c: the engine plays everything a game needs (decided 2026-11-27)
+
+The studio had become wide (drawing, wardrobes, exports) while its own engine still left the
+motion features games use most to the Spine add-on. This phase completes the engine:
+
+- Multi-track playback (`src/engine/mixer.js`): tracks, crossfades, layers with alpha, additive
+  layers, queued clips and events, in the engine, the web player, the standalone player and the
+  stage; `see_animation` shows a planned crossfade or layer.
+- IK finished (softness), transform constraints and physics constraints evaluated by the engine;
+  physics is the studio's own damped spring on Spine's parameters, deterministic on a 1/60 grid.
+  `bake_animation` works without the add-on.
+- Sequences (flipbooks: fire, smoke, frame-by-frame eyes and mouths), drawn with `draw_rig`
+  `frames` and played everywhere, Godot included.
+- Godot: physics and transform bones baked, flipbooks as texture tracks, `crossfade()` on the rig.
+- Out of this phase: a state machine with parameters (next phase).
 
 ### Phase 3: the agent understands what it animates
 

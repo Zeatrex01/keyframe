@@ -3,14 +3,15 @@
 //
 // Clean-room: written from the Spine JSON format documentation and checked number by number
 // against the official runtime by test/engine-parity.test.js when the Spine add-on is present.
-// What the engine does not evaluate (IK, transform, path and physics constraints, sequences,
-// inherit timelines) is listed in `unsupported`, never ignored in silence.
+// What the engine does not evaluate (path constraints, inherit timelines, skin-only bones) is
+// listed in `unsupported`, never ignored in silence; where it evaluates something its own way
+// (physics) the model says so in `approximations`.
 //
 // Pure and isomorphic.
 
 import { StudioError } from '../shared/errors.js';
 import { compileChannel, resolveCurve, keyIndex, segmentPercent, segmentValue } from './curve.js';
-import { compileIk, compileIkTimelines } from './constraints.js';
+import { compileIk, compileIkTimelines, compileTransform, compileTransformTimelines, compilePhysics, compilePhysicsTimelines, constraintOrder } from './constraints.js';
 
 export const INHERIT = Object.freeze({ normal: 0, onlyTranslation: 1, noRotationOrReflection: 2, noScale: 3, noScaleOrReflection: 4 });
 export const BLEND = Object.freeze({ normal: 0, additive: 1, multiply: 2, screen: 3 });
@@ -36,17 +37,17 @@ function compileAttachment(raw, name, slotName, skinName, unsupported) {
   const type = raw.type ?? 'region';
   const path = raw.path ?? raw.name ?? name;
   const color = parseColor(raw.color);
-  if (raw.sequence) unsupported.add(`sequence:${skinName}/${slotName}/${name}`);
+  const sequence = raw.sequence ? compileSequence(raw.sequence, path) : null;
   if (type === 'region') {
-    return { type, name, path, color, x: num(raw.x, 0), y: num(raw.y, 0), rotation: num(raw.rotation, 0),
+    return { type, name, path, color, sequence, x: num(raw.x, 0), y: num(raw.y, 0), rotation: num(raw.rotation, 0),
       scaleX: num(raw.scaleX, 1), scaleY: num(raw.scaleY, 1), width: num(raw.width, 32), height: num(raw.height, 32) };
   }
   if (type === 'mesh') {
     const uvs = Float64Array.from(raw.uvs ?? []);
-    return { type, name, path, color, uvs, triangles: Uint32Array.from(raw.triangles ?? []), vertices: compileVertices(raw.vertices ?? [], uvs.length / 2),
+    return { type, name, path, color, sequence, uvs, triangles: Uint32Array.from(raw.triangles ?? []), vertices: compileVertices(raw.vertices ?? [], uvs.length / 2),
       hull: num(raw.hull, 0), width: num(raw.width, 0), height: num(raw.height, 0) };
   }
-  if (type === 'linkedmesh') return { type: 'linkedmesh', name, path, color, parent: raw.parent, skin: raw.skin ?? 'default', timelines: raw.timelines !== false };
+  if (type === 'linkedmesh') return { type: 'linkedmesh', name, path, color, sequence, parent: raw.parent, skin: raw.skin ?? 'default', timelines: raw.timelines !== false };
   if (type === 'clipping') {
     const count = num(raw.vertexCount, 0);
     return { type, name, end: raw.end ?? null, vertices: compileVertices(raw.vertices ?? [], count), color };
@@ -61,6 +62,34 @@ function compileAttachment(raw, name, slotName, skinName, unsupported) {
     }
   }
   return { type, name, ignored: true };
+}
+
+/**
+ * A sequence (a flipbook in one attachment): `count` images named <path><start + i>, the index
+ * padded to `digits`; `setup` is the frame shown when no sequence timeline drives it.
+ */
+export function compileSequence(raw, path) {
+  const count = Math.max(1, Math.floor(num(raw.count, 1)));
+  const start = Math.floor(num(raw.start, 1)), digits = Math.max(0, Math.floor(num(raw.digits, 0)));
+  const setup = Math.min(count - 1, Math.max(0, Math.floor(num(raw.setup, 0))));
+  return { count, start, digits, setup, paths: Array.from({ length: count }, (_, i) => `${path}${String(start + i).padStart(digits, '0')}`) };
+}
+
+/** The frame a sequence key shows `elapsed` seconds after its key, by Spine's sequence modes. */
+export const SEQUENCE_MODES = Object.freeze(['hold', 'once', 'loop', 'pingpong', 'onceReverse', 'loopReverse', 'pingpongReverse']);
+export function sequenceFrame(mode, index, delay, elapsed, count) {
+  if (mode === 'hold' || !(delay > 0)) return Math.min(count - 1, Math.max(0, index));
+  const i = index + Math.floor(elapsed / delay + 1e-5);
+  const n = count * 2 - 2;
+  switch (mode) {
+    case 'once': return Math.min(count - 1, i);
+    case 'loop': return i % count;
+    case 'pingpong': { if (n <= 0) return 0; const j = i % n; return j >= count ? n - j : j; }
+    case 'onceReverse': return Math.max(count - 1 - i, 0);
+    case 'loopReverse': return count - 1 - (i % count);
+    case 'pingpongReverse': { if (n <= 0) return 0; const j = (i + count - 1) % n; return j >= count ? n - j : j; }
+    default: return Math.min(count - 1, Math.max(0, index));
+  }
 }
 
 /** Spine's vertex encoding: plain [x, y, ...] or weighted [count, bone, x, y, w, ...]. */
@@ -135,9 +164,16 @@ export function compileSkeleton(json) {
     const blend = Object.hasOwn(BLEND, s.blend ?? 'normal') ? BLEND[s.blend ?? 'normal'] : 0;
     return { name: s.name, index, bone, color: parseColor(s.color), dark: s.dark ? parseColor(s.dark) : null, attachmentName: s.attachment ?? null, blend };
   });
-  for (const kind of ['transform', 'path', 'physics']) for (const c of json[kind] ?? []) unsupported.add(`${kind}:${c.name}`);
-  const ik = compileIk(json, boneIndex, unsupported);
+  for (const c of json.path ?? []) unsupported.add(`path:${c.name}`);
+  const approximations = new Set();
+  const ik = compileIk(json, boneIndex);
   const ikByName = new Map(ik.map(c => [c.name, c]));
+  const transform = compileTransform(json, boneIndex);
+  const transformByName = new Map(transform.map(c => [c.name, c]));
+  const physics = compilePhysics(json, boneIndex);
+  const physicsByName = new Map(physics.map(c => [c.name, c]));
+  for (const c of physics) approximations.add(`physics:${c.name}`);
+  for (const kind of ['ik', 'transform', 'physics']) for (const c of json[kind] ?? []) if (c.skin) unsupported.add(`skin-required-constraint:${c.name}`);
 
   // Skins: 4.x is an array of { name, attachments: { slot: { name: attachment } } }.
   const skins = new Map();
@@ -161,7 +197,7 @@ export function compileSkeleton(json) {
         if (att.type !== 'linkedmesh') continue;
         const parent = skins.get(att.skin)?.get(si)?.get(att.parent);
         if (!parent || parent.type !== 'mesh') throw new StudioError('bad-skeleton', `Linked mesh "${name}" names parent mesh "${att.parent}" in skin "${att.skin}", which does not exist.`, { attachment: name });
-        map.set(name, { ...parent, name, path: att.path, color: att.color, deformFrom: att.timelines ? parent : null });
+        map.set(name, { ...parent, name, path: att.path, color: att.color, sequence: att.sequence, deformFrom: att.timelines ? parent : null });
       }
     }
   }
@@ -175,13 +211,16 @@ export function compileSkeleton(json) {
 
   const events = new Map(Object.entries(json.events ?? {}));
   const animations = new Map();
-  for (const [name, raw] of Object.entries(json.animations ?? {})) animations.set(name, compileAnimation(name, raw ?? {}, { boneIndex, slotIndex, slots, skins, events, unsupported, ikByName }));
+  for (const [name, raw] of Object.entries(json.animations ?? {})) animations.set(name, compileAnimation(name, raw ?? {}, { boneIndex, slotIndex, slots, skins, events, unsupported, ikByName, transformByName, physicsByName, physics }));
 
   return {
     name: json.skeleton?.name ?? null,
     version: json.skeleton?.spine ?? null,
-    bones, slots, ik, boneIndex, slotIndex, skins, defaultSkin: skins.get('default') ?? null, animations, events,
+    referenceScale: num(json.skeleton?.referenceScale, 100),
+    bones, slots, ik, transform, physics, constraints: constraintOrder(ik, transform, physics),
+    boneIndex, slotIndex, skins, defaultSkin: skins.get('default') ?? null, animations, events,
     unsupported: [...unsupported].sort(),
+    approximations: [...approximations].sort(),
     findAnimation: animationName => animations.get(animationName) ?? null,
     findSkin: skinName => (skins.has(skinName) ? { name: skinName } : null),
   };
@@ -245,8 +284,14 @@ function compileAnimation(name, raw, ctx) {
         for (const [kind, keys] of Object.entries(timelinesOf ?? {})) {
           if (!Array.isArray(keys) || !keys.length) continue;
           seen(keys);
-          if (kind !== 'deform') { ctx.unsupported.add(`timeline:${name}/${slotName}/${attName}/${kind}`); continue; }
           const attachment = ctx.skins.get(skinName)?.get(slot)?.get(attName);
+          if (kind === 'sequence') {
+            if (!attachment?.sequence) { ctx.unsupported.add(`sequence-timeline:${name}/${slotName}/${attName}`); continue; }
+            timelines.push({ kind: 'sequence', slot, attachment, times: Float32Array.from(keys.map(k => num(k.time, 0))),
+              keys: keys.map(k => ({ time: Math.fround(num(k.time, 0)), mode: SEQUENCE_MODES.includes(k.mode) ? k.mode : 'hold', index: Math.floor(num(k.index, 0)), delay: num(k.delay, 0) })) });
+            continue;
+          }
+          if (kind !== 'deform') { ctx.unsupported.add(`timeline:${name}/${slotName}/${attName}/${kind}`); continue; }
           if (!attachment || attachment.type !== 'mesh') { ctx.unsupported.add(`deform:${name}/${slotName}/${attName}`); continue; }
           timelines.push({ kind: 'deform', slot, attachment, ...compileDeform(keys, attachment, `${where}/attachments/${skinName}/${slotName}/${attName}`) });
         }
@@ -284,10 +329,11 @@ function compileAnimation(name, raw, ctx) {
   }
   for (const kind of ['transform', 'path', 'physics']) {
     const section = raw[kind];
-    if (section && Object.keys(section).length) {
-      for (const k of Object.values(section)) if (Array.isArray(k)) seen(k); else if (k && typeof k === 'object') for (const v of Object.values(k)) if (Array.isArray(v)) seen(v);
-      ctx.unsupported.add(`${kind}-timeline:${name}`);
-    }
+    if (!section || !Object.keys(section).length) continue;
+    for (const k of Object.values(section)) if (Array.isArray(k)) seen(k); else if (k && typeof k === 'object') for (const v of Object.values(k)) if (Array.isArray(v)) seen(v);
+    if (kind === 'path') ctx.unsupported.add(`path-timeline:${name}`);
+    else if (kind === 'transform') timelines.push(...compileTransformTimelines(section, ctx.transformByName, where));
+    else timelines.push(...compilePhysicsTimelines(section, ctx.physicsByName, ctx.physics, where));
   }
   return { name, duration, timelines };
 }

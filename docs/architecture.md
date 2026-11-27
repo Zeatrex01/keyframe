@@ -335,16 +335,18 @@ after the notice that it needs their own Spine license.
   world positions, matrices, attachments, colours and draw order to agree (0.01). Key times are
   float32, as in every Spine runtime, so posing on a key lands on it exactly.
 - `src/runtime` keeps one API with two backends. `parseSkeleton` uses the engine unless the file
-  needs what the engine does not evaluate yet (transform, path and physics constraints, skin-only
-  bones, sequences) and the add-on is on. Without the add-on such a file still poses, and
+  needs what the engine does not evaluate yet (path constraints, skin-only bones and
+  constraints) and the add-on is on. Since 2026-11-27 the engine evaluates IK (with softness),
+  transform and physics constraints and sequences itself (`src/engine/constraints.js`); physics
+  is the studio's own damped spring on Spine's parameters, listed in `model.approximations`. Without the add-on such a file still poses, and
   `data.limits` names what was left out, so `check_skeleton`, `see_animation` and
   `sample_animation` say so (`notEvaluated`) instead of pretending.
 - `src/core/spine-addon.js` installs the add-on: Esoteric Software's own npm package
   (`@esotericsoftware/spine-player` 4.2.119), checked against the pinned sha512 integrity,
   unpacked with the studio's own tar reader into the user's app data with a consent record.
   Turning it off deletes exactly those files. Nothing of it is re-distributed.
-- What only the add-on does: the official verdict beside the engine's, baking physics and
-  posing transform/path/physics constraints, binary `.skel` import and export (read back by the
+- What only the add-on does: the official verdict beside the engine's, posing and baking path
+  constraints, binary `.skel` import and export (read back by the
   official binary reader). Reading and writing Spine 4.2 JSON never needs it: that is a data
   format.
 

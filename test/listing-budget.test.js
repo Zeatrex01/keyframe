@@ -13,7 +13,9 @@ import { compactSchema } from '../src/mcp/describe.js';
 // 2026-11-24: raised to 25,000 for draw_rig (Phase 4, #24), the 26th: placeholder art to a rig.
 // 2026-11-24: raised to 30,000 for the drawing side: style_guide, critique_art and export_art
 // (the art director's guide, check and exports), and the parametric shapes and components of draw_rig.
-const BUDGET_BYTES = 30000;
+// 2026-11-27: raised to 30,500 for see_animation's `then` and `layers` (the 0.2 engine's
+// crossfades and layers, seen as a game mixes them); nested fields carry one-word hints.
+const BUDGET_BYTES = 30500;
 const SUMMARY_MAX = 220;      // one or two sentences
 
 test('the compact listing of the real tool set stays under budget', async () => {

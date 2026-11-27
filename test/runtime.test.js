@@ -108,7 +108,7 @@ test('an IK constraint is applied: the runtime, not keyframe math, decides the p
   near(bone(end, 'upper').applied.rotation, 45 - bend, 'the applied local rotation carries the IK result', 0.01);
 });
 
-test('a physics constraint lags behind a sudden move, independent of the sampling times', needsSpine, async () => {
+test('a physics constraint lags behind a sudden move, independent of the sampling times', async () => {
   const json = {
     skeleton: { spine: '4.2.43', hash: 'phys' },
     bones: [

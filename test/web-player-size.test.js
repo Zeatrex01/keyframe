@@ -44,3 +44,26 @@ test('a canvas with no CSS size keeps its size at a display scale above 1; a CSS
     globalThis.window = saved.window; globalThis.document = saved.document; globalThis.requestAnimationFrame = saved.raf;
   }
 });
+
+test('a first frame stamped before the player started does not stop the player (browsers stamp the frame start)', () => {
+  const frames = [];
+  const saved = { window: globalThis.window, document: globalThis.document, raf: globalThis.requestAnimationFrame };
+  globalThis.window = { devicePixelRatio: 1 };
+  globalThis.document = { createElement: () => fakeCanvas(1, 1) };
+  globalThis.requestAnimationFrame = cb => { frames.push(cb); return frames.length; };
+  try {
+    const mods = { 'engine/index.js': engine, 'engine/canvas.js': canvasMod, 'engine/keyframe-format.js': format };
+    const KeyframePlayer = defineKeyframePlayer(id => mods[id]);
+    const json = JSON.parse(fs.readFileSync(`${DIR}play-button_v2.json`, 'utf8'));
+    const atlas = engine.parseAtlas(fs.readFileSync(`${DIR}play-button_v2.atlas`, 'utf8'));
+    const pages = new Map(atlas.pages.map(p => [p.name, { width: 512, height: 512 }]));
+    const player = new KeyframePlayer(fakeCanvas(200, 200), json, atlas, pages, { animation: 'idle' });
+    assert.ok(player.duration > 0.1, 'a clip plays');
+    assert.doesNotThrow(() => player.frame(player.last - 8), 'an earlier stamp is a zero step');
+    assert.equal(player.time, 0);
+    player.frame(player.last + 100);
+    assert.ok(Math.abs(player.time - 0.1) < 1e-9, 'and time moves on from there');
+  } finally {
+    globalThis.window = saved.window; globalThis.document = saved.document; globalThis.requestAnimationFrame = saved.raf;
+  }
+});

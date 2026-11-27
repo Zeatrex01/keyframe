@@ -116,7 +116,7 @@ export function standalonePlayer({ skeleton, atlasText, pages, title = 'Keyframe
 </head>
 <body>
 <canvas aria-label="${escapeHtml(title)}"></canvas>
-<div class="bar"><select aria-label="Animation"></select><button type="button" data-act="play">Pause</button><button type="button" data-act="loop" aria-pressed="true">Loop</button><select aria-label="Speed" data-act="speed"><option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option></select><span class="time"></span></div>
+<div class="bar"><select aria-label="Animation"></select><select aria-label="Layer" data-act="layer" title="Play a second clip over this one"><option value="">No layer</option></select><button type="button" data-act="play">Pause</button><button type="button" data-act="loop" aria-pressed="true">Loop</button><select aria-label="Speed" data-act="speed"><option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option></select><span class="time"></span></div>
 <script>
 ${bundleEngine()}
 const KEYFRAME_DATA = ${scriptJson(data)};

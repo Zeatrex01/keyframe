@@ -62,6 +62,18 @@ the clip that is running, so the character punches while its legs keep running; 
 ends, the arms go back to the clip underneath. The layer copies the AnimationPlayer's process mode
 (a game that advances it by hand advances `LayerPlayer` the same way), not its speed.
 
+## Crossfades, physics and flipbooks
+
+`rig.crossfade("run", 0.2)` changes clips with Godot's own blend between them, so a character goes
+from idle to run without a pop (`blend_time` on the rig is the default when no time is given).
+
+Physics constraints (hair, tails, capes) and transform constraints have no Skeleton2D counterpart,
+so the export plays them on the studio's engine and bakes the result into the bones' tracks; a
+clip that loops is recorded on its second lap, so the swing at its end runs on into its start. The
+report lists each one. A flipbook (a sequence attachment: fire, smoke, frame-by-frame eyes) is one
+Polygon2D whose `uv` (and `polygon`, and `texture` when its frames are on several pages) switches
+frame by frame on nearest tracks.
+
 ## Sprite stacks
 
 A drawing with height bands (`stack` on its parts, [drawing.md](drawing.md#sprite-stacks)) exports
@@ -81,4 +93,5 @@ or below. `spacing` makes the pile taller or flatter, `tint` colours it.
 | `weapon` | what the `weapon` slot shows; `""` puts it away |
 | `set_look(look)`, `set_attachment(slot, attachment)`, `get_attachments(slot)` | the same, piece by piece |
 | `play_layer(clip)` | plays an upper-body clip over the running one; `false` for an unknown clip |
+| `crossfade(clip, seconds)`, `blend_time` | plays a clip blending from the one before; `false` for an unknown clip |
 | `keyframe_event` (signal) | the clip's events, with their int, float and string values |

@@ -13,6 +13,7 @@ export function bootStandalone(load, data) {
   const { toSkeletonJson, isKeyframeDocument } = load('engine/keyframe-format.js');
   const canvas = document.querySelector('canvas');
   const select = document.querySelector('select');
+  const layerSelect = /** @type {HTMLSelectElement} */ (document.querySelector('[data-act="layer"]'));
   const playButton = document.querySelector('[data-act="play"]');
   const loopButton = document.querySelector('[data-act="loop"]');
   const speedSelect = /** @type {HTMLSelectElement} */ (document.querySelector('[data-act="speed"]'));
@@ -47,25 +48,36 @@ export function bootStandalone(load, data) {
     if (!lists.length) lists.push(drawsAt(null, 0));
     const box = engine.boundsOf(lists) ?? { x: -100, y: -100, width: 200, height: 200 };
 
-    for (const a of animations) select.append(new Option(a.name, a.name));
+    for (const a of animations) { select.append(new Option(a.name, a.name)); layerSelect?.append(new Option(a.name, a.name)); }
     let current = animations.find(a => a.name === data.animation) ?? animations[0] ?? null;
     if (current) select.value = current.name;
-    if (!animations.length) select.hidden = true;
-    let time = 0, paused = false, loop = true, speed = 1, last = performance.now();
+    if (!animations.length) { select.hidden = true; if (layerSelect) layerSelect.hidden = true; }
+    if (layerSelect && animations.length < 2) layerSelect.hidden = true;
+    let paused = false, loop = true, speed = 1, last = performance.now();
+    // The engine's mixer: a new clip crossfades from the one before, a layer plays over it.
+    const mixer = new engine.Mixer(model, { pose, defaultMix: 0.2 });
+    mixer.addListener({ complete: ({ track, entry }) => { if (track === 0 && !entry.loop) { paused = true; playButton.textContent = 'Play'; } } });
+    if (current) mixer.setAnimation(0, current.name, { loop, mix: 0 });
     const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     if (reduced) { paused = true; playButton.textContent = 'Play'; }
 
-    select.addEventListener('change', () => { current = model.animations.get(select.value) ?? current; time = 0; });
-    playButton.addEventListener('click', () => { paused = !paused; playButton.textContent = paused ? 'Play' : 'Pause'; if (!paused && current && !loop && time >= current.duration) time = 0; });
-    loopButton.addEventListener('click', () => { loop = !loop; loopButton.setAttribute('aria-pressed', String(loop)); });
+    select.addEventListener('change', () => { current = model.animations.get(select.value) ?? current; if (current) mixer.setAnimation(0, current.name, { loop }); });
+    layerSelect?.addEventListener('change', () => { if (layerSelect.value) mixer.setAnimation(1, layerSelect.value, { loop: true }); else mixer.clearTrack(1); });
+    playButton.addEventListener('click', () => {
+      paused = !paused; playButton.textContent = paused ? 'Play' : 'Pause';
+      const e = mixer.current(0);
+      if (!paused && e && !loop && e.time >= e.animation.duration) { e.time = 0; e.lastTime = null; }
+    });
+    loopButton.addEventListener('click', () => { loop = !loop; loopButton.setAttribute('aria-pressed', String(loop)); const e = mixer.current(0); if (e) e.loop = loop; });
     speedSelect.addEventListener('change', () => { speed = Number(speedSelect.value) || 1; });
 
     const frame = now => {
-      const dt = Math.min(0.1, (now - last) / 1000);
+      const dt = Math.max(0, Math.min(0.1, (now - last) / 1000)); // a frame stamp can precede the start
       last = now;
-      if (current && !paused) time += dt * speed;
-      const d = current?.duration ?? 0;
-      const t = d > 0 ? (loop ? time % d : Math.min(time, d)) : 0;
+      if (!paused) mixer.update(dt * speed);
+      const e = mixer.current(0);
+      const d = e?.animation.duration ?? 0;
+      const t = e && d > 0 ? (e.loop ? e.time % d : Math.min(e.time, d)) : 0;
       const ratio = window.devicePixelRatio || 1;
       const w = Math.max(1, Math.round(canvas.clientWidth * ratio)), h = Math.max(1, Math.round(canvas.clientHeight * ratio));
       if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
@@ -75,8 +87,8 @@ export function bootStandalone(load, data) {
       ctx.globalCompositeOperation = 'source-over';
       ctx.fillStyle = data.background;
       ctx.fillRect(0, 0, w, h);
-      renderer.render(ctx, drawsAt(current, t), page => pages.get(page), fitView(box, w, h));
-      timeLabel.textContent = current ? `${t.toFixed(2)} / ${d.toFixed(2)} s` : '';
+      renderer.render(ctx, engine.collectDraws(mixer.apply(), regions).draws, page => pages.get(page), fitView(box, w, h));
+      timeLabel.textContent = e ? `${t.toFixed(2)} / ${d.toFixed(2)} s` : '';
       requestAnimationFrame(frame);
     };
     requestAnimationFrame(frame);

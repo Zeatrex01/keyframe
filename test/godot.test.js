@@ -9,7 +9,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { godotScene, compose, decompose, multiply, inverse, toGodot, GODOT_FORMAT } from '../src/engine/godot.js';
-import { compileSkeleton, Pose, collectDraws, parseAtlas, atlasRegions } from '../src/engine/index.js';
+import { compileSkeleton, Pose, Playhead, collectDraws, parseAtlas, atlasRegions } from '../src/engine/index.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -72,7 +72,7 @@ function playGodot(scene, clip, time) {
     } else if (track.target === 'slot') {
       const s = slotState.get(track.name);
       if (track.property === 'attachment') s.attachment = v; else if (track.property === 'modulate') s.modulate = v; else if (track.property === 'z_index') s.z = v;
-    } else if (track.target === 'attachment') polygons.set(`${track.name}/${track.attachment}`, v);
+    } else if (track.target === 'attachment' && track.property === 'polygon') polygons.set(`${track.name}/${track.attachment}`, v);
   }
   const globals = new Map(), rests = new Map();
   for (const b of scene.bones) {
@@ -297,4 +297,61 @@ test('a clipping mask reaches Godot: the eye keeps its pupil inside (a Polygon2D
   assert.match(builder, /mask\.clip_children = CanvasItem\.CLIP_CHILDREN_ONLY/);
   assert.match(builder, /var follow := RemoteTransform2D\.new\(\)/, 'a clipped slot still moves with its own bone');
   assert.match(builder, /_clip\(root, data\.get\("slots", \[\]\), slot_nodes\)\n\tfor slot_name in slot_nodes:\n\t\tslot_paths\[slot_name\]/, 'track paths are taken after the move');
+});
+
+test('physics and transform constraints are baked from the engine: Godot plays the swing the engine shows', () => {
+  const json = { skeleton: { spine: '4.2.43' },
+    bones: [{ name: 'root' }, { name: 'body', parent: 'root' }, { name: 'cape', parent: 'body', length: 40 }, { name: 'hem', parent: 'cape', x: 40, length: 20 },
+      { name: 'badge', parent: 'root' }],
+    slots: [],
+    physics: [{ name: 'cape', bone: 'cape', rotate: 1, inertia: 0.8, strength: 60, damping: 0.9 }],
+    transform: [{ name: 'pin', bones: ['badge'], target: 'hem', mixScaleX: 0 }],
+    animations: { dash: { bones: { body: { translate: [{ y: 0 }, { time: 0.3, y: 80 }, { time: 1, y: 80 }] } } } } };
+  const scene = godotScene(json, { atlasText: '', fps: 30 });
+  const clip = scene.animations[0];
+  assert.ok(clip.tracks.some(t => t.name === 'cape' && t.property === 'rotation' && t.type === 'value'), 'the physics bone is baked');
+  assert.ok(clip.tracks.some(t => t.name === 'badge' && t.property === 'position'), 'the constrained bone is baked');
+  assert.ok(scene.report.baked.some(b => b.includes('physics cape')) && scene.report.baked.some(b => b.includes('transform pin')));
+  const model = compileSkeleton(json);
+  const head = new Playhead(model, 'dash');
+  let swung = 0;
+  for (const time of [0, 0.2, 0.4, 0.6, 1]) {
+    const pose = head.at(time);
+    const g = playGodot(scene, clip, time);
+    for (const bone of pose.bones) {
+      const want = toGodot(bone), got = g.globals.get(bone.data.name);
+      assert.ok(Math.abs(want.o[0] - got.o[0]) < 1e-3 && Math.abs(want.o[1] - got.o[1]) < 1e-3, `${bone.data.name}@${time}`);
+    }
+    swung = Math.max(swung, Math.abs(Math.atan2(pose.bones[2].c, pose.bones[2].a)));
+  }
+  assert.ok(swung > 0.05, 'the cape swings');
+});
+
+test('a looping clip with physics is recorded on its second lap, so its seam closes', () => {
+  const json = { skeleton: { spine: '4.2.43' }, bones: [{ name: 'root' }, { name: 'body', parent: 'root' }, { name: 'tail', parent: 'body', length: 40 }], slots: [],
+    physics: [{ name: 'tail', bone: 'tail', rotate: 1, inertia: 0.8, strength: 60, damping: 0.9 }],
+    animations: { bob: { bones: { body: { translate: [{ y: 0 }, { time: 0.5, y: 30 }, { time: 1, y: 0 }] } } } } };
+  const clip = godotScene(json, { atlasText: '', fps: 30 }).animations[0];
+  assert.equal(clip.loop, true);
+  const rotation = clip.tracks.find(t => t.name === 'tail' && t.property === 'rotation');
+  const first = rotation.keys[0].value, last = rotation.keys.at(-1).value;
+  assert.ok(Math.abs(first) > 1e-3, 'it starts mid-swing, as the lap before left it');
+  assert.ok(Math.abs(first - last) < Math.abs(first) * 0.5 + 0.02, `the seam is close (${first} vs ${last})`);
+});
+
+test('a sequence (flipbook) switches its texture coordinates frame by frame in Godot', () => {
+  const json = { skeleton: { spine: '4.2.43' }, bones: [{ name: 'root' }],
+    slots: [{ name: 'fire', bone: 'root', attachment: 'flame' }],
+    skins: [{ name: 'default', attachments: { fire: { flame: { width: 10, height: 10, sequence: { count: 3, start: 1, digits: 1 } } } } }],
+    animations: { burn: { attachments: { default: { fire: { flame: { sequence: [{ mode: 'loop', delay: 0.1 }] } } } }, slots: { fire: { rgba: [{ color: 'ffffffff' }, { time: 0.6, color: 'ffffffff' }] } } } } };
+  const atlasText = 'p.png\nsize: 64, 16\nflame1\nbounds: 0, 0, 10, 10\nflame2\nbounds: 16, 0, 10, 10\nflame3\nbounds: 32, 0, 10, 10\n';
+  const scene = godotScene(json, { atlasText, fps: 30 });
+  const att = scene.slots[0].attachments[0];
+  assert.equal(att.frames.length, 3, 'every frame\'s coordinates');
+  const uv = scene.animations[0].tracks.find(t => t.property === 'uv');
+  assert.ok(uv && uv.interpolation === 'nearest');
+  const u = time => trackValue(uv, time)[0];
+  assert.deepEqual([0, 0.1, 0.2, 0.3].map(t => u(t + 0.01)), [0, 16, 32, 0], 'frame 1, 2, 3, then round again');
+  const builder = fs.readFileSync(path.join(ROOT, 'integrations/godot/addons/keyframe/keyframe_builder.gd'), 'utf8');
+  assert.match(builder, /track\.get\("interpolation", "linear"\)/, 'the add-on keys polygon, uv and texture tracks by their interpolation');
 });

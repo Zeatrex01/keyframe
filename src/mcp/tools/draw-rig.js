@@ -36,6 +36,8 @@ const PART = {
     stack: { type: 'array', items: { type: 'number' }, short: '[from, to] height band (sprite stack)', description: 'Sprite stacking: the part is drawn as seen from above and is the cut through the object at every height from `from` to `to` (rig units, 0 is the ground). export_art kind stack piles the cuts into a turnable top-down object (a car: wheels [0, 3], body [2, 8], windows [8, 12], roof [12, 13]). Parts without it stay flat.' },
     taper: { type: 'array', items: { type: 'number' }, short: '[bottom, top] cut scale along the band', description: 'With `stack`: the cut\'s scale at the bottom and the top of the band (1 is as drawn), so a cone, a dome or a tree crown is one part: [1, 0.2].' },
     hidden: { type: 'boolean', short: 'hidden in setup', description: 'Hidden in the setup pose (a closed lid, a flash); default false.' },
+    frames: { type: 'array', maxItems: 64, short: 'flipbook frames (svg or {shapes})', description: 'A flipbook: 2 to 64 frames (SVG, or { shapes } in the part\'s box) that the part\'s attachment plays as a sequence (fire, smoke, a blink, a mouth). A clip plays it with attachments.default.<part>.<part>.sequence: [{ time, mode: loop | once | pingpong | hold, delay: seconds a frame, index }].' },
+    physics: { short: 'swings on its own (hair, tail, cape)', description: 'true, or { inertia 0-1, strength, damping 0-1, mass, gravity, wind, x, y }: the part swings on its own as the rig moves (hair, a tail, a cape, a ribbon), simulated by the studio\'s engine; its bone points from the pivot through the art. Defaults rest where it is drawn: inertia 0.7, strength 45, damping 0.85. Put the pivot where it hangs from.' },
   },
 };
 

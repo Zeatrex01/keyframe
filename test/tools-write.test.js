@@ -53,7 +53,7 @@ test('set_curves re-eases keys without moving values, first into a new delivery,
   } finally { p.cleanup(); }
 });
 
-test('bake_animation removes physics and verifies the replay', needsSpine, async () => {
+test('bake_animation removes physics and verifies the replay', async () => {
   const rig = {
     skeleton: { spine: '4.2.43', hash: 'p' },
     bones: [{ name: 'root' }, { name: 'body', parent: 'root' }, { name: 'tail', parent: 'body', length: 40 }],

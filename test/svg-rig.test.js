@@ -11,7 +11,7 @@ import { buildSvgRig } from '../src/render/svg-rig.js';
 import { decodePng } from '../src/render/png.js';
 import { renderFrames } from '../src/render/frames.js';
 import { checkSkeleton } from '../src/spine/check.js';
-import { compileSkeleton, setupPose, parseAtlas } from '../src/engine/index.js';
+import { compileSkeleton, setupPose, parseAtlas, poseAt, regionVertices as regionCorners } from '../src/engine/index.js';
 import { createServer } from '../src/mcp/server.js';
 import { SPINE } from './helpers/spine-addon.js';
 import { officialRuntime } from './helpers/official-runtime.js';
@@ -170,3 +170,52 @@ test('start_here sends an empty project to draw_rig, and leaves the step out onc
     assert.ok(!drawn.steps.some(s => s.step === 'DRAW'));
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
+
+// ── flipbooks and parts that swing (the 0.2 engine) ──────────────────────────
+
+const box = (w, h, fill) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}"><rect width="${w}" height="${h}" fill="${fill}"/></svg>`;
+
+test('a part with frames becomes a sequence attachment the engine plays frame by frame', async () => {
+  const built = buildSvgRig({ name: 'torch', parts: [
+    { name: 'stick', svg: box(4, 20, '#8a5a2b'), at: [0, 10] },
+    { name: 'flame', svg: box(10, 12, '#ffb000'), frames: [box(10, 12, '#ff4000'), box(10, 12, '#ffb000'), box(10, 12, '#ffff40')], at: [0, 26], parent: 'stick', blend: 'additive' },
+  ] });
+  const att = built.skeleton.skins[0].attachments.flame.flame;
+  assert.deepEqual(att.sequence, { count: 3, start: 1, digits: 2, setup: 0 });
+  assert.equal(att.path, 'flame_f');
+  for (const r of ['flame_f01', 'flame_f02', 'flame_f03']) assert.match(built.atlasText, new RegExp(`^${r}$`, 'm'), r);
+  assert.equal(checkSkeleton(built.skeleton).filter(f => f.level === 'fatal').length, 0);
+  const json = { ...built.skeleton, animations: { burn: { attachments: { default: { flame: { flame: { sequence: [{ mode: 'loop', delay: 0.1 }] } } } }, bones: { stick: { rotate: [{ value: 0 }, { time: 0.3, value: 0 }] } } } } };
+  const pages = new Map([[built.page, decodePng(built.png)]]);
+  const colour = async t => {
+    const { frames } = await renderFrames({ json, atlasText: built.atlasText, pages, animation: 'burn', times: [t], width: 40, height: 40, viewport: { x: -8, y: 20, width: 16, height: 12 }, supersample: 1 });
+    const d = frames[0].image.data, i = (20 * 40 + 20) * 4;
+    return [d[i], d[i + 1], d[i + 2]];
+  };
+  const [a, b, c] = [await colour(0.01), await colour(0.11), await colour(0.21)];
+  assert.ok(a[1] < 120 && b[1] > 140 && c[2] > 40, `red, then amber, then yellow (${a} / ${b} / ${c})`);
+});
+
+test('a part with physics points its bone through its art, stays drawn where it was, and swings when its parent moves', () => {
+  const parts = [
+    { name: 'head', svg: box(30, 30, '#f0c8a0'), at: [0, 60] },
+    { name: 'tail', svg: box(8, 40, '#4a3060'), at: [20, 40], pivot: [20, 60], parent: 'head', physics: { strength: 40 } },
+  ];
+  const built = buildSvgRig({ name: 'pony', parts });
+  const plain = buildSvgRig({ name: 'pony', parts: parts.map(({ physics: _, ...p }) => p) });
+  const tailBone = built.skeleton.bones.find(b => b.name === 'tail');
+  near(tailBone.rotation, -90, 'the bone points down the hanging tail');
+  assert.ok(tailBone.length >= 40, 'it has a length to swing by');
+  assert.deepEqual(built.skeleton.physics.map(c => [c.name, c.bone, c.rotate, c.strength]), [['tail', 'tail', 1, 40]]);
+  const corners = sk => { const m = compileSkeleton(sk); const p = setupPose(m); const s = p.slots.find(x => x.data.name === 'tail');
+    return Array.from(regionCorners(p.bones[s.data.bone], s.attachment)).map(v => Math.round(v * 100) / 100); };
+  assert.deepEqual(corners(built.skeleton), corners(plain.skeleton), 'the tail is drawn exactly where it is without physics');
+  const moving = compileSkeleton({ ...built.skeleton, animations: { shake: { bones: { head: { translate: [{ x: 0 }, { time: 0.2, x: 40 }, { time: 1, x: 40 }] } } } } });
+  const swing = deg(poseAt(moving, 'shake', 0.15).bones[moving.boneIndex.get('tail')]) + 90;
+  assert.ok(Math.abs(swing) > 3, `the tail swings when the head moves sideways (${swing})`);
+  assert.throws(() => buildSvgRig({ name: 'bad', parts: [{ ...parts[1], parent: undefined, physics: { strength: -1 } }] }), /physics\.strength/);
+  assert.throws(() => buildSvgRig({ name: 'bad', parts: [{ ...parts[0], frames: [box(2, 2, '#000')] }] }), /2 to 64/);
+});
+
+function near(a, b, msg, eps = 1e-6) { assert.ok(Math.abs(a - b) <= eps, `${msg}: ${a} vs ${b}`); }
+function deg(b) { return Math.atan2(b.c, b.a) * 180 / Math.PI; }

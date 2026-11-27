@@ -6,8 +6,7 @@
 //             owner enabled the Spine add-on.
 //
 // `parseSkeleton` picks the backend: the engine, unless the file uses something the engine does
-// not evaluate yet (transform, path or physics constraints, skin-only bones, sequences) and the
-// add-on is on. Without the add-on such a file still poses on the engine, and `data.limits`
+// not evaluate yet (path constraints, skin-only bones and constraints) and the add-on is on. Without the add-on such a file still poses on the engine, and `data.limits`
 // names what was left out, so every tool can say so instead of pretending.
 //
 // Callers get the same shapes from both: `data.animations[]`, `findAnimation(name).duration`,
@@ -17,7 +16,7 @@
 
 import { StudioError } from '../shared/errors.js';
 import { drawOrderHazards } from '../spine/draw-order.js';
-import { compileSkeleton, poseAt, setupPose } from '../engine/index.js';
+import { compileSkeleton, setupPose, Playhead } from '../engine/index.js';
 import { isKeyframeDocument, toSkeletonJson } from '../engine/keyframe-format.js';
 import * as official from './spine.js';
 
@@ -26,7 +25,7 @@ export { RUNTIME_VERSION, MAX_SAMPLE_SECONDS, majorMinor, assertRuntimeVersion, 
 import { MAX_SAMPLE_SECONDS, assertRuntimeVersion, spineRuntimeAvailable } from './spine.js';
 
 /** What the engine leaves out of a pose: the rule that sends a file to the add-on when it is on. */
-const LIMIT = /^(transform|path|physics|skin-required-bone|sequence):/;
+const LIMIT = /^(path|skin-required-bone|skin-required-constraint):/;
 
 /** The engine's compiled skeleton, dressed in the shape callers read from spine.SkeletonData. */
 class EngineData {
@@ -41,8 +40,10 @@ class EngineData {
     this.slots = model.slots.map(s => ({ name: s.name }));
     this.skins = [...model.skins.keys()].map(name => ({ name }));
     this.ikConstraints = model.ik.map(c => ({ name: c.name }));
-    // The engine does not simulate physics; a file with physics names it in `limits`.
-    this.physicsConstraints = [];
+    this.physicsConstraints = model.physics.map(c => ({ name: c.name }));
+    this.transformConstraints = model.transform.map(c => ({ name: c.name }));
+    // Evaluated the engine's own way (physics): close to Spine's, not number for number.
+    this.approximations = model.approximations;
     this.unsupported = model.unsupported;
     this.limits = model.unsupported.filter(u => LIMIT.test(u));
   }
@@ -130,13 +131,14 @@ class EnginePoser {
     this.animation = animationName;
     this.skin = skin;
     this.loop = loop;
+    // A playhead carries physics forward between instants asked in order (frames, bake samples).
+    this.head = new Playhead(data.model, animationName, { skin, loop });
   }
   at(time) {
     if (!(time >= 0) || time > MAX_SAMPLE_SECONDS) {
       throw new StudioError('bad-argument', `Sample times must be numbers between 0 and ${MAX_SAMPLE_SECONDS} s.`, { time, max: MAX_SAMPLE_SECONDS });
     }
-    // Key times are float32 in a Spine export; posing at the float32 instant lands on them.
-    return poseAt(this.data.model, this.animation, Math.fround(time), { skin: this.skin, loop: this.loop });
+    return this.head.at(time);
   }
 }
 
