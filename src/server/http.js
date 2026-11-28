@@ -39,6 +39,7 @@ import { SECURITY_HEADERS, send, refuse, refuseError, statusFor, readBody, readJ
 import { createStateReader, REFERENCE_TYPES } from './state.js';
 import { createAgentHub } from '../agent/hub.js';
 import { listPacks, ASSET_ROOT } from '../core/asset-library.js';
+import { catalogFor, assetFolders } from '../mcp/tools/find-assets.js';
 import { PARTS_FORMAT } from '../render/svg-rig.js';
 import { copyExample, findExample, listExamples } from './examples.js';
 import { updateRoutes } from './update-routes.js';
@@ -84,6 +85,17 @@ export function connectionBlocks(root = ROOT, appRoot = appRootOf(root)) {
 
 /** The optional programs and whether each is here: the add-on contract in src/core/addons.js. */
 export { addonStatus as addons } from '../core/addons.js';
+
+const THUMB_TYPES = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg', '.bmp']);
+/** The absolute file of a catalogued asset, or null when the catalog does not list it. */
+function catalogFile(projectDir, source, rel, root) {
+  if (!rel) return null;
+  const catalog = catalogFor(projectDir ? path.resolve(projectDir) : null, assetFolders());
+  const hit = catalog.assets.find(a => a.source === source && a.path === rel && (source !== 'folder' || a.root === root));
+  if (!hit) return null;
+  const base = source === 'folder' ? hit.root : catalog.sources.find(x => x.source === source)?.root;
+  return base ? path.join(base, hit.path) : null;
+}
 
 /** A string field of a JSON body, or a 400 that names it. */
 function text(body, key, { optional = false } = {}) {
@@ -225,6 +237,25 @@ export function createStudioServer({ projectDir, version, configFile, maxUpload 
       return { ...st, agent: { ...(st.agent ?? { connected: false }), ...agents.summary(dir ?? null) }, outside: readPresence(presenceFile(registry.file ?? resolvePaths().configFile)) };
     } },
     'GET /api/assets': { run: () => ({ packs: listPacks() }) },
+    // The asset catalog (find_assets): the page's Assets panel reads the same answers the agent does.
+    'GET /api/assets/find': { run: ({ url }) => {
+      const q = url.searchParams;
+      const source = ['project', 'library', 'folder'].includes(q.get('source')) ? q.get('source') : 'all';
+      const usage = ['used', 'unreferenced', 'reference'].includes(q.get('usage')) ? q.get('usage') : undefined;
+      return tool('find_assets', { query: q.get('q') ?? '', source, ...(usage ? { usage } : {}), offset: Math.max(0, Number(q.get('offset')) || 0), limit: 60 });
+    } },
+    'GET /api/assets/changes': { run: () => tool('find_assets', { changes: true, limit: 40 }) },
+    'POST /api/assets/seen': { run: () => tool('find_assets', { changes: true, mark_seen: true, limit: 1 }) },
+    'POST /api/assets/folders': { run: async ({ body }) => tool('find_assets', { folder: text(await body(), 'folder'), remember: true, limit: 1 }) },
+    'POST /api/assets/forget': { run: async ({ body }) => tool('find_assets', { forget: text(await body(), 'folder'), limit: 1 }) },
+    // A catalogued picture, for the panel's thumbnails: only a file the catalog lists, only images
+    // a browser shows; an SVG is sandboxed so it can never run as a page of the studio.
+    'GET /api/assets/file': { raw: true, run: ({ req, res, url }) => {
+      const q = url.searchParams;
+      const abs = catalogFile(dir, q.get('source'), q.get('path'), q.get('root'));
+      if (!abs || !THUMB_TYPES.has(path.extname(abs).toLowerCase())) return refuse(res, 404, 'not-found', 'No such catalogued picture.');
+      return sendFile(req, res, abs, { 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'; sandbox" });
+    } },
     'GET /api/agent': { run: () => { agents.detect(); return agents.summary(dir ?? null); } },
     // Both answer with the slots as the open project sees them (as GET /api/agent does).
     'PUT /api/agent/slots': { run: async ({ body }) => ({ ...agents.setSlots((await body()).slots), ...agents.summary(dir ?? null) }) },

@@ -56,6 +56,12 @@ export const GUIDE = Object.freeze({
     example: {},
     next: ['read_rig', 'check_skeleton'],
   },
+  find_assets: {
+    when: 'Before drawing: look for art, sounds or fonts the owner already has; or ask what nothing uses, or what changed since the last look.',
+    notWhen: 'You need what is inside one skeleton: read its rig instead.',
+    example: { query: 'coin', kind: ['image'] },
+    next: ['draw_rig', 'add_effect', 'scan_project'],
+  },
   add_effect: {
     when: 'The clip needs an effect: sparks, smoke, fire or confetti (emit), coins flying out (burst), a trail, a hit flash, a glow, a shake.',
     notWhen: 'The effect needs new art: draw it first with draw_rig, then reuse it here.',

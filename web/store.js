@@ -14,6 +14,7 @@ for (const id of ['app', 'projectName', 'projectSwitch', 'projectThumb', 'barSep
   'refCard', 'refThumb', 'refEmpty', 'refName', 'refSync', 'refCompare', 'refAdd', 'refList', 'refStatus', 'refFile', 'refLinkForm', 'refLink', 'refLinkGo', 'refLinkHint', 'refFrom', 'refTo',
   'deliveryEmpty', 'deliveryTop', 'deliveryFile', 'deliveryCheck', 'deliveryNote', 'deliveryActs', 'deliveryFlip', 'deliveryVersions', 'deliveryPlayer',
   'versions', 'versionsEmpty', 'versionsNote', 'deliveryStatus', 'inspectorTabs', 'tabbar', 'keysPanel', 'timeline', 'keysEmpty', 'clipList', 'clipsEmpty', 'clipCount', 'refCount',
+  'assetQuery', 'assetSource', 'assetUnused', 'assetCount', 'assetList', 'assetMore', 'assetSeen', 'assetChangesNote', 'assetChangeList', 'assetFolderForm', 'assetFolder', 'assetFolders', 'assetStatus',
   'msgs', 'chatEmpty', 'live', 'liveName', 'livePhase', 'liveSecs', 'liveText', 'stopAgent', 'steps', 'compose', 'suggest', 'text', 'attach', 'send', 'chatHint', 'outsideNote', 'outsideText', 'outsideOpen',
   'navProjects', 'navSettings', 'hub', 'settings', 'openForm', 'openPath', 'createForm', 'createParent', 'createName', 'hubStatus', 'hubEmpty',
   'first', 'firstClient', 'firstCode', 'firstDirector', 'firstDirectorGo', 'firstCopy', 'firstDot', 'firstStatusText', 'firstConnect', 'firstOpen', 'firstExamples', 'firstFolder',

@@ -231,8 +231,8 @@ deletes it. See [`NOTICE`](NOTICE) and [`docs/addons.md`](docs/addons.md).
 
 ## Tools
 
-Thirty tools are served to the AI by default: art direction (a style guide), draw, critique
-and export art, read, brief, write, effects, check, critique motion, see, measure, undo, bake, paint
+Thirty-one tools are served to the AI by default: art direction (a style guide), draw, critique
+and export art, find assets, read, brief, write, effects, check, critique motion, see, measure, undo, bake, paint
 weights, export to Godot, converse, and learn from a reference. More are
 available with `--all`. Every tool explains itself (when to use it, every argument, a worked
 example, what comes next), so any model can use them without help.

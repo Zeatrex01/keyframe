@@ -14,6 +14,7 @@ import { setPhoneTab, setTab, showPanel } from './panels.js';
 import { setLang, setTheme, storedLang, storedTheme, t } from './ui.js';
 import { closeOpening, opening, playOpening, showView } from './views.js';
 import { loadUpdate } from './update.js';
+import './assets.js';
 
 // ---------- wiring ----------
 
