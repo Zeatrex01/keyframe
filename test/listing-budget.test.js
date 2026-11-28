@@ -25,7 +25,9 @@ import { compactSchema } from '../src/mcp/describe.js';
 // scarf reacts to the character moving), one enum.
 // 2026-11-27: raised to 30,970 for export_art's `trim` (false keeps each PNG at its full box, for
 // tiles and nine-slice panels), one boolean.
-const BUDGET_BYTES = 30970;
+// 2026-11-28: raised to 31,100 for export_art's `model` (a textured low-poly model from drawn
+// views), one object whose fields the description explains.
+const BUDGET_BYTES = 31100;
 const SUMMARY_MAX = 220;      // one or two sentences
 
 test('the compact listing of the real tool set stays under budget', async () => {

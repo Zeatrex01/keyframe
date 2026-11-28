@@ -81,7 +81,7 @@ also flat-colour low-poly kits. The agent draws the object as flat views in the 
 studio turns them into a textured low-poly model that Godot imports, and that the existing
 model-to-stack baker can still turn into a stack.
 
-Proposed shape (not built; a first working draft exists outside the repo):
+Built 2026-11-28 as `export_art` kind `model` (gate `test/model.test.js`, workflow `docs/low-poly-models.md`). The shape as proposed:
 
 - No new tool: `export_art` gains kind `model`. The drawing's parts are named after the views:
   `front`, `back`, `left`, `right`, `top`, `bottom`; front (or back), one side and top (or bottom)

@@ -10,6 +10,9 @@
 //                              first, and turn@<s>x.png + .json, the stack pre-turned to N angles
 //   clip-<anim>/               an animation as a PNG sequence and a sheet with its frame times,
 //                              for engines without a skeletal runtime
+//   model/<name>.glb           a textured low-poly 3D model built from views drawn as parts named
+//                              front, back, left, right, top, bottom (src/render/model.js), with
+//                              its texture, a preview and model.json
 //
 // Pure: returns the files as { path: bytes | text }; the tool writes them. Rasterised with the
 // studio's own renderer, no browser and no dependency.
@@ -22,9 +25,10 @@ import { StudioError } from '../shared/errors.js';
 import { clipLoops, loopAnswer } from '../engine/loops.js';
 import { stackSlices, turnFrames } from './stack.js';
 import { OVERSAMPLE, pixelOptions, findPalette, toPixelArt, hexOf } from './pixel.js';
+import { buildModel, encodeGlb, previewSheet } from './model.js';
 
 const r2 = v => Math.round(v * 100) / 100;
-export const EXPORT_KINDS = Object.freeze(['parts', 'sheet', 'svg', 'stack', 'clip']);
+export const EXPORT_KINDS = Object.freeze(['parts', 'sheet', 'svg', 'stack', 'model', 'clip']);
 
 /** The box of the pixels that are not fully transparent, or null for an empty image. */
 export function alphaBounds(img) {
@@ -64,14 +68,14 @@ function packSheet(images, pad = 2) {
 /**
  * Export a drawing.
  * @param {{ name: string, kind?: string, parts: any[] }} doc  the parts document (svg-rig.js)
- * @param {{ scales?: number[], kinds?: string[], pixels?: number, padding?: number, turns?: number, maxSide?: number, pixel?: object, trim?: boolean }} options  trim: false keeps
+ * @param {{ scales?: number[], kinds?: string[], pixels?: number, padding?: number, turns?: number, maxSide?: number, pixel?: object, trim?: boolean, model?: object }} options  trim: false keeps
  *   every image at its part's full box (tiles, nine-slice panels, frames that must line up); padding: clear pixels around each sprite in a sheet (default 2); turns: angles of the pre-turned stack (default 16); maxSide: the widest stack strip row in pixels (default MAX_STRIP_SIDE)
  *   scales: pixels per rig unit (1x, 2x, 3x); pixels: instead, the longest side of the whole drawing in pixels
  *   pixel: pixel art for parts and sheet (src/render/pixel.js): { colors, palette, outline, upscale }; pivots and
  *   boxes are then in the blown-up pixels
  * @returns {{ files: Record<string, Uint8Array | string>, manifest: any, palette: number[][] | null }}
  */
-export function exportDrawing(doc, { scales = [1, 2], kinds = ['parts', 'sheet', 'svg'], pixels, padding = 2, turns = 16, maxSide = MAX_STRIP_SIDE, pixel, trim = true } = {}) {
+export function exportDrawing(doc, { scales = [1, 2], kinds = ['parts', 'sheet', 'svg'], pixels, padding = 2, turns = 16, maxSide = MAX_STRIP_SIDE, pixel, trim = true, model } = {}) {
   const px = pixel ? pixelOptions(pixel) : null;
   if (px && kinds.some(k => k !== 'parts' && k !== 'sheet')) throw new StudioError('bad-argument', 'Pixel art is made of the parts, the sheet and clips; export svg and stack without `pixel`.', { kinds });
   let palette = px?.palette ?? null;
@@ -135,9 +139,34 @@ export function exportDrawing(doc, { scales = [1, 2], kinds = ['parts', 'sheet',
     for (const l of looks) files[`svg/${l.name}.svg`] = partSvg({ ...l.part, name: l.name, svg: l.svg });
     files[`${doc.name}.svg`] = drawingSvg(doc).svg;
   }
+  if (kinds.includes('model')) { const m = modelFiles(doc, model); Object.assign(files, m.files); manifest.model = m.manifest; }
   if (px) manifest.pixel = { palette: (palette ?? []).map(hexOf), upscale: px.upscale, ...(px.outline ? { outline: hexOf(px.outline) } : {}), filter: 'nearest' };
   files['parts.json'] = `${JSON.stringify(manifest, null, 1)}\n`;
   return { files, manifest, palette };
+}
+
+/**
+ * A textured low-poly model from the drawing's views: the .glb (texture inside), the texture on its
+ * own, a preview of four turns, and model.json saying how it was made.
+ */
+export function modelFiles(doc, options = {}) {
+  const m = buildModel(doc, options ?? {});
+  const png = encodePng(m.texture);
+  const manifest = {
+    file: `model/${doc.name}.glb`, shape: m.shape, triangles: m.triangles, vertices: m.vertices,
+    size: { x: m.size[0], y: m.size[1], z: m.size[2], units: 'metres; +Y up, +Z is the front (the nose), +X its left' },
+    texture: { file: `model/${doc.name}_texture.png`, w: m.texture.width, h: m.texture.height, filter: m.options.filter },
+    lit: m.options.lit, views: m.source, faces: m.faces, ...(m.notes.length ? { notes: m.notes } : {}),
+  };
+  return {
+    model: m, manifest,
+    files: {
+      [`model/${doc.name}.glb`]: encodeGlb(m, png),
+      [`model/${doc.name}_texture.png`]: png,
+      [`model/${doc.name}_preview.png`]: encodePng(previewSheet(m)),
+      'model/model.json': `${JSON.stringify({ meta: { app: 'Keyframe Studio', kind: 'low-poly-model' }, ...manifest }, null, 1)}\n`,
+    },
+  };
 }
 
 /** The widest strip a stack writes on one row, in pixels: safe in every engine's texture import. */

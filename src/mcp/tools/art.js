@@ -18,6 +18,7 @@ import { projectStyle } from '../style-file.js';
 import { webPlayerFiles } from '../../deliver/web-player.js';
 import { bandOf } from '../../render/stack.js';
 import { pixelOptions, paletteFiles } from '../../render/pixel.js';
+import { modelOptions } from '../../render/model.js';
 
 /** The Godot node that draws an exported sprite stack (shipped in the add-on, copied beside the export). */
 const STACK_NODE = new URL('../../../integrations/godot/addons/keyframe/keyframe_stack.gd', import.meta.url);
@@ -99,7 +100,8 @@ export const exportArtTool = {
   writes: true,
   summary: 'Exports a drawing for engines and the web: trimmed PNGs per part and state with pivots at any scale, a sprite sheet with a JSON map, clean SVG, a clip as PNG frames, and an embeddable web player.',
   description: `Writes new files into <folder>/<name>-export/ (never touches the drawing or the owner's files; a second export replaces the folder's files): \`parts\` png@<s>x/<part>.png, each part and each state at scale s (pixels per rig unit), transparent and trimmed, with parts.json listing for each its trim offset, source size and pivot in pixels so an engine places and turns it like the rig; \`sheet\` <name>@<s>x.png and .json, all of them packed into one sprite sheet with a frame map in the common JSON-hash layout (frame, spriteSourceSize, sourceSize, pivot) that game engines and web libraries read; \`svg\` svg/<part>.svg and <name>.svg, clean SVG with a <g id> per part for web pages and design tools; \`clip\` (with \`animation\`) clip-<anim>/frame_0000.png... and clip-<anim>@sheet.png/.json at \`fps\`, for engines without a skeletal runtime: every clip of the skeleton is framed alike (same size, feet on the same row), the map gives the origin in pixels (meta.origin, each frame's pivot) and whether the clip loops (a loop leaves out its closing copy of the first frame); \`web\` web/keyframe-player.js (the studio's engine as one script: a KeyframePlayer class with play, stop, pause, seek, setSpeed, setLook for drawn states, and start/complete/loop/event listeners, plus a <keyframe-player> element), the skeleton, its atlas and pages, and an index.html showing the snippet, for web games and pages. Kinds: ${KINDS.join(', ')}; default parts, sheet and svg, and stack when a part has a height band. Scales default [1, 2]; \`pixels\` instead sets the longest side of the whole drawing.
-\`pixel\` makes pixel art of the parts, the sheet and the clip, into <name>-export/pixel/: every pixel one colour of a palette, fully opaque or clear, no anti-aliasing. { colors: 2-64 (default 16; the palette is found from the drawing and shared by every part and frame), palette: ['rrggbb', ...] (use these colours instead), outline: 'rrggbb' (a one-pixel outline), upscale: 1-8 (each pixel blown up to a block, for crisp display) }. Draw it small: \`pixels\` 32-128 for the drawing, \`size\` 32-128 for clip frames. palette.hex and palette.png list the colours; the maps say filter: nearest (import without smoothing).`,
+\`pixel\` makes pixel art of the parts, the sheet and the clip, into <name>-export/pixel/: every pixel one colour of a palette, fully opaque or clear, no anti-aliasing. { colors: 2-64 (default 16; the palette is found from the drawing and shared by every part and frame), palette: ['rrggbb', ...] (use these colours instead), outline: 'rrggbb' (a one-pixel outline), upscale: 1-8 (each pixel blown up to a block, for crisp display) }. Draw it small: \`pixels\` 32-128 for the drawing, \`size\` 32-128 for clip frames. palette.hex and palette.png list the colours; the maps say filter: nearest (import without smoothing).
+\`model\` is a textured low-poly 3D model (docs/low-poly-models.md) from parts named after the views, each the object drawn flat from that side: front (facing its nose), back, left (standing at its left, nose to your left), right (nose to your right), top (from above, nose up), bottom; front, one side and top are enough, the others are mirrored. Writes model/<name>.glb (texture inside; +Y up, +Z the front), <name>_texture.png, <name>_preview.png (four turns, also returned to look at) and model.json. Settings in \`model\`: { shape: hull (lofted along the length: cars, boats) | round (turned around the up axis: barrels, posts) | box (crates, blocks), texture: px on the longest side (128), filter: nearest | linear, meters: per rig unit (0.01: draw in centimetres), sides (8, round), segments (12), levels (4, hull), smooth: degrees (40, 0 flat), lit: false for unlit painted light }.`,
   inputSchema: {
     type: 'object', required: ['file'], additionalProperties: false,
     properties: {
@@ -115,10 +117,12 @@ export const exportArtTool = {
       turns: { type: 'integer', minimum: 4, maximum: 64, short: 'angles of the pre-turned stack (16)', description: 'How many angles the turn sheet of a stack has (kind stack); default 16.' },
       loop: { type: 'boolean', short: 'clip loops or plays once (auto)', description: 'Whether the clip export cycles (idle, run) or plays once (jump, attack). Default: it loops when it ends where it starts.' },
       pixel: { type: 'object', short: 'pixel art: colors, palette, outline, upscale', description: 'Pixel art of the parts, sheet and clip (see the description): { colors, palette, outline, upscale }.' },
+      model: { type: 'object', short: 'kind model: shape, texture, filter...', description: 'Settings of the low-poly model (kind model, see the description): { shape, texture, filter, meters, sides, segments, levels, smooth, lit }.' },
     },
   },
-  async run({ file, kinds, scales, pixels, animation, fps, size, padding, loop, turns, pixel, trim }, { session }) {
+  async run({ file, kinds, scales, pixels, animation, fps, size, padding, loop, turns, pixel, trim, model }, { session }) {
     if (pixel) pixelOptions(pixel);
+    if (model !== undefined) modelOptions(model);
     const project = projectOf(session);
     const { doc, abs } = readDrawing(project, file);
     const stacked = doc.parts.some(p => bandOf(p));
@@ -128,7 +132,7 @@ export const exportArtTool = {
     const drawing = wanted.filter(k => EXPORT_KINDS.includes(k) && k !== 'clip');
     const outDir = path.join(path.dirname(abs), `${doc.name}-export`);
     const files = {};
-    const out = drawing.length ? exportDrawing(doc, { scales: scales?.length ? scales : [1, 2], kinds: drawing, pixels, padding: padding ?? 2, turns: turns ?? 16, pixel, trim: trim !== false }) : { files: {}, manifest: { scales: [] }, palette: null };
+    const out = drawing.length ? exportDrawing(doc, { scales: scales?.length ? scales : [1, 2], kinds: drawing, pixels, padding: padding ?? 2, turns: turns ?? 16, pixel, trim: trim !== false, model }) : { files: {}, manifest: { scales: [] }, palette: null };
     Object.assign(files, out.files);
     let palette = out.palette;
     if (wanted.includes('stack')) {
@@ -170,6 +174,7 @@ export const exportArtTool = {
     }
     const names = Object.keys(files);
     const turnSheet = names.find(n => n.startsWith('turn@') && n.endsWith('.png'));
+    const preview = names.find(n => n.startsWith('model/') && n.endsWith('_preview.png'));
     const result = {
       folder: project.rel(outDir), files: names.length,
       scales: out.manifest.scales,
@@ -177,10 +182,12 @@ export const exportArtTool = {
       ...(clip ? { clip } : {}),
       ...(pixel ? { pixel: { folder: 'pixel/', colors: (palette ?? []).length, palette: 'pixel/palette.hex', filter: 'nearest' } } : {}),
       ...(web ? { web } : {}),
+      ...(out.manifest.model ? { model: out.manifest.model } : {}),
       ...(turnSheet ? { stack: { strip: names.filter(n => n.startsWith('stack@') && n.endsWith('.png')), turns: turns ?? 16, godot: 'godot/keyframe_stack.gd', shadows: 'godot/keyframe_stack_shadows.gd' } } : {}),
       next: 'Engines: the sprite sheet and its JSON, or the per-part PNGs with parts.json (pivots in pixels). Web: the SVG files; for animation on a page, the standalone player.',
     };
     // A stack is seen before it is called done: its turn sheet comes back as an image.
-    return turnSheet ? { image: { data: Buffer.from(files[turnSheet]).toString('base64'), mimeType: 'image/png' }, meta: result } : result;
+    const seen = preview ?? turnSheet;
+    return seen ? { image: { data: Buffer.from(files[seen]).toString('base64'), mimeType: 'image/png' }, meta: result } : result;
   },
 };
