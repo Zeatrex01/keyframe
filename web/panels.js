@@ -6,8 +6,8 @@ import { S, el } from './store.js';
 import { node, t } from './ui.js';
 import { renderTransport, setClip, togglePlay } from './stage.js';
 
-export const INSPECTOR_TABS = ['keys', 'clips', 'reference', 'versions'];
-export const PHONE_TABS = ['chat', 'keys', 'reference', 'clips', 'versions'];
+export const INSPECTOR_TABS = ['keys', 'clips', 'reference', 'versions', 'assets'];
+export const PHONE_TABS = ['chat', 'keys', 'reference', 'clips', 'versions', 'assets'];
 // Wide enough for the key lanes to sit under the stage, so Keys is not a tab there.
 const wide = matchMedia('(min-width: 1181px)');
 
@@ -26,6 +26,8 @@ export function setTab(tab, { focus = false } = {}) {
   S.tab = tab;
   el.app.dataset.tab = tab;
   select(el.inspectorTabs, 'tab', tab, focus);
+  // A panel that reads on demand (Assets) hears that it is shown.
+  document.dispatchEvent(new CustomEvent('kf-tab', { detail: tab }));
 }
 
 /** Show one panel on a phone; the inspector follows, so a wider window shows the same thing. */
@@ -33,7 +35,7 @@ export function setPhoneTab(tab, { focus = false } = {}) {
   if (!PHONE_TABS.includes(tab)) tab = 'chat';
   S.phoneTab = tab;
   el.app.dataset.phone = tab;
-  select(el.tabbar, 'phone', tab === 'versions' ? 'clips' : tab, focus);
+  select(el.tabbar, 'phone', tab === 'versions' || tab === 'assets' ? 'clips' : tab, focus);
   if (tab !== 'chat') setTab(tab);
 }
 

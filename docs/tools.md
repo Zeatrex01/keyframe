@@ -2,7 +2,7 @@
 
 <!-- Written by `npm run docs:tools` from the tool definitions; do not edit by hand. -->
 
-The studio serves 30 tools to any MCP client by default; 12 more are on the shelf and served with
+The studio serves 31 tools to any MCP client by default; 12 more are on the shelf and served with
 `--all` (or `"all": true` in the connection). Any tool's full contract is also one `help { tool }` call away.
 Every refusal carries `fix` (how to get past it) and, for argument problems, an `example` call that works.
 
@@ -17,6 +17,7 @@ Every refusal carries `fix` (how to get past it) and, for argument problems, an 
 | [`apply_motion`](#apply_motion) | core | Plays a measured or saved motion on a bone of the rig and writes the delivery; with no motion it lists the library of learned motions. |
 | [`compare_reference`](#compare_reference) | core | Proves a copy: the reference and the animation side by side at the same instants, plus how far their measured motion is apart, channel by channel. |
 | [`scan_project`](#scan_project) | core | Lists the skeletons in the project: counts, Spine version, atlas and pages, delivery or base, and whether each plays. |
+| [`find_assets`](#find_assets) | core | Finds the owner's art, sounds and fonts in the project, the library and their asset folders: search, what uses what, unused files, what changed. |
 | [`brief`](#brief) | core | What the skeleton is (character, creature, prop, UI, VFX, scene) and what each clip is for; the studio proposes, you confirm. |
 | [`read_rig`](#read_rig) | core | The rig: bone tree with setup and world transforms, slots and draw order, skins and attachments, constraints, animation summary. |
 | [`read_animation`](#read_animation) | core | One animation as measurements: channels per bone and slot, ranges, key spacing, frame grid, draw-order changes; keys on request. |
@@ -299,6 +300,50 @@ Example:
 ```
 
 **Next:** `read_rig`, `check_skeleton`
+
+## find_assets
+
+*core, read only.* Finds the owner's art, sounds and fonts in the project, the library and their asset folders: search, what uses what, unused files, what changed.
+
+**Use when:** Before drawing: look for art, sounds or fonts the owner already has; or ask what nothing uses, or what changed since the last look.
+
+**Not when:** You need what is inside one skeleton: read its rig instead.
+
+One catalog of everything the owner has to build with, read from disk and never written:
+- project: the open folder's images, atlases, skeletons, drawings (<name>.parts.json), Aseprite files, sounds, fonts, models, Godot scenes and pages, with what uses what (a skeleton its atlas or its loose images, an atlas its page images, a drawing its rig files and library items, a Godot scene its res:// files, any JSON the files it names) and so the usage of each image, atlas, sound, font and model: used, unreferenced (nothing in the project names it) or reference (in reference/).
+- library: the bundled packs (ref asset:<pack>/<item>, which draw_rig's svg and add_effect's art take), with what in the project uses each item.
+- folder: the owner's own asset folders outside any project (bought packs, a shared art folder), kept in the studio's list; add one with `folder` and `remember: true`, take it off with `forget`.
+List answers are brief rows (source, path, kind, image size, usage, size), 25 at a time with the total; `file` gives one asset in full (absolute file, uses, used by, license). Search words all have to match the path, tags, pack or kind, in any language's letters.
+`changes: true` answers what was added, changed, moved or removed in the project and the folders since the last "seen" mark (the first look records a baseline); `mark_seen: true` sets the mark after answering, so the next look starts from here. The snapshot lives in the studio's own data, never beside the owner's files.
+Before drawing new art, look here for art the owner already has.
+
+| Argument | Type | Meaning |
+|---|---|---|
+| `query` | string | Words that all have to appear in the path, tags, pack or kind (coin, tree png, ui button). Empty lists everything. |
+| `kind` | string[] | Only these kinds: image, skeleton, drawing, atlas, aseprite, audio, font, model, scene, video, page. |
+| `source` | `all` \\| `project` \\| `library` \\| `folder` | Where to look: all (default), the project, the bundled library or the owner's asset folders. |
+| `usage` | `used` \\| `unreferenced` \\| `reference` | Only project and library assets with this usage: unreferenced lists what nothing in the project uses. |
+| `file` | string | One asset in full: a row's path (project or library), its ref (asset:<pack>/<item>), or the absolute file of a folder row (root + path). |
+| `changes` | boolean | Answer what was added, changed, moved or removed since the last "seen" mark, newest first, instead of the list. |
+| `mark_seen` | boolean | With changes: mark everything answered as seen, so the next look lists only what comes after. |
+| `folder` | string | An absolute folder to look in as well (a folder of packs the owner keeps outside the project). |
+| `remember` | boolean | With folder: keep it in the studio's list of asset folders (studio.config.json, assetFolders), so every later look includes it. |
+| `forget` | string | An absolute folder to take off the studio's list of asset folders; the folder itself is not touched. |
+| `offset` | integer (≥ 0) | Skip this many rows (default 0), to page through a long answer. |
+| `limit` | integer (≥ 1, ≤ 200) | Rows per answer, default 25, at most 200. |
+
+Example:
+
+```json
+{
+ "query": "coin",
+ "kind": [
+  "image"
+ ]
+}
+```
+
+**Next:** `draw_rig`, `add_effect`, `scan_project`
 
 ## brief
 

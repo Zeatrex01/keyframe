@@ -38,7 +38,7 @@ export const DEFAULT_TIMEOUT_MS = 20 * 60_000;
 // What the owner sees while a run works: the phase follows the tool being called.
 const PHASES = {
   answering: ['reply'],
-  reading: ['start_here', 'help', 'scan_project', 'brief', 'read_rig', 'read_animation', 'sample_animation', 'describe_animation', 'see_reference', 'measure_reference', 'list_history'],
+  reading: ['start_here', 'help', 'scan_project', 'find_assets', 'brief', 'read_rig', 'read_animation', 'sample_animation', 'describe_animation', 'see_reference', 'measure_reference', 'list_history'],
   writing: ['write_animation', 'set_curves', 'add_effect', 'draw_rig', 'apply_motion', 'bake_animation', 'paint_weights', 'delete_animation', 'restore_file'],
   checking: ['check_skeleton', 'critique_animation', 'see_animation', 'compare_reference'],
 };

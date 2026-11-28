@@ -37,6 +37,7 @@ const SPECIFIC = {
   'update-bad-install': 'Install the app again with the setup or Install.cmd; your projects and settings are kept.',
   'agent-busy': 'The slot is still working: wait for its answer, or stop it first.',
   'unknown-asset': 'Use a reference from `available`, written asset:<pack>/<item>.',
+  'asset-not-found': 'Search with find_assets first (query), then pass a row\'s path or ref, or for a folder row its root joined with its path.',
   'not-proven': 'Run the calls named in `missing` on the delivery (check_skeleton, critique_animation; critique_art for a drawing), read and look at what they say, fix what they find, then reply ready.',
   'weak-verdict': 'Revise what critique_animation found and critique again until it says good; or, when a weakness stays on purpose, reply ready with `weak` naming it in one plain sentence for the owner.',
   'stale-drawing': 'Open the drawing again to see the newer version, or save the board\'s copy under another name.',

@@ -7,6 +7,15 @@ All notable changes to this project. The format follows
 
 ### Added
 
+- The asset catalog (`find_assets`, served by default): every image, atlas, skeleton, drawing,
+  Aseprite file, sound, font, model and Godot scene in the open project, the bundled library and
+  the owner's own asset folders (kept in the studio's list, `assetFolders`), found by words in
+  any language's letters. In the project it knows what uses what (a skeleton its atlas or loose
+  images, an atlas its pages, a drawing its library items, a Godot scene its `res://` files, any
+  JSON the files it names), so it names what nothing uses; and it tells what was added, changed,
+  moved or removed since the last look, until marked seen. Nothing is written beside the files it
+  reads: the snapshot lives in the studio's own state folder. The page's Assets panel shows the
+  same catalog.
 - A 3D look for sprite stacks in Godot, off by default: height shade (`KeyframeStack.shade`,
   `shade_top`), a perspective lean away from the middle of the screen
   (`KeyframeStack.perspective`), and sun shadows with each pile's own outline from the new

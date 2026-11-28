@@ -192,6 +192,7 @@
       <button type="button" role="tab" id="tabClips" data-tab="clips" aria-controls="clipsPanel" aria-selected="true"><span data-i18n="clips.tab"></span><span class="count" id="clipCount" hidden></span></button>
       <button type="button" role="tab" id="tabReference" data-tab="reference" aria-controls="refCard" aria-selected="false" tabindex="-1"><span data-i18n="ref.title"></span><span class="count" id="refCount" hidden></span></button>
       <button type="button" role="tab" id="tabVersions" data-tab="versions" aria-controls="versionsPanel" aria-selected="false" tabindex="-1"><span data-i18n="versions.tab"></span></button>
+      <button type="button" role="tab" id="tabAssets" data-tab="assets" aria-controls="assetsPanel" aria-selected="false" tabindex="-1"><span data-i18n="assets.tab"></span></button>
     </div>
     <div class="ins-body">
 
@@ -279,6 +280,39 @@
         <ul class="versions" id="versions"></ul>
         <p class="t-caption" id="versionsNote" hidden></p>
         <p class="status" id="deliveryStatus" role="status"></p>
+      </section>
+
+      <section class="ins-panel" id="assetsPanel" role="tabpanel" aria-labelledby="tabAssets">
+        <input class="input" id="assetQuery" type="search" spellcheck="false" autocomplete="off" data-i18n-placeholder="assets.search" data-i18n-label="assets.search">
+        <div class="asset-filters">
+          <div class="seg" id="assetSource" role="group" data-i18n-label="assets.source">
+            <button type="button" data-source="all" aria-pressed="true" data-i18n="assets.all"></button>
+            <button type="button" data-source="project" aria-pressed="false" data-i18n="assets.project"></button>
+            <button type="button" data-source="library" aria-pressed="false" data-i18n="assets.library"></button>
+            <button type="button" data-source="folder" aria-pressed="false" data-i18n="assets.folders"></button>
+          </div>
+          <label class="asset-unused"><input type="checkbox" id="assetUnused"><span data-i18n="assets.unused"></span></label>
+        </div>
+        <p class="t-caption" id="assetCount" role="status"></p>
+        <ul class="asset-list" id="assetList"></ul>
+        <button type="button" class="btn ghost sm" id="assetMore" hidden><span data-i18n="assets.more"></span></button>
+        <div class="asset-changes">
+          <div class="asset-head">
+            <h3 class="h-sec" data-i18n="assets.changes"></h3>
+            <button type="button" class="btn ghost sm" id="assetSeen" hidden><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg><span data-i18n="assets.seen"></span></button>
+          </div>
+          <p class="quiet" id="assetChangesNote"></p>
+          <ul class="asset-list" id="assetChangeList"></ul>
+        </div>
+        <form class="asset-folder" id="assetFolderForm">
+          <label class="field-label" for="assetFolder" data-i18n="assets.folderLabel"></label>
+          <div class="input-row">
+            <input class="input mono" id="assetFolder" type="text" spellcheck="false" autocomplete="off" data-i18n-placeholder="assets.folderPlaceholder">
+            <button type="submit" class="btn icon" data-i18n-label="assets.folderAdd"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg></button>
+          </div>
+          <ul class="asset-folders" id="assetFolders"></ul>
+        </form>
+        <p class="status" id="assetStatus" role="status"></p>
       </section>
 
     </div>

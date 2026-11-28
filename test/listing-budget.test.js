@@ -27,7 +27,9 @@ import { compactSchema } from '../src/mcp/describe.js';
 // tiles and nine-slice panels), one boolean.
 // 2026-11-28: raised to 31,100 for export_art's `model` (a textured low-poly model from drawn
 // views), one object whose fields the description explains.
-const BUDGET_BYTES = 31100;
+// 2026-11-28: raised to 32,400 for find_assets, the 31st core tool: the asset catalog (the
+// project, the library and the owner's asset folders; usage and changes), one-word hints.
+const BUDGET_BYTES = 32400;
 const SUMMARY_MAX = 220;      // one or two sentences
 
 test('the compact listing of the real tool set stays under budget', async () => {
@@ -44,7 +46,7 @@ test('every tool has a short summary, a full description, and core tools form th
     assert.ok(tool.description.length > tool.summary.length, `${tool.name} description adds to its summary`);
   }
   const core = TOOLS.filter(t => t.tier === 'core').map(t => t.name).sort();
-  assert.deepEqual(core, ['add_effect', 'apply_motion', 'bake_animation', 'brief', 'check_skeleton', 'compare_reference', 'critique_animation', 'critique_art', 'delete_animation', 'describe_animation', 'draw_rig', 'export_art', 'export_godot', 'help', 'list_history',
+  assert.deepEqual(core, ['add_effect', 'apply_motion', 'bake_animation', 'brief', 'check_skeleton', 'compare_reference', 'critique_animation', 'critique_art', 'delete_animation', 'describe_animation', 'draw_rig', 'export_art', 'export_godot', 'find_assets', 'help', 'list_history',
     'measure_reference', 'paint_weights', 'read_animation', 'read_rig', 'reply', 'restore_file', 'sample_animation', 'scan_project', 'see_animation',
     'see_reference', 'set_curves', 'start_here', 'style_guide', 'wait_for_message', 'write_animation']);
 });
@@ -57,7 +59,7 @@ test('by default only the core tools are on the wire; `all` adds the shelf', asy
     return sent[0].result.tools.map(t => t.name);
   };
   const served = await names({});
-  assert.equal(served.length, 30);
+  assert.equal(served.length, 31);
   assert.ok(served.includes('bake_animation') && !served.includes('export_binary'));
   assert.equal((await names({ all: true })).length, TOOLS.length);
 

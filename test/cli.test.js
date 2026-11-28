@@ -20,7 +20,7 @@ function project() {
 test('list shows the default set, and the shelf only with --all', () => {
   const plain = run('list');
   assert.equal(plain.status, 0);
-  assert.equal(plain.stdout.trim().split('\n').length, 30);
+  assert.equal(plain.stdout.trim().split('\n').length, 31);
   assert.ok(plain.stdout.includes('bake_animation') && !plain.stdout.includes('export_binary'));
   assert.ok(run('list', '--all').stdout.includes('export_binary'));
 });

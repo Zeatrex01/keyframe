@@ -43,8 +43,8 @@ on the studio's own engine; Spine JSON is still read and written as a data forma
 
 A plain AI-assisted tool: the user does not do the work by hand, and does not wait long for it.
 The owner describes the motion; the model writes it; the studio checks it and shows it. The
-default wire therefore carries a small set of tools only (thirty as of 2026-11-24): art direction, draw, critique and export art, read, brief, write, effects, check, critique, see, measure, undo, bake, paint weights, export to Godot, converse, learn from a reference
-(2026-11-12: `bake_animation` back on the default wire, for rigs with physics that go to an engine without it; 2026-11-24: `critique_animation` joins it, so every agent measures its motion against the animation principles). The specialist
+default wire therefore carries a small set of tools only (thirty-one as of 2026-11-28): art direction, draw, critique and export art, find assets, read, brief, write, effects, check, critique, see, measure, undo, bake, paint weights, export to Godot, converse, learn from a reference
+(2026-11-12: `bake_animation` back on the default wire, for rigs with physics that go to an engine without it; 2026-11-24: `critique_animation` joins it, so every agent measures its motion against the animation principles; 2026-11-28: `find_assets` joins it, so every agent looks for the art, sounds and fonts the owner already has before drawing new ones, and can say what nothing uses and what changed). The specialist
 tools in the last row of the table above (merge, swap-to-skin, weight repair, binary
 export and the rest of the shelf) stay in the tree with their gates and are served only when
 the server is started with `--all`.

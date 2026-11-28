@@ -12,7 +12,7 @@ do the work by hand, and should never have to wait long for it.
 
 ## Working rules
 
-- **Keep it plain.** Thirty tools are served by default (art direction, draw, critique and export art, read, brief, write, effects, check, critique, see, measure, undo, bake, paint weights, export to Godot, converse, learn from a reference). A new
+- **Keep it plain.** Thirty-one tools are served by default (art direction, draw, critique and export art, find assets, read, brief, write, effects, check, critique, see, measure, undo, bake, paint weights, export to Godot, converse, learn from a reference). A new
   tool or a new page needs a maintainer decision first; ideas go to `docs/ideas.md` with a date.
 - **Every change comes with its gate.** A gate is a `*.test.js` on `node:test`. It must pass,
   and it must fail when the code is deliberately broken, before the commit.
