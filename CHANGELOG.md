@@ -5,6 +5,40 @@ All notable changes to this project. The format follows
 
 ## Unreleased
 
+## 0.0.4-beta - 2026-11-28
+
+Path constraints, onion skin and a curve view; a 3D look for sprite stacks in Godot; dashed outlines; the asset catalog.
+
+### Added
+
+- Dashed outlines: a shape's `dash: [on, off]` draws its stroke as dashes (lines, rectangles, circles,
+  ellipses, polygons and stars), and `export_art` `trim: false` keeps every part PNG at its full
+  box, so tiles and nine-slice panels line up without offsets.
+- The asset catalog (`find_assets`, served by default): every image, atlas, skeleton, drawing,
+  Aseprite file, sound, font, model and Godot scene in the open project, the bundled library and
+  the owner's own asset folders (kept in the studio's list, `assetFolders`), found by words in
+  any language's letters. In the project it knows what uses what (a skeleton its atlas or loose
+  images, an atlas its pages, a drawing its library items, a Godot scene its `res://` files, any
+  JSON the files it names), so it names what nothing uses; and it tells what was added, changed,
+  moved or removed since the last look, until marked seen. Nothing is written beside the files it
+  reads: the snapshot lives in the studio's own state folder. The page's Assets panel shows the
+  same catalog.
+- A 3D look for sprite stacks in Godot, off by default: height shade (`KeyframeStack.shade`,
+  `shade_top`), a perspective lean away from the middle of the screen
+  (`KeyframeStack.perspective`), and sun shadows with each pile's own outline from the new
+  `KeyframeStackShadows` node, which export_art ships beside `keyframe_stack.gd`. A pile's redraw
+  is now only draw calls (slice rects and colours are cached), so panning with the lean on stays
+  cheap.
+- Path constraints on the studio's own engine: bones laid along a path attachment (open or
+  closed, constant speed or not, weighted and deformed too), every position, spacing and rotate
+  mode of Spine 4.2, keyed by path timelines. Inherit timelines and skin-only bones and
+  constraints are evaluated as well, so no Spine 4.2 file needs the Spine add-on to pose or bake
+  any more. Godot bakes the bones a path or an inherit key moves.
+- Onion skin on the stage: faint ghosts of the clip a few instants before and after the moment
+  shown (the Onion skin switch in the transport).
+- A curve view under the key ruler: click a bone lane's name to see that channel's values over
+  the clip, eases included, with its keys and the playhead. Read-only.
+
 ## 0.0.3-beta - 2026-11-27
 
 The engine plays everything a game needs: layers and crossfades, physics and transform constraints, flipbooks; particle effects, pixel-art export and Aseprite import; Godot blends, live physics and eased layers.
